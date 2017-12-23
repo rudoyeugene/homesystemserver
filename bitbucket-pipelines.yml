@@ -1,10 +1,10 @@
---- 
-image: "maven:3.3.9"
-pipelines: 
-  default: 
-    - 
-      step: 
-        script: 
-          - "mvn clean package"
-          - "curl -H \"Content-Type:application/json\" -X POST --user \"${BB_AUTH_STRING}\" -d \"${BUILD_STATUS}\" \"https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/commit/${BITBUCKET_COMMIT}/statuses/build\""
-          - "curl -X POST --user \"${BB_AUTH_STRING}\" \"https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads\" -F files=@\"target/home-system-server.tar.gz\""
+image: maven:3.3.9
+
+pipelines:
+  default:
+    - step:
+        script: # Modify the commands below to build your repository.
+          - mvn clean package
+          - curl -H "Content-Type:application/json" -X POST --user "${BB_AUTH_STRING}" -d "${BUILD_STATUS}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/commit/${BITBUCKET_COMMIT}/statuses/build"
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" -F files=@"target/home-system-server.tar.gz"
+          
