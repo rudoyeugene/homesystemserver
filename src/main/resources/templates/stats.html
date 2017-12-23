@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <title>Stats</title>
+    <div th:include="decoration"/>
+</head>
+<br></br>
+<body>
+<div th:each="data : ${boardStats}">
+    <table cellspacing="5" cellpadding="10" frame="box">
+        <tbody>
+        <tr>
+            <td><span class="infoText" th:text="${data}"></span></td>
+        </tr>
+        </tbody>
+    </table>
+    <br></br>
+</div>
+<div>
+    <table cellspacing="5" cellpadding="10">
+        <tbody>
+        <tr>
+            <td style="text-align: left"><a href="/admin/" class="button btnInfo">BACK</a></td>
+            <td style="text-align: right"><a href="/admin/stats" class="button btnInfo">REFRESH</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<link rel="manifest" th:href="@{/manifest.json}"/>
+<head>
+    <title>Home System</title>
+    <div th:include="decoration"></div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        var delayedArmMessage = "System will be armed in " + [[${armDelaySeconds}]] + " seconds, continue?";
+
+        //REST Buttons
+        function arm(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=ARM", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function delayedArm(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=DELAYED_ARM", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function disarm(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=DISARM", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function automatic(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=AUTOMATIC", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function resendHourly(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=RESEND_HOURLY", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function resendWeekly(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=RESEND_WEEKLY", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function openPorts(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=OPEN_PORTS", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function closePorts(message) {
+            confirm(message);
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("POST", "/admin/fireAction?action=CLOSE_PORTS", true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send();
+            var response = JSON.parse(xhttp.responseText);
+        }
+
+        function currentState() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("GET", "/admin/currentState", false);
+            xhttp.send();
+            var response = xhttp.responseText;
+            alert(response)
+        }
+
+        function uptime() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.open("GET", "/admin/uptime", false);
+            xhttp.send();
+            var response = xhttp.responseText;
+            alert(response)
+        }
+
+        /*]]>*/
+    </script>
+
+</head>
+<body>
+<div class="blackShadowedText">SECURITY CONTROLS:</div>
+<div>
+    <table cellspacing="5" cellpadding="10">
+        <tbody>
+        <tr>
+            <td style="text-align: left">
+                <button type="submit" onclick="return arm('ARM system immediately?')" class="button btnArm">ARM</button>
+            </td>
+            <td style="text-align: right">
+                <button type="submit" onclick="return delayedArm(delayedArmMessage)" class="button btnArm">DELAYED ARM</button>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: left">
+                <button type="submit" onclick="return disarm('DISARM system immediately?')" class="button btnDisarm">DISARM</button>
+            </td>
+            <td style="text-align: right">
+                <button type="submit" onclick="return automatic('Turn system in AUTO mode immediately?')" class="button btnInfo">AUTOMATIC</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br></br>
+<div class="blackShadowedText">SYSTEM STATUS:</div>
+<div>
+    <table cellspacing="5" cellpadding="10">
+        <tbody>
+        <tr>
+            <td style="text-align: left"><a href="/admin/" onclick="return currentState()" class="button btnInfo">CURRENT STATE</a></td>
+            <td style="text-align: right"><a href="/admin/" onclick="return uptime()" class="button btnInfo">UPTIME</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br></br>
+<div class="blackShadowedText">REPORTING CONTROLS:</div>
+<div>
+    <table cellspacing="5" cellpadding="10">
+        <tbody>
+        <tr>
+            <td style="text-align: center">
+                <button type="submit" onclick="return resendHourly('Are you sure?')" class="button btnInfo">RESEND HOURLY REPORT</button>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: center">
+                <button type="submit" onclick="return resendWeekly('Are you sure?')" class="button btnInfo">RESEND WEEKLY REPORT</button>
+            </td>
+        </tr>
+        <tr>
+            <td style="text-align: left"><a href="/admin/ipStates" class="button btnInfo">IP STATES</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<br></br>
+<div class="blackShadowedText">SYSTEM CONTROLS:</div>
+<div>
+    <table cellspacing="5" cellpadding="10">
+        <tbody>
+        <tr>
+            <td style="text-align: left"><a href="/admin/pair" class="button btnInfo">PAIR CLIENTS</a></td>
+            <td style="text-align: left"><a href="/admin/stats" class="button btnInfo">STATS</a></td>
+            <td style="text-align: right"><a href="/admin/cameras" class="button btnInfo">CAMERAS</a></td>
+            <td style="text-align: right"><a href="/admin/downloadClient" class="button btnInfo">DOWNLOAD CLIENT</a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+<div>
+    <table cellspacing="5" cellpadding="10">
+        <tbody>
+        <tr>
+            <td style="text-align: center">
+                <button type="submit" onclick="return openPorts('Open all outer Cameras ports to the world, are you sure?')" class="button btnInfo">OPEN PORTS</button>
+            </td>
+            <td style="text-align: center">
+                <button type="submit" onclick="return closePorts('Close all outer Cameras ports from the world, are you sure?')" class="button btnInfo">CLOSE PORTS</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

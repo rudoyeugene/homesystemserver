@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+  http://www.springframework.org/schema/context
+  http://www.springframework.org/schema/context/spring-context-4.2.xsd
+  http://www.springframework.org/schema/task
+  http://www.springframework.org/schema/task/spring-task.xsd http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+
+    <context:annotation-config/>
+
+    <mvc:annotation-driven/>
+
+    <context:component-scan base-package="com.rudyii.hsw.*"/>
+
+    <context:property-placeholder location="classpath:application.properties, file:conf/system.properties"
+                                  ignore-unresolvable="true"/>
+
+    <import resource="file:conf/system-settings.xml"/>
+
+    <task:annotation-driven executor="hswExecutor" scheduler="hswScheduler" proxy-target-class="true"/>
+    <task:executor id="hswExecutor" pool-size="${pool.size}"/>
+    <task:scheduler id="hswScheduler" pool-size="${pool.size}"/>
+
+    <bean id="fcmService" class="com.rudyii.hsw.actions.FCMSender">
+        <property name="endpoint" value="https://fcm.googleapis.com/fcm/send"/>
+        <property name="serverKey"
+                  value="AAAACvWrlYE:APA91bH96C1KTNemqRCvblv1YtWj0qiW0bRfc2h6vTn3oyOUHIV99gJLrxutMozF_nIWbMg4YwnMjkqTO5UVrnziFn5b4ltccXU8AhNdAt6kAhfwgj02kgTtPAFpWrRnpJew5R2CpgBq"/>
+    </bean>
+
+    <bean id="applicationEventMulticaster"
+          class="org.springframework.context.event.SimpleApplicationEventMulticaster">
+        <property name="taskExecutor">
+            <bean parent="hswExecutor"/>
+        </property>
+    </bean>
+
+    <bean id="videoCaptor" class="com.rudyii.hsw.motion.VideoCaptor" scope="prototype"/>
+    <bean id="motionNotifier" class="com.rudyii.hsw.motion.MotionNotifier" scope="prototype"/>
+    <bean id="dropboxClientProvider" class="com.rudyii.hsw.providers.DropboxClientProvider" scope="prototype"/>
+    <bean id="emailDetails" class="com.rudyii.hsw.providers.EmailDetailsProvider" scope="prototype"/>
+</beans>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration monitorinterval="30" status="info" strict="true">
+    <Properties>
+        <Property name="filename">HomeSystemWeb.log</Property>
+        <Property name="log-path">logs</Property>
+    </Properties>
+    <Appenders>
+        <RollingFile name="RollingFile" fileName="${log-path}/HomeSystemWeb.log"
+                     filePattern="${log-path}/HomeSystemWeb-%i.log" >
+            <PatternLayout>
+                <pattern>[%-5level] %logger{1} %d{dd.MM.yyy HH:mm:ss.SSS} [%t] - %msg%n</pattern>
+            </PatternLayout>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10 MB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+
+        <Console name="console" target="SYSTEM_OUT">
+            <PatternLayout pattern="[%-5level] %logger{1} %d{dd.MM.yyy HH:mm:ss.SSS} [%t] - %msg%n"/>
+        </Console>
+
+    </Appenders>
+    <Loggers>
+        <Root level="all">
+            <AppenderRef ref="console"/>
+            <AppenderRef ref="RollingFile"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
