@@ -51,6 +51,8 @@ public class FirebaseService {
 
     private Map<String, Object> statuses, motions, requests, settings;
 
+    private Map<String, Long> localConnectedClients;
+
     public FirebaseService(FirebaseDatabase firebaseDatabase, UuidService uuidService,
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
@@ -70,6 +72,7 @@ public class FirebaseService {
         this.motions = new HashMap<>();
         this.requests = new HashMap<>();
         this.settings = new HashMap<>();
+        this.localConnectedClients = new HashMap<>();
         this.databaseReferences = new ArrayList();
         this.valueEventListeners = new ArrayList();
 
@@ -292,6 +295,28 @@ public class FirebaseService {
         };
     }
 
+    private ValueEventListener getConnectedClientsValueEventListener() {
+        return new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Map<String, Long> connectedClients = (Map<String, Long>) dataSnapshot.getValue();
+
+                if (connectedClients != null) {
+                    localConnectedClients.putAll(connectedClients);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+    }
+
+    public Map<String, Long> getLocalConnectedClients() {
+        return localConnectedClients;
+    }
+
     @Scheduled(cron = "0 */1 * * * *")
     public void ping() {
         DatabaseReference pingRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/ping");
@@ -308,5 +333,8 @@ public class FirebaseService {
         wanInfo.put("isp", wanIp.getIsp());
 
         pushData(uuidService.getServerKey() + "/info/wanInfo", wanInfo);
+
+        DatabaseReference connectedClientsRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/connectedClients");
+        connectedClientsRef.addListenerForSingleValueEvent(getConnectedClientsValueEventListener());
     }
 }

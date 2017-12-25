@@ -6,6 +6,7 @@ import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.services.ActionsService;
 import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.FirebaseService;
 import com.rudyii.hsw.services.UuidService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +25,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
@@ -41,6 +46,7 @@ public class AdminPortal {
     private ArmedStateService armedStateService;
     private BoardMonitor boardMonitor;
     private UuidService uuidService;
+    private FirebaseService firebaseService;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
     private IpMonitor ipMonitor;
     private ActionsService actionsService;
@@ -58,6 +64,7 @@ public class AdminPortal {
     public AdminPortal(Uptime uptime, ArmedStateService armedStateService,
                        BoardMonitor boardMonitor, UuidService uuidService,
                        IpMonitor ipMonitor, ActionsService actionsService,
+                       FirebaseService firebaseService,
                        CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.uptime = uptime;
         this.armedStateService = armedStateService;
@@ -65,6 +72,7 @@ public class AdminPortal {
         this.uuidService = uuidService;
         this.ipMonitor = ipMonitor;
         this.actionsService = actionsService;
+        this.firebaseService = firebaseService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
@@ -169,5 +177,21 @@ public class AdminPortal {
                 .contentLength(file.length())
                 .contentType(MediaType.parseMediaType("application/octet-stream"))
                 .body(resource);
+    }
+
+    @RequestMapping(path = "/connectedClients")
+    public ModelAndView buildConnectedClients() {
+        ModelAndView modelAndView = new ModelAndView("connectedClients");
+
+        Map<String, Long> connectedClientsRaw = firebaseService.getLocalConnectedClients();
+        Map<String, String> connectedClients = new HashMap<>();
+
+        connectedClientsRaw.forEach((name, timestamp) -> {
+            connectedClients.put(name, ("last time connected: " + new SimpleDateFormat("HH:mm:ss, dd.MM.yyyy").format(new Date(timestamp)).toString()));
+        });
+
+        modelAndView.addObject("connectedClients", connectedClients);
+
+        return modelAndView;
     }
 }
