@@ -1,12 +1,16 @@
 package com.rudyii.hsw.services;
 
 import com.google.firebase.database.*;
+import com.google.gson.JsonObject;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
 import com.rudyii.hsw.events.*;
+import com.rudyii.hsw.helpers.FCMSender;
 import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.WanIp;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,11 +28,13 @@ import java.util.Random;
 
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
+import static com.rudyii.hsw.helpers.FCMSender.TYPE_TO;
 import static com.rudyii.hsw.helpers.PidGeneratorShutdownHandler.getPid;
 import static com.rudyii.hsw.helpers.SimplePropertiesKeeper.isHomeSystemInitComplete;
 
 @Service
 public class FirebaseService {
+    private static Logger LOG = LogManager.getLogger(FirebaseService.class);
 
     @Value("${application.version}")
     private String appVersion;
@@ -45,18 +51,19 @@ public class FirebaseService {
     private UpnpService upnpService;
     private EventService eventService;
     private IspService ispService;
+    private FCMSender fcmSender;
     private CameraMotionDetectionController[] motionDetectionControllers;
     private ArrayList<DatabaseReference> databaseReferences;
     private ArrayList<ValueEventListener> valueEventListeners;
 
     private Map<String, Object> statuses, motions, requests, settings;
-
-    private Map<String, Long> localConnectedClients;
+    private Map<String, String> localConnectedClients;
 
     public FirebaseService(FirebaseDatabase firebaseDatabase, UuidService uuidService,
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
+                           FCMSender fcmSender,
                            CameraMotionDetectionController... motionDetectionControllers) {
         this.firebaseDatabase = firebaseDatabase;
         this.uuidService = uuidService;
@@ -66,6 +73,7 @@ public class FirebaseService {
         this.upnpService = upnpService;
         this.eventService = eventService;
         this.ispService = ispService;
+        this.fcmSender = fcmSender;
         this.motionDetectionControllers = motionDetectionControllers;
 
         this.statuses = new HashMap<>();
@@ -122,12 +130,17 @@ public class FirebaseService {
         reference.setValueAsync(value);
     }
 
-    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, CaptureEvent.class, CameraRebootEvent.class})
+    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, CaptureEvent.class, CameraRebootEvent.class, IspEvent.class})
     private void onEvent(EventBase event) {
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
 
             updateStatuses(armedEvent.getArmedState(), armedEvent.getArmedMode());
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("reason", "systemStateChanged");
+
+            sendFcmMessage(jsonObject);
 
         } else if (event instanceof MotionDetectedEvent) {
             MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
@@ -165,10 +178,24 @@ public class FirebaseService {
 
             pushData(uuidService.getServerKey() + "/motions/" + motionDetectedEvent.getCameraName(), camera);
 
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("reason", "motionDetected");
+            jsonObject.addProperty("cameraName", motionDetectedEvent.getCameraName());
+
+            sendFcmMessage(jsonObject);
+
         } else if (event instanceof CaptureEvent) {
             CaptureEvent captureEvent = (CaptureEvent) event;
 
             pushData(uuidService.getServerKey() + "/motions/lastRecord", captureEvent.getUploadCandidate().getName());
+        } else if (event instanceof IspEvent) {
+            refreshWanInfo();
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("reason", "ispChanged");
+
+            sendFcmMessage(jsonObject);
+
         } else if (event instanceof CameraRebootEvent) {
             CameraRebootEvent cameraRebootEvent = (CameraRebootEvent) event;
 
@@ -176,6 +203,12 @@ public class FirebaseService {
             offlineDevice.put(cameraRebootEvent.getCameraName(), System.currentTimeMillis());
 
             pushData(uuidService.getServerKey() + "/offlineDevices", offlineDevice);
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("reason", "cameraReboot");
+
+            sendFcmMessage(jsonObject);
+
         }
     }
 
@@ -299,7 +332,7 @@ public class FirebaseService {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Map<String, Long> connectedClients = (Map<String, Long>) dataSnapshot.getValue();
+                Map<String, String> connectedClients = (Map<String, String>) dataSnapshot.getValue();
 
                 if (connectedClients != null) {
                     localConnectedClients.putAll(connectedClients);
@@ -313,10 +346,6 @@ public class FirebaseService {
         };
     }
 
-    public Map<String, Long> getLocalConnectedClients() {
-        return localConnectedClients;
-    }
-
     @Scheduled(cron = "0 */1 * * * *")
     public void ping() {
         DatabaseReference pingRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/ping");
@@ -325,7 +354,17 @@ public class FirebaseService {
         DatabaseReference uptimeRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/uptime");
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("reason", "serverStarted");
 
+        sendFcmMessage(jsonObject);
+        refreshWanInfo();
+
+        DatabaseReference connectedClientsRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/connectedClients");
+        connectedClientsRef.addListenerForSingleValueEvent(getConnectedClientsValueEventListener());
+    }
+
+    private void refreshWanInfo() {
         Map<String, Object> wanInfo = new HashMap<>();
         WanIp wanIp = ispService.getCurrentWanIp();
 
@@ -333,8 +372,16 @@ public class FirebaseService {
         wanInfo.put("isp", wanIp.getIsp());
 
         pushData(uuidService.getServerKey() + "/info/wanInfo", wanInfo);
+    }
 
-        DatabaseReference connectedClientsRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/connectedClients");
-        connectedClientsRef.addListenerForSingleValueEvent(getConnectedClientsValueEventListener());
+    private void sendFcmMessage(JsonObject messageData) {
+        localConnectedClients.forEach((name, token) -> {
+            try {
+                fcmSender.sendData(TYPE_TO, token, messageData);
+            } catch (Exception e) {
+                LOG.error("Failed to send FCM Message to " + name, e);
+            }
+        });
+
     }
 }

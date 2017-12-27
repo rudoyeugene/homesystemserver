@@ -25,11 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
@@ -177,21 +173,5 @@ public class AdminPortal {
                 .contentLength(file.length())
                 .contentType(MediaType.parseMediaType("application/octet-stream"))
                 .body(resource);
-    }
-
-    @RequestMapping(path = "/connectedClients")
-    public ModelAndView buildConnectedClients() {
-        ModelAndView modelAndView = new ModelAndView("connectedClients");
-
-        Map<String, Long> connectedClientsRaw = firebaseService.getLocalConnectedClients();
-        Map<String, String> connectedClients = new HashMap<>();
-
-        connectedClientsRaw.forEach((name, timestamp) -> {
-            connectedClients.put(name, ("last time connected: " + new SimpleDateFormat("HH:mm:ss, dd.MM.yyyy").format(new Date(timestamp)).toString()));
-        });
-
-        modelAndView.addObject("connectedClients", connectedClients);
-
-        return modelAndView;
     }
 }

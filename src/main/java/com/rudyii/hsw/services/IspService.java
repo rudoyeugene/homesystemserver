@@ -1,8 +1,8 @@
 package com.rudyii.hsw.services;
 
 import com.google.gson.Gson;
+import com.rudyii.hsw.events.IspEvent;
 import com.rudyii.hsw.objects.WanIp;
-import com.rudyii.hsw.providers.NotificationsService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.util.IOUtil;
@@ -15,7 +15,6 @@ import java.net.Inet4Address;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 
 import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
@@ -23,17 +22,17 @@ import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 @Service
 public class IspService {
     private static Logger LOG = LogManager.getLogger(IspService.class);
-    private NotificationsService notificationsService;
     private PingService pingService;
+    private EventService eventService;
 
     private WanIp previousWanIp;
 
     private WanIp currentWanIp;
 
     @Autowired
-    public IspService(NotificationsService notificationsService, PingService pingService) {
-        this.notificationsService = notificationsService;
+    public IspService(PingService pingService, EventService eventService) {
         this.pingService = pingService;
+        this.eventService = eventService;
     }
 
     @PostConstruct
@@ -72,19 +71,8 @@ public class IspService {
         if (previousWanIp.getQuery().equals(currentWanIp.getQuery())) {
             previousWanIp = currentWanIp;
         } else {
-            ArrayList<String> body = new ArrayList<>();
 
-            body.add("Previous ISP and WAN IP address:");
-            body.add("Previous Internet provider: " + previousWanIp.getIsp());
-            body.add("Previous WAN IP: " + previousWanIp.getQuery());
-            body.add("You are visited from: " + previousWanIp.getRegionName());
-            body.add("<br>");
-            body.add("Current ISP and WAN IP address:");
-            body.add("Current Internet provider: " + currentWanIp.getIsp());
-            body.add("Current WAN IP: " + currentWanIp.getQuery());
-            body.add("You are visiting from: " + currentWanIp.getRegionName());
-
-            notificationsService.sendMessage("ISP/WAN IP Changed!", body, true);
+            eventService.publish(new IspEvent());
 
             previousWanIp = currentWanIp;
         }
