@@ -1,8 +1,11 @@
 package com.rudyii.hsw.actions.base;
 
+import com.google.gson.JsonObject;
 import com.rudyii.hsw.actions.DropboxUploadAction;
+import com.rudyii.hsw.actions.FcmMessageSendAction;
 import com.rudyii.hsw.actions.MailSendAction;
 import com.rudyii.hsw.objects.Attachment;
+import com.rudyii.hsw.services.IspService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +33,13 @@ public class ActionsFactory {
     @Autowired
     private DropboxUploadAction uploadAction;
 
-    public ActionsFactory() {
+    @Autowired
+    private FcmMessageSendAction messageSendAction;
+
+    private IspService ispService;
+
+    public ActionsFactory(IspService ispService) {
+        this.ispService = ispService;
         this.actionsListToBeFired = Collections.synchronizedList(new ArrayList());
     }
 
@@ -43,8 +52,11 @@ public class ActionsFactory {
     }
 
     @Async
-    public void addToQueueFCMSenderAction(File uploadCandidate) {
-
+    public void addToQueueFcmMessageSendAction(String name, String recipientToken, JsonObject messageData) {
+        FcmMessageSendAction currentAction = messageSendAction.withData(name, recipientToken, messageData);
+        if (!currentAction.fireAction()) {
+            actionsListToBeFired.add(currentAction);
+        }
     }
 
     @Async
@@ -59,13 +71,17 @@ public class ActionsFactory {
     public void retryActions() {
         if (actionsListToBeFired.size() > 0) {
             LOG.info("Actions queue size = " + actionsListToBeFired.size());
-            for (Action action : actionsListToBeFired){
-                if (action.fireAction()) {
-                    LOG.info(action.getClass().getSimpleName() + " successfully fired");
-                    actionsListToBeFired.remove(action);
-                } else {
-                    LOG.error(action.getClass().getSimpleName() + " action firing failed, will retry next time");
+            if (ispService.internetIsAvailable()) {
+                for (Action action : actionsListToBeFired) {
+                    if (action.fireAction()) {
+                        LOG.info(action.getClass().getSimpleName() + " successfully fired");
+                        actionsListToBeFired.remove(action);
+                    } else {
+                        LOG.error(action.getClass().getSimpleName() + " action firing failed, will retry next time");
+                    }
                 }
+            } else {
+                LOG.warn("Internet is unavailable, next retry will be fired in a minute, actions queue size: " + actionsListToBeFired.size());
             }
         }
     }

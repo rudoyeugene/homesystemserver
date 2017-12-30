@@ -5,10 +5,10 @@ import com.google.gson.JsonObject;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
 import com.rudyii.hsw.events.*;
-import com.rudyii.hsw.helpers.FCMSender;
 import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.WanIp;
+import com.rudyii.hsw.providers.NotificationsService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,7 +29,6 @@ import java.util.Random;
 
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
-import static com.rudyii.hsw.helpers.FCMSender.TYPE_TO;
 import static com.rudyii.hsw.helpers.PidGeneratorShutdownHandler.getPid;
 import static com.rudyii.hsw.helpers.SimplePropertiesKeeper.isHomeSystemInitComplete;
 
@@ -52,7 +51,7 @@ public class FirebaseService {
     private UpnpService upnpService;
     private EventService eventService;
     private IspService ispService;
-    private FCMSender fcmSender;
+    private NotificationsService notificationsService;
     private CameraMotionDetectionController[] motionDetectionControllers;
     private ArrayList<DatabaseReference> databaseReferences;
     private ArrayList<ValueEventListener> valueEventListeners;
@@ -65,7 +64,7 @@ public class FirebaseService {
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
-                           FCMSender fcmSender,
+                           NotificationsService notificationsService,
                            CameraMotionDetectionController... motionDetectionControllers) {
         this.firebaseDatabase = firebaseDatabase;
         this.uuidService = uuidService;
@@ -75,7 +74,7 @@ public class FirebaseService {
         this.upnpService = upnpService;
         this.eventService = eventService;
         this.ispService = ispService;
-        this.fcmSender = fcmSender;
+        this.notificationsService = notificationsService;
         this.motionDetectionControllers = motionDetectionControllers;
 
         this.statuses = new HashMap<>();
@@ -441,7 +440,7 @@ public class FirebaseService {
     private void sendFcmMessage(JsonObject messageData) {
         localConnectedClients.forEach((name, token) -> {
             try {
-                fcmSender.sendData(TYPE_TO, token, messageData);
+                notificationsService.sendFcmMessage(name, token, messageData);
             } catch (Exception e) {
                 LOG.error("Failed to send FCM Message to " + name, e);
             }

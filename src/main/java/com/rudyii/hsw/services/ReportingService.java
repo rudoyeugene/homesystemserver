@@ -99,7 +99,7 @@ public class ReportingService {
             LOG.error("ERROR getting stats!", e);
         }
 
-        notificationsService.sendMessage(SUBJECT_WEEKLY, body, false);
+        notificationsService.sendEmail(SUBJECT_WEEKLY, body, false);
     }
 
     @Async
@@ -139,6 +139,6 @@ public class ReportingService {
             body.addAll(boardMonitor.getMonitoringResults());
         }
 
-        notificationsService.sendMessage(SUBJECT_HOURLY, body, attachments, false);
+        notificationsService.sendEmail(SUBJECT_HOURLY, body, attachments, false);
     }
 }

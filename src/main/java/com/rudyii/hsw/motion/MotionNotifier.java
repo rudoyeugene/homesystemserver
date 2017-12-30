@@ -65,14 +65,14 @@ public class MotionNotifier {
             }
             body.add("\n");
 
-            notificationsService.sendMessage(subject, body, true);
+            notificationsService.sendEmail(subject, body, true);
             LOG.error("Failed to extract image from camera: " + camera.getName(), e);
             return;
         }
 
         body.add("Motion detected at: " + bodyTimeStamp + " from camera: " + camera.getName());
         body.add("Motion area size: " + Precision.round(area, 2) + "%");
-        notificationsService.sendMessage("Motion detected!", body, attachments, false);
+        notificationsService.sendEmail("Motion detected!", body, attachments, false);
     }
 
     private void generateTimestamps() {

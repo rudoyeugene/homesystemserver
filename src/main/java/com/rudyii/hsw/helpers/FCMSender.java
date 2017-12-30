@@ -1,6 +1,8 @@
 package com.rudyii.hsw.helpers;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.rudyii.hsw.enums.FcmMessageEnum;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -12,56 +14,60 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Map;
+
+import static com.rudyii.hsw.enums.FcmMessageEnum.FAIL;
+import static com.rudyii.hsw.enums.FcmMessageEnum.SUCCESS;
 
 @Component
 public class FCMSender {
-    private static Logger LOG = LogManager.getLogger(FCMSender.class);
-
     public static final String TYPE_TO = "to";  // Use for single devices, device groups and topics
     public static final String TYPE_CONDITION = "condition"; // Use for Conditions
     private static final String URL_SEND = "https://fcm.googleapis.com/fcm/send";
-    @Value("${fcm.server.key}")
-    private String FCM_SERVER_KEY;
+    private static Logger LOG = LogManager.getLogger(FCMSender.class);
 
-    public String sendNotification(String type, String typeParameter, JsonObject notificationObject) throws IOException {
+    @Value("${fcm.server.key}")
+    private String fcmServerKey;
+
+    public FcmMessageEnum sendNotification(String type, String typeParameter, JsonObject notificationObject) throws IOException {
         return sendNotificationAndData(type, typeParameter, notificationObject, null);
     }
 
-    public String sendData(String type, String typeParameter, JsonObject dataObject) throws IOException {
-        return sendNotificationAndData(type, typeParameter, null, dataObject);
+    public FcmMessageEnum sendData(String recipientType, String recipientToken, JsonObject messageData) throws IOException {
+        return sendNotificationAndData(recipientType, recipientToken, null, messageData);
     }
 
-    public String sendNotificationAndData(String type, String typeParameter, JsonObject notificationObject, JsonObject dataObject) throws IOException {
-        String result = null;
-        if (type.equals(TYPE_TO) || type.equals(TYPE_CONDITION)) {
-            JsonObject sendObject = new JsonObject();
-            sendObject.addProperty(type, typeParameter);
-            result = sendFcmMessage(sendObject, notificationObject, dataObject);
+    public FcmMessageEnum sendNotificationAndData(String recipientType, String recipientToken, JsonObject notificationObject, JsonObject messageData) throws IOException {
+        FcmMessageEnum result = null;
+        if (recipientType.equals(TYPE_TO) || recipientType.equals(TYPE_CONDITION)) {
+            JsonObject recipientDetails = new JsonObject();
+            recipientDetails.addProperty(recipientType, recipientToken);
+            result = sendFcmMessage(recipientDetails, notificationObject, messageData);
         }
         return result;
     }
 
-    public String sendTopicData(String topic, JsonObject dataObject) throws IOException {
+    public FcmMessageEnum sendTopicData(String topic, JsonObject dataObject) throws IOException {
         return sendData(TYPE_TO, "/topics/" + topic, dataObject);
     }
 
-    public String sendTopicNotification(String topic, JsonObject notificationObject) throws IOException {
+    public FcmMessageEnum sendTopicNotification(String topic, JsonObject notificationObject) throws IOException {
         return sendNotification(TYPE_TO, "/topics/" + topic, notificationObject);
     }
 
-    public String sendTopicNotificationAndData(String topic, JsonObject notificationObject, JsonObject dataObject) throws IOException {
+    public FcmMessageEnum sendTopicNotificationAndData(String topic, JsonObject notificationObject, JsonObject dataObject) throws IOException {
         return sendNotificationAndData(TYPE_TO, "/topics/" + topic, notificationObject, dataObject);
     }
 
-    private String sendFcmMessage(JsonObject sendObject, JsonObject notificationObject, JsonObject dataObject) throws IOException {
+    private FcmMessageEnum sendFcmMessage(JsonObject recipientDetails, JsonObject notificationObject, JsonObject messageData) throws IOException {
         HttpPost httpPost = new HttpPost(URL_SEND);
         httpPost.setHeader("Content-Type", "application/json");
-        httpPost.setHeader("Authorization", "key=" + FCM_SERVER_KEY);
+        httpPost.setHeader("Authorization", "key=" + fcmServerKey);
 
-        if (notificationObject != null) sendObject.add("notification", notificationObject);
-        if (dataObject != null) sendObject.add("data", dataObject);
+        if (notificationObject != null) recipientDetails.add("notification", notificationObject);
+        if (messageData != null) recipientDetails.add("data", messageData);
 
-        String data = sendObject.toString();
+        String data = recipientDetails.toString();
 
         StringEntity entity = new StringEntity(data);
         httpPost.setEntity(entity);
@@ -71,8 +77,9 @@ public class FCMSender {
         BasicResponseHandler responseHandler = new BasicResponseHandler();
         String response = (String) httpClient.execute(httpPost, responseHandler);
 
-        LOG.info("Message was sent with result: " + response);
+        Gson gson = new Gson();
+        Map<String, Object> result = gson.fromJson(response, Map.class);
 
-        return response;
+        return (Double) result.get("failure") == 0 ? SUCCESS : FAIL;
     }
 }
