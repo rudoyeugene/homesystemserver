@@ -8,7 +8,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +23,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by jack on 31.01.17.
  */
+@Component
+@Scope(value = "prototype")
 public class VideoCaptor {
     private static Logger LOG = LogManager.getLogger(VideoCaptor.class);
 

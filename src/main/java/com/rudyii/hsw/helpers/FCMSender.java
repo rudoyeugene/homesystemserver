@@ -8,23 +8,20 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
-import static com.rudyii.hsw.enums.FcmMessageEnum.FAIL;
-import static com.rudyii.hsw.enums.FcmMessageEnum.SUCCESS;
+import static com.rudyii.hsw.enums.FcmMessageEnum.*;
 
 @Component
 public class FCMSender {
     public static final String TYPE_TO = "to";  // Use for single devices, device groups and topics
     public static final String TYPE_CONDITION = "condition"; // Use for Conditions
     private static final String URL_SEND = "https://fcm.googleapis.com/fcm/send";
-    private static Logger LOG = LogManager.getLogger(FCMSender.class);
 
     @Value("${fcm.server.key}")
     private String fcmServerKey;
@@ -77,8 +74,20 @@ public class FCMSender {
         BasicResponseHandler responseHandler = new BasicResponseHandler();
         String response = (String) httpClient.execute(httpPost, responseHandler);
 
+        return processResults(response);
+    }
+
+    private FcmMessageEnum processResults(String response) {
         Gson gson = new Gson();
         Map<String, Object> result = gson.fromJson(response, Map.class);
+        ArrayList<Object> detailedResult = (ArrayList<Object>) result.get("results");
+        Map<String, Object> results = (Map<String, Object>) detailedResult.get(0);
+
+        String error = (String) results.get("error");
+
+        if ("InvalidRegistration".equals(error)) {
+            return WARNING;
+        }
 
         return (Double) result.get("failure") == 0 ? SUCCESS : FAIL;
     }

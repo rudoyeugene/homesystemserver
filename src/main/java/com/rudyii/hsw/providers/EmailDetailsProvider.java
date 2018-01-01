@@ -1,10 +1,12 @@
 package com.rudyii.hsw.providers;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 /**
  * Created by jack on 06.06.17.
  */
+@Component
 public class EmailDetailsProvider {
 
     @Value("${mail.smtp.port}")

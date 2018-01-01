@@ -22,7 +22,7 @@
     <import resource="file:conf/system-settings.xml"/>
 
     <task:annotation-driven executor="hswExecutor" scheduler="hswScheduler" proxy-target-class="true"/>
-    <task:executor id="hswExecutor" pool-size="${pool.size}"/>
+    <task:executor id="hswExecutor" pool-size="${pool.size}" queue-capacity="${queue.capacity}"/>
     <task:scheduler id="hswScheduler" pool-size="${pool.size}"/>
 
     <bean id="applicationEventMulticaster"
@@ -31,9 +31,4 @@
             <bean parent="hswExecutor"/>
         </property>
     </bean>
-
-    <bean id="videoCaptor" class="com.rudyii.hsw.motion.VideoCaptor" scope="prototype"/>
-    <bean id="motionNotifier" class="com.rudyii.hsw.motion.MotionNotifier" scope="prototype"/>
-    <bean id="dropboxClientProvider" class="com.rudyii.hsw.providers.DropboxClientProvider" scope="prototype"/>
-    <bean id="emailDetails" class="com.rudyii.hsw.providers.EmailDetailsProvider" scope="prototype"/>
 </beans>

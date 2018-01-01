@@ -8,6 +8,7 @@ import com.rudyii.hsw.services.ArmedStateService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 
@@ -36,6 +37,7 @@ public class CameraMotionDetectionController {
     private int noiseLevel;
     private boolean detectorEnabled, healthCheckEnabled, rebootInProgress;
     private ArmedStateService armedStateService;
+    private ApplicationContext context;
     private CameraMotionDetector currentCameraMotionDetector;
     private Camera camera;
     private File lock;
@@ -55,17 +57,9 @@ public class CameraMotionDetectionController {
     private String rebootUrlTemplate;
 
     @Autowired
-    private VideoCaptor videoCaptor;
-
-    @Autowired
-    private CameraMotionDetector cameraMotionDetectorPrototype;
-
-    @Autowired
-    private MotionNotifier motionNotifier;
-
-    @Autowired
-    public CameraMotionDetectionController(ArmedStateService armedStateService) {
+    public CameraMotionDetectionController(ArmedStateService armedStateService, ApplicationContext context) {
         this.armedStateService = armedStateService;
+        this.context = context;
     }
 
     @PostConstruct
@@ -120,7 +114,7 @@ public class CameraMotionDetectionController {
             System.out.println("New motion detected at: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()) + " on camera: " + cameraName);
             try {
                 lock.createNewFile();
-                videoCaptor.startCaptureFrom(camera);
+                context.getBean(VideoCaptor.class).startCaptureFrom(camera);
             } catch (IOException e) {
                 LOG.error("Failed to lock " + lock.getAbsolutePath(), e);
             }
@@ -131,7 +125,7 @@ public class CameraMotionDetectionController {
     void enableMotionDetection() throws Exception {
         this.detectorEnabled = true;
 
-        this.currentCameraMotionDetector = cameraMotionDetectorPrototype;
+        this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
 
         currentCameraMotionDetector.setCamera(camera);
         currentCameraMotionDetector.setInterval(interval);

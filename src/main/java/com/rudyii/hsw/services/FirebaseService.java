@@ -6,7 +6,6 @@ import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
 import com.rudyii.hsw.events.*;
 import com.rudyii.hsw.helpers.Uptime;
-import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.WanIp;
 import com.rudyii.hsw.providers.NotificationsService;
 import org.apache.logging.log4j.LogManager;
@@ -22,10 +21,7 @@ import javax.annotation.PreDestroy;
 import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
@@ -52,7 +48,6 @@ public class FirebaseService {
     private EventService eventService;
     private IspService ispService;
     private NotificationsService notificationsService;
-    private CameraMotionDetectionController[] motionDetectionControllers;
     private ArrayList<DatabaseReference> databaseReferences;
     private ArrayList<ValueEventListener> valueEventListeners;
 
@@ -64,8 +59,7 @@ public class FirebaseService {
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
-                           NotificationsService notificationsService,
-                           CameraMotionDetectionController... motionDetectionControllers) {
+                           NotificationsService notificationsService) {
         this.firebaseDatabase = firebaseDatabase;
         this.uuidService = uuidService;
         this.armedStateService = armedStateService;
@@ -75,12 +69,11 @@ public class FirebaseService {
         this.eventService = eventService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
-        this.motionDetectionControllers = motionDetectionControllers;
 
-        this.statuses = new HashMap<>();
-        this.motions = new HashMap<>();
-        this.requests = new HashMap<>();
-        this.localConnectedClients = new HashMap<>();
+        this.statuses = Collections.synchronizedMap(new HashMap<>());
+        this.motions = Collections.synchronizedMap(new HashMap<>());
+        this.requests = Collections.synchronizedMap(new HashMap<>());
+        this.localConnectedClients = Collections.synchronizedMap(new HashMap<>());
         this.databaseReferences = new ArrayList();
         this.valueEventListeners = new ArrayList();
 
@@ -135,9 +128,9 @@ public class FirebaseService {
         } else {
             pushData(event.getServerKey() + "/statuses", statuses);
             pushData(event.getServerKey() + "/requests", requests);
+            unregisterListeners();
+            registerListeners();
         }
-
-        registerListeners();
     }
 
     @EventListener({ArmedEvent.class, MotionDetectedEvent.class, CameraRebootEvent.class, IspEvent.class})
@@ -344,6 +337,7 @@ public class FirebaseService {
                 Map<String, String> connectedClients = (Map<String, String>) dataSnapshot.getValue();
 
                 if (connectedClients != null) {
+                    localConnectedClients.clear();
                     localConnectedClients.putAll(connectedClients);
                 }
             }
@@ -386,9 +380,9 @@ public class FirebaseService {
         DatabaseReference uptimeRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/uptime");
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
+        updateConnectedClients();
         refreshWanInfo();
         notifyServerStarted();
-        updateConnectedClients();
         cleanupObsoleteMotions();
     }
 
@@ -424,7 +418,7 @@ public class FirebaseService {
 
 
     public void notifyServerStarted() {
-        if (this.alreadyFired) {
+        if (alreadyFired) {
             return;
         }
 
@@ -434,7 +428,7 @@ public class FirebaseService {
         jsonObject.addProperty("pid", getPid());
 
         sendFcmMessage(jsonObject);
-        this.alreadyFired = true;
+        alreadyFired = true;
     }
 
     private void sendFcmMessage(JsonObject messageData) {

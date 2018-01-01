@@ -8,7 +8,7 @@ import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.services.IspService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -27,25 +27,18 @@ public class ActionsFactory {
 
     private List<Action> actionsListToBeFired;
 
-    @Autowired
-    private MailSendAction sendAction;
-
-    @Autowired
-    private DropboxUploadAction uploadAction;
-
-    @Autowired
-    private FcmMessageSendAction messageSendAction;
-
     private IspService ispService;
+    private ApplicationContext context;
 
-    public ActionsFactory(IspService ispService) {
+    public ActionsFactory(IspService ispService, ApplicationContext context) {
         this.ispService = ispService;
+        this.context = context;
         this.actionsListToBeFired = Collections.synchronizedList(new ArrayList());
     }
 
     @Async
     public void addToQueueMailSenderAction(String subject, ArrayList<String> body, ArrayList<Attachment> attachments, boolean forAdmin) {
-        MailSendAction currentAction = sendAction.withData(subject, body, attachments, forAdmin);
+        MailSendAction currentAction = context.getBean(MailSendAction.class).withData(subject, body, attachments, forAdmin);
         if (!currentAction.fireAction()) {
             actionsListToBeFired.add(currentAction);
         }
@@ -53,7 +46,7 @@ public class ActionsFactory {
 
     @Async
     public void addToQueueFcmMessageSendAction(String name, String recipientToken, JsonObject messageData) {
-        FcmMessageSendAction currentAction = messageSendAction.withData(name, recipientToken, messageData);
+        FcmMessageSendAction currentAction = context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, messageData);
         if (!currentAction.fireAction()) {
             actionsListToBeFired.add(currentAction);
         }
@@ -61,7 +54,7 @@ public class ActionsFactory {
 
     @Async
     public void addToQueueDropboxUploadAction(File uploadCandidate) {
-        DropboxUploadAction currentAction = uploadAction.withUploadCandidate(uploadCandidate);
+        DropboxUploadAction currentAction = context.getBean(DropboxUploadAction.class).withUploadCandidate(uploadCandidate);
         if (!currentAction.fireAction()) {
             actionsListToBeFired.add(currentAction);
         }

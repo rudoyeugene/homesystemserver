@@ -104,5 +104,4 @@ public class MailSendAction implements Action {
 
         LOG.info(logLine);
     }
-
 }
