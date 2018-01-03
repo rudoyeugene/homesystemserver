@@ -7,10 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -53,10 +50,18 @@ public class StatsProvider {
         statement.execute();
     }
 
-    public void reset() throws Exception {
+    public void reset() {
         if (statsReset) {
-            connection.createStatement().executeQuery("DELETE FROM ARMED_STATE_STATS");
-            connection.createStatement().executeQuery("VACUUM");
+            try {
+                connection.createStatement().executeQuery("DELETE FROM ARMED_STATE_STATS");
+            } catch (SQLException e) {
+                LOG.warn("Nothing removed from Armed state stats while reset requested");
+            }
+            try {
+                connection.createStatement().executeQuery("VACUUM");
+            } catch (SQLException e) {
+                LOG.warn("Vacuum failed");
+            }
         }
     }
 
@@ -86,15 +91,23 @@ public class StatsProvider {
     }
 
     @Scheduled(cron = "0 0 0 * * *")
-    public void cleanupObsolete() throws Exception {
+    public void cleanupObsolete() {
         LOG.info("Cleanup of obsolete statistics started");
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.add(Calendar.DATE, -keepDays.intValue());
 
         String date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
-        connection.createStatement().executeQuery("DELETE FROM ARMED_STATE_STATS where MODIFIED_DATE < date('" + date + "')");
-        connection.createStatement().executeQuery("DELETE FROM ARMED_STATE_HIST where MODIFIED_DATE < date('" + date + "')");
+        try {
+            connection.createStatement().executeQuery("DELETE FROM ARMED_STATE_STATS where MODIFIED_DATE < date('" + date + "')");
+        } catch (SQLException e) {
+            LOG.warn("Nothing removed from Armed state stats");
+        }
+        try {
+            connection.createStatement().executeQuery("DELETE FROM ARMED_STATE_HIST where MODIFIED_DATE < date('" + date + "')");
+        } catch (SQLException e) {
+            LOG.warn("Nothing removed from Armed state history");
+        }
         LOG.info("Cleanup of obsolete statistics completed");
     }
 }
