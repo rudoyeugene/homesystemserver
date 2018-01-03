@@ -32,12 +32,7 @@ public class UpnpService {
         this.ispService = ispService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
 
-        discover = new GatewayDiscover();
-        discover.discover();
-
-        gateway = discover.getValidGateway();
-
-        LOG.info("Discovered gateway device: " + gateway.getModelName() + ", " + gateway.getModelDescription());
+        reloadGateway();
     }
 
     @PostConstruct
@@ -99,6 +94,10 @@ public class UpnpService {
         try {
             boolean successed;
 
+            if (gateway == null) {
+                reloadGateway();
+            }
+
             successed = gateway.addPortMapping(outerPort, innerPort, ip, "TCP", buildDescription(cameraName, innerPort, outerPort));
 
             if (successed) {
@@ -121,6 +120,10 @@ public class UpnpService {
 
     private void closePortFor(String cameraName, Integer outerPort) {
         try {
+            if (gateway == null) {
+                reloadGateway();
+            }
+
             boolean successed = gateway.deletePortMapping(outerPort, "TCP");
             LOG.info("Closing port for " + cameraName + ">" + outerPort + (successed ? " successed" : " failed"));
         } catch (Exception e) {
@@ -133,10 +136,12 @@ public class UpnpService {
 
     private void reloadGateway() {
         try {
+            discover = new GatewayDiscover();
             discover.discover();
             gateway = discover.getValidGateway();
+            LOG.info("Discovered gateway device: " + gateway.getModelName() + ", " + gateway.getModelDescription());
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("Failed to discovered gateway device, ", e);
         }
     }
 

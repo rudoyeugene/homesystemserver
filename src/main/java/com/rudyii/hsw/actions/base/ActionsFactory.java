@@ -25,7 +25,7 @@ import java.util.List;
 public class ActionsFactory {
     private static Logger LOG = LogManager.getLogger(ActionsFactory.class);
 
-    private List<Action> actionsListToBeFired;
+    private List<Action> actionsListToBeFired, actionsListSuccessfullyFired;
 
     private IspService ispService;
     private ApplicationContext context;
@@ -34,6 +34,7 @@ public class ActionsFactory {
         this.ispService = ispService;
         this.context = context;
         this.actionsListToBeFired = Collections.synchronizedList(new ArrayList());
+        this.actionsListSuccessfullyFired = Collections.synchronizedList(new ArrayList());
     }
 
     @Async
@@ -68,7 +69,7 @@ public class ActionsFactory {
                 for (Action action : actionsListToBeFired) {
                     if (action.fireAction()) {
                         LOG.info(action.getClass().getSimpleName() + " successfully fired");
-                        actionsListToBeFired.remove(action);
+                        actionsListSuccessfullyFired.add(action);
                     } else {
                         LOG.error(action.getClass().getSimpleName() + " action firing failed, will retry next time");
                     }
@@ -76,6 +77,10 @@ public class ActionsFactory {
             } else {
                 LOG.warn("Internet is unavailable, next retry will be fired in a minute, actions queue size: " + actionsListToBeFired.size());
             }
+
+            LOG.info("Actions queue size will be cut on  " + actionsListSuccessfullyFired.size());
+            actionsListToBeFired.removeAll(actionsListSuccessfullyFired);
+            actionsListSuccessfullyFired.clear();
         }
     }
 }

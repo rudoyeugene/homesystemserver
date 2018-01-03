@@ -183,7 +183,7 @@ public class FirebaseService {
 
                 bos.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.error("Error occurred: ", e);
             }
 
             pushData(uuidService.getServerKey() + "/motions/" + currentMotionTimestamp, camera);

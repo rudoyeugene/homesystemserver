@@ -88,7 +88,7 @@ public class PingService {
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("Error occurred: ", e);
             }
         }
 

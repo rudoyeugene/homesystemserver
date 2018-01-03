@@ -206,7 +206,7 @@ public class CameraMotionDetectionController {
         try {
             Thread.sleep(rebootTimeout);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Error occurred: ", e);
         }
         LOG.info("Camera: " + getCameraName() + " reboot complete");
     }
