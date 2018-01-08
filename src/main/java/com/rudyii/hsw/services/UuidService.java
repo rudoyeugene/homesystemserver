@@ -3,6 +3,7 @@ package com.rudyii.hsw.services;
 import com.rudyii.hsw.events.ServerKeyUpdatedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.sql.Connection;
@@ -21,6 +22,9 @@ public class UuidService {
 
     private String serverKey;
 
+    @Value("${server.alias}")
+    private String serverAlias;
+
     public UuidService(Connection connection, EventService eventService) {
         this.connection = connection;
         this.eventService = eventService;
@@ -38,7 +42,7 @@ public class UuidService {
 
     public String getQRCodeImageUrl() {
         resolveSecret();
-        return "https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=" + serverKey;
+        return "https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=" + serverAlias + ":" + serverKey;
     }
 
     private void resolveSecret() {
@@ -81,5 +85,9 @@ public class UuidService {
     public String getServerKey() {
         resolveSecret();
         return serverKey;
+    }
+
+    public String getServerAlias() {
+        return serverAlias;
     }
 }

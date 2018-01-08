@@ -1,12 +1,16 @@
+package com.rudyii.hsw.simple;
+
 import com.google.gson.Gson;
 import com.rudyii.hsw.objects.User;
 import com.rudyii.hsw.objects.WanIp;
-import org.codehaus.plexus.util.IOUtil;
-import org.junit.Test;
+import org.apache.maven.shared.utils.io.IOUtil;
+import org.junit.jupiter.api.Test;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-public class SimpleTest {
+public class SimpleTestsCollection {
 
     @Test
     public void runMe()  {
@@ -36,5 +40,18 @@ public class SimpleTest {
         WanIp wanIp = gson.fromJson(response, WanIp.class);
 
         System.out.println(wanIp.toString());
+    }
+
+    @Test
+    public void arrays(){
+        ArrayList<String> strings = new ArrayList<>();
+        strings.add("one");
+        strings.add("two");
+        strings.add("three");
+
+        String convertedStrings = Arrays.toString(strings.toArray());
+        System.out.println(convertedStrings);
+
+        ArrayList<String> strings2 = new ArrayList<>(Arrays.asList(convertedStrings.split("")));
     }
 }

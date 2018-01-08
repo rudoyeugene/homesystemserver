@@ -135,12 +135,14 @@ public class FirebaseService {
 
     @EventListener({ArmedEvent.class, MotionDetectedEvent.class, CameraRebootEvent.class, IspEvent.class})
     private void onEvent(EventBase event) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("serverName", uuidService.getServerAlias());
+
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
 
             updateStatuses(armedEvent.getArmedState(), armedEvent.getArmedMode());
 
-            JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("reason", "systemStateChanged");
             jsonObject.addProperty("armedMode", armedEvent.getArmedMode().toString());
             jsonObject.addProperty("armedState", armedEvent.getArmedState().toString());
@@ -168,7 +170,6 @@ public class FirebaseService {
             camera.put("timeStamp", currentMotionTimestamp);
             camera.put("motionArea", motionDetectedEvent.getMotionArea().intValue());
 
-            JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("reason", "motionDetected");
             jsonObject.addProperty("motionId", currentMotionTimestamp);
 
@@ -198,7 +199,6 @@ public class FirebaseService {
         } else if (event instanceof IspEvent) {
             refreshWanInfo();
 
-            JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("reason", "ispChanged");
             jsonObject.addProperty("isp", ispService.getCurrentWanIp().getIsp());
             jsonObject.addProperty("ip", ispService.getCurrentWanIp().getQuery());
@@ -208,12 +208,10 @@ public class FirebaseService {
         } else if (event instanceof CameraRebootEvent) {
             CameraRebootEvent cameraRebootEvent = (CameraRebootEvent) event;
 
-            JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("reason", "cameraReboot");
             jsonObject.addProperty("cameraName", cameraRebootEvent.getCameraName());
 
             sendFcmMessage(jsonObject);
-
         }
     }
 
@@ -426,6 +424,7 @@ public class FirebaseService {
         jsonObject.addProperty("reason", "serverStartupOrShutdown");
         jsonObject.addProperty("action", "starting");
         jsonObject.addProperty("pid", getPid());
+        jsonObject.addProperty("serverName", uuidService.getServerAlias());
 
         sendFcmMessage(jsonObject);
         alreadyFired = true;
