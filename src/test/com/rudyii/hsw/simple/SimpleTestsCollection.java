@@ -53,5 +53,7 @@ public class SimpleTestsCollection {
         System.out.println(convertedStrings);
 
         ArrayList<String> strings2 = new ArrayList<>(Arrays.asList(convertedStrings.split("")));
+
+        System.out.println((512000 * 100)/916000 + "%");
     }
 }

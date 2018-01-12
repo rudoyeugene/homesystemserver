@@ -1,5 +1,6 @@
 package com.rudyii.hsw.services;
 
+import com.google.api.core.ApiFuture;
 import com.google.firebase.database.*;
 import com.google.gson.JsonObject;
 import com.rudyii.hsw.enums.ArmedModeEnum;
@@ -13,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import sun.misc.BASE64Encoder;
 
@@ -22,6 +24,7 @@ import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
@@ -38,6 +41,9 @@ public class FirebaseService {
     @Value("${motion.record.length.millis}")
     private Long recordInterval;
 
+    @Value("${motion.snapshot.keep.minutes}")
+    private Long snapshotKeepMinutes;
+
     private Random random = new Random();
     private FirebaseDatabase firebaseDatabase;
     private UuidService uuidService;
@@ -48,6 +54,7 @@ public class FirebaseService {
     private EventService eventService;
     private IspService ispService;
     private NotificationsService notificationsService;
+    private ThreadPoolTaskExecutor hswExecutor;
     private ArrayList<DatabaseReference> databaseReferences;
     private ArrayList<ValueEventListener> valueEventListeners;
 
@@ -59,7 +66,7 @@ public class FirebaseService {
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
-                           NotificationsService notificationsService) {
+                           NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor) {
         this.firebaseDatabase = firebaseDatabase;
         this.uuidService = uuidService;
         this.armedStateService = armedStateService;
@@ -69,6 +76,7 @@ public class FirebaseService {
         this.eventService = eventService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
+        this.hswExecutor = hswExecutor;
 
         this.statuses = Collections.synchronizedMap(new HashMap<>());
         this.motions = Collections.synchronizedMap(new HashMap<>());
@@ -158,7 +166,7 @@ public class FirebaseService {
 
             if (lastMotionTimestamp == null) {
                 motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
-            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (recordInterval)) {
+            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (snapshotKeepMinutes)) {
                 System.out.println("Motion event for camera " + (motionDetectedEvent.getCameraName() + " was ignored"));
                 return;
             } else {
@@ -187,11 +195,10 @@ public class FirebaseService {
                 LOG.error("Error occurred: ", e);
             }
 
-            pushData(uuidService.getServerKey() + "/motions/" + currentMotionTimestamp, camera);
-
-            sendFcmMessage(jsonObject);
+            pushData(uuidService.getServerKey() + "/motions/" + currentMotionTimestamp, camera).addListener(() -> sendFcmMessage(jsonObject), hswExecutor);
 
         } else if (event instanceof CaptureEvent) {
+            //Currently ignored
             CaptureEvent captureEvent = (CaptureEvent) event;
 
             pushData(uuidService.getServerKey() + "/motions/lastRecord", captureEvent.getUploadCandidate().getName());
@@ -281,6 +288,7 @@ public class FirebaseService {
             }
 
             public void onCancelled(DatabaseError databaseError) {
+                LOG.error("Failed to fetch Ports State Firebase data!");
             }
         };
     }
@@ -294,6 +302,7 @@ public class FirebaseService {
             }
 
             public void onCancelled(DatabaseError databaseError) {
+                LOG.error("Failed to fetch Weekly Resend Firebase data!");
             }
         };
     }
@@ -307,6 +316,7 @@ public class FirebaseService {
             }
 
             public void onCancelled(DatabaseError databaseError) {
+                LOG.error("Failed to fetch Hourly Resend Firebase data!");
             }
         };
     }
@@ -324,6 +334,7 @@ public class FirebaseService {
             }
 
             public void onCancelled(DatabaseError databaseError) {
+                LOG.error("Failed to fetch Armed Mode & Armed State Firebase data!");
             }
         };
     }
@@ -342,7 +353,7 @@ public class FirebaseService {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-
+                LOG.error("Failed to fetch Connected Clients Firebase data!");
             }
         };
     }
@@ -356,7 +367,7 @@ public class FirebaseService {
                 motions.forEach((timeStampString, data) -> {
                     Long timeStamp = Long.valueOf(timeStampString);
 
-                    if (timeStamp < (System.currentTimeMillis() - 600000L)) {
+                    if (timeStamp < (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(snapshotKeepMinutes))) {
                         DatabaseReference obsoleteRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/motions/" + timeStampString);
                         obsoleteRef.removeValueAsync();
                     }
@@ -365,7 +376,7 @@ public class FirebaseService {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-
+                LOG.error("Failed to fetch Motions Obsolete Records Firebase data!");
             }
         };
     }
@@ -404,14 +415,14 @@ public class FirebaseService {
         pushData(uuidService.getServerKey() + "/info/wanInfo", wanInfo);
     }
 
-    private void pushData(String path, Map<String, Object> value) {
+    private ApiFuture pushData(String path, Map<String, Object> value) {
         DatabaseReference reference = firebaseDatabase.getReference(path);
-        reference.setValueAsync(value);
+        return reference.setValueAsync(value);
     }
 
-    private void pushData(String path, String value) {
+    private ApiFuture pushData(String path, String value) {
         DatabaseReference reference = firebaseDatabase.getReference(path);
-        reference.setValueAsync(value);
+        return reference.setValueAsync(value);
     }
 
 
