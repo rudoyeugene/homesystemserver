@@ -2,6 +2,7 @@ package com.rudyii.hsw.services;
 
 import com.google.api.core.ApiFuture;
 import com.google.firebase.database.*;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
@@ -44,6 +45,7 @@ public class FirebaseService {
     @Value("${motion.snapshot.keep.minutes}")
     private Long snapshotKeepMinutes;
 
+    private String serverAlias;
     private Random random = new Random();
     private FirebaseDatabase firebaseDatabase;
     private UuidService uuidService;
@@ -85,6 +87,7 @@ public class FirebaseService {
         this.databaseReferences = new ArrayList();
         this.valueEventListeners = new ArrayList();
 
+        this.serverAlias = uuidService.getServerAlias();
         createStructure(null);
     }
 
@@ -109,10 +112,14 @@ public class FirebaseService {
     @PreDestroy
     private void destroy() {
         JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("serverName", serverAlias);
         jsonObject.addProperty("reason", "serverStartupOrShutdown");
         jsonObject.addProperty("action", "stopping");
 
         sendFcmMessage(jsonObject);
+
+        pushData(uuidService.getServerKey() + "/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
+
         unregisterListeners();
     }
 
@@ -141,10 +148,10 @@ public class FirebaseService {
         }
     }
 
-    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, CameraRebootEvent.class, IspEvent.class})
+    @EventListener({ArmedEvent.class, CameraRebootEvent.class, CaptureEvent.class, IspEvent.class, MotionDetectedEvent.class})
     private void onEvent(EventBase event) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("serverName", uuidService.getServerAlias());
+        jsonObject.addProperty("serverName", serverAlias);
 
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
@@ -166,7 +173,7 @@ public class FirebaseService {
 
             if (lastMotionTimestamp == null) {
                 motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
-            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (snapshotKeepMinutes)) {
+            } else if ((currentMotionTimestamp - lastMotionTimestamp) < recordInterval) {
                 System.out.println("Motion event for camera " + (motionDetectedEvent.getCameraName() + " was ignored"));
                 return;
             } else {
@@ -180,6 +187,8 @@ public class FirebaseService {
 
             jsonObject.addProperty("reason", "motionDetected");
             jsonObject.addProperty("motionId", currentMotionTimestamp);
+            jsonObject.addProperty("cameraName", motionDetectedEvent.getCameraName());
+            jsonObject.addProperty("motionArea", motionDetectedEvent.getMotionArea().intValue());
 
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
@@ -195,13 +204,21 @@ public class FirebaseService {
                 LOG.error("Error occurred: ", e);
             }
 
-            pushData(uuidService.getServerKey() + "/motions/" + currentMotionTimestamp, camera).addListener(() -> sendFcmMessage(jsonObject), hswExecutor);
+            pushData(uuidService.getServerKey() + "/motions/" + currentMotionTimestamp, camera).addListener(new Runnable() {
+                private JsonObject thisJsonObject;
+
+                @Override
+                public void run() {
+                    this.thisJsonObject = jsonObject;
+                    sendFcmMessage(thisJsonObject);
+                }
+            }, hswExecutor);
 
         } else if (event instanceof CaptureEvent) {
-            //Currently ignored
             CaptureEvent captureEvent = (CaptureEvent) event;
 
-            pushData(uuidService.getServerKey() + "/motions/lastRecord", captureEvent.getUploadCandidate().getName());
+            jsonObject.addProperty("reason", "videoRecorded");
+            jsonObject.addProperty("fileName", captureEvent.getUploadCandidate().getName());
 
         } else if (event instanceof IspEvent) {
             refreshWanInfo();
@@ -220,6 +237,8 @@ public class FirebaseService {
 
             sendFcmMessage(jsonObject);
         }
+
+        pushData(uuidService.getServerKey() + "/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
     }
 
     private void updateStatuses(ArmedStateEnum armedState, ArmedModeEnum armedMode) {
@@ -415,7 +434,7 @@ public class FirebaseService {
         pushData(uuidService.getServerKey() + "/info/wanInfo", wanInfo);
     }
 
-    private ApiFuture pushData(String path, Map<String, Object> value) {
+    private ApiFuture pushData(String path, Map<?, ?> value) {
         DatabaseReference reference = firebaseDatabase.getReference(path);
         return reference.setValueAsync(value);
     }
@@ -435,9 +454,12 @@ public class FirebaseService {
         jsonObject.addProperty("reason", "serverStartupOrShutdown");
         jsonObject.addProperty("action", "starting");
         jsonObject.addProperty("pid", getPid());
-        jsonObject.addProperty("serverName", uuidService.getServerAlias());
+        jsonObject.addProperty("serverName", serverAlias);
 
         sendFcmMessage(jsonObject);
+
+        pushData(uuidService.getServerKey() + "/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
+
         alreadyFired = true;
     }
 
