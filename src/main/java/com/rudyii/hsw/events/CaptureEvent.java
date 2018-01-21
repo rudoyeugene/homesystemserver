@@ -7,25 +7,13 @@ import java.io.File;
  */
 public class CaptureEvent extends EventBase {
     private File uploadCandidate;
-    private boolean toDropbox = false;
-    private boolean toGoogleDrive = false;
 
-    public CaptureEvent(File uploadCandidate, boolean toDropbox, boolean toGoogleDrive) {
+    public CaptureEvent(File uploadCandidate) {
         this.uploadCandidate = uploadCandidate;
-        this.toDropbox = toDropbox;
-        this.toGoogleDrive = toGoogleDrive;
         System.out.println("With upload candidate: " + uploadCandidate.getName());
     }
 
     public File getUploadCandidate() {
         return uploadCandidate;
-    }
-
-    public boolean isToDropbox() {
-        return toDropbox;
-    }
-
-    public boolean isToGoogleDrive() {
-        return toGoogleDrive;
     }
 }

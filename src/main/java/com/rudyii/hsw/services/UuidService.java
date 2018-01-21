@@ -79,7 +79,7 @@ public class UuidService {
         }
         readServerKey();
 
-        eventService.publish(new ServerKeyUpdatedEvent(serverKey));
+        eventService.publish(new ServerKeyUpdatedEvent());
     }
 
     public String getServerKey() {

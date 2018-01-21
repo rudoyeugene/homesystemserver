@@ -64,7 +64,7 @@ public class VideoCaptor {
     }
 
     private void publishCaptureEvent() {
-        eventService.publish(new CaptureEvent(result, true, false));
+        eventService.publish(new CaptureEvent(result));
     }
 
     private void generateTimestamps() {

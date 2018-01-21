@@ -25,7 +25,6 @@ import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
@@ -41,9 +40,6 @@ public class FirebaseService {
 
     @Value("${motion.record.length.millis}")
     private Long recordInterval;
-
-    @Value("${motion.snapshot.keep.minutes}")
-    private Long snapshotKeepMinutes;
 
     private String serverAlias;
     private Random random = new Random();
@@ -88,11 +84,13 @@ public class FirebaseService {
         this.valueEventListeners = new ArrayList();
 
         this.serverAlias = uuidService.getServerAlias();
-        createStructure(null);
     }
 
     @PostConstruct
     private void init() {
+        DatabaseReference serverNameRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/serverName");
+        serverNameRef.setValueAsync(serverAlias);
+
         DatabaseReference pidRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/pid");
         pidRef.setValueAsync(getPid());
 
@@ -124,7 +122,7 @@ public class FirebaseService {
     }
 
     @EventListener(ServerKeyUpdatedEvent.class)
-    public void createStructure(ServerKeyUpdatedEvent event) {
+    public void createStructure() {
         Map<String, String> state = new HashMap<>();
 
         state.put("armedState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
@@ -137,18 +135,14 @@ public class FirebaseService {
 
         updateStatuses(armedStateService.isArmed() ? ARMED : DISARMED, armedStateService.getArmedMode());
 
-        if (event == null) {
-            pushData(uuidService.getServerKey() + "/statuses", statuses);
-            pushData(uuidService.getServerKey() + "/requests", requests);
-        } else {
-            pushData(event.getServerKey() + "/statuses", statuses);
-            pushData(event.getServerKey() + "/requests", requests);
-            unregisterListeners();
-            registerListeners();
-        }
+        pushData(uuidService.getServerKey() + "/statuses", statuses);
+        pushData(uuidService.getServerKey() + "/requests", requests);
+        init();
+        unregisterListeners();
+        registerListeners();
     }
 
-    @EventListener({ArmedEvent.class, CameraRebootEvent.class, CaptureEvent.class, IspEvent.class, MotionDetectedEvent.class})
+    @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionDetectedEvent.class, UploadEvent.class})
     private void onEvent(EventBase event) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("serverName", serverAlias);
@@ -180,13 +174,9 @@ public class FirebaseService {
                 motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
             }
 
-            Map<String, Object> camera = new HashMap<>();
-            camera.put("cameraName", motionDetectedEvent.getCameraName());
-            camera.put("timeStamp", currentMotionTimestamp);
-            camera.put("motionArea", motionDetectedEvent.getMotionArea().intValue());
-
             jsonObject.addProperty("reason", "motionDetected");
             jsonObject.addProperty("motionId", currentMotionTimestamp);
+            jsonObject.addProperty("timeStamp", currentMotionTimestamp);
             jsonObject.addProperty("cameraName", motionDetectedEvent.getCameraName());
             jsonObject.addProperty("motionArea", motionDetectedEvent.getMotionArea().intValue());
 
@@ -197,28 +187,34 @@ public class FirebaseService {
                 byte[] imageBytes = bos.toByteArray();
 
                 BASE64Encoder encoder = new BASE64Encoder();
-                camera.put("image", encoder.encode(imageBytes));
+                jsonObject.addProperty("image", encoder.encode(imageBytes));
 
                 bos.close();
             } catch (IOException e) {
                 LOG.error("Error occurred: ", e);
             }
 
-            pushData(uuidService.getServerKey() + "/motions/" + currentMotionTimestamp, camera).addListener(new Runnable() {
+            pushData(uuidService.getServerKey() + "/log/" + currentMotionTimestamp, new Gson().fromJson(jsonObject, HashMap.class)).addListener(new Runnable() {
                 private JsonObject thisJsonObject;
 
                 @Override
                 public void run() {
                     this.thisJsonObject = jsonObject;
+                    thisJsonObject.remove("cameraName");
+                    thisJsonObject.remove("motionArea");
+                    thisJsonObject.remove("timeStamp");
+                    thisJsonObject.remove("image");
+
                     sendFcmMessage(thisJsonObject);
                 }
             }, hswExecutor);
 
-        } else if (event instanceof CaptureEvent) {
-            CaptureEvent captureEvent = (CaptureEvent) event;
+        } else if (event instanceof UploadEvent) {
+            UploadEvent uploadEvent = (UploadEvent) event;
 
             jsonObject.addProperty("reason", "videoRecorded");
-            jsonObject.addProperty("fileName", captureEvent.getUploadCandidate().getName());
+            jsonObject.addProperty("fileName", uploadEvent.getFileName());
+            jsonObject.addProperty("url", uploadEvent.getUrl());
 
         } else if (event instanceof IspEvent) {
             refreshWanInfo();
@@ -377,29 +373,6 @@ public class FirebaseService {
         };
     }
 
-    private ValueEventListener getMotionsCleanupValueEventListener() {
-        return new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Map<String, Object> motions = (Map<String, Object>) dataSnapshot.getValue();
-
-                motions.forEach((timeStampString, data) -> {
-                    Long timeStamp = Long.valueOf(timeStampString);
-
-                    if (timeStamp < (System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(snapshotKeepMinutes))) {
-                        DatabaseReference obsoleteRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/motions/" + timeStampString);
-                        obsoleteRef.removeValueAsync();
-                    }
-                });
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Motions Obsolete Records Firebase data!");
-            }
-        };
-    }
-
     @Scheduled(cron = "0 */1 * * * *")
     public void ping() {
         DatabaseReference pingRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/ping");
@@ -411,12 +384,6 @@ public class FirebaseService {
         updateConnectedClients();
         refreshWanInfo();
         notifyServerStarted();
-        cleanupObsoleteMotions();
-    }
-
-    private void cleanupObsoleteMotions() {
-        DatabaseReference motionsRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/motions");
-        motionsRef.addListenerForSingleValueEvent(getMotionsCleanupValueEventListener());
     }
 
     private void updateConnectedClients() {
@@ -471,6 +438,5 @@ public class FirebaseService {
                 LOG.error("Failed to send FCM Message to " + name, e);
             }
         });
-
     }
 }

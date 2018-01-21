@@ -29,14 +29,7 @@ public class UploadService {
     public void onEvent(CaptureEvent event) {
         if (event.getUploadCandidate() != null && event.getUploadCandidate().exists()) {
             LOG.info("Invoking upload process for file: " + event.getUploadCandidate().getAbsolutePath());
-
-            if (event.isToDropbox()) {
-                actionsFactory.addToQueueDropboxUploadAction(event.getUploadCandidate());
-            }
-
-            if (event.isToGoogleDrive()) {
-                //TODO GoogleDriveUploader.uploadFile(((CaptureEvent) event).uploadCandidate, ((CaptureEvent) event).remoteDir, true);
-            }
+            actionsFactory.addToQueueDropboxUploadAction(event.getUploadCandidate());
 
         } else {
             LOG.warn("File: " + event.getUploadCandidate().getAbsolutePath() + " does not exist. Upload skipped");
