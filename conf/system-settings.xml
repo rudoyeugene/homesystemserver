@@ -70,6 +70,22 @@
         <entry key="date: " value="cmd /c date /t"/>
     </util:map>
 
+    <util:list id="onArmCommands" value-type="java.lang.String">
+        <value>/usr/bin/logger -t HOME_SYSTEM "ARMED"</value>
+    </util:list>
+
+    <util:list id="onDisarmCommands" value-type="java.lang.String">
+        <value>/usr/bin/logger -t HOME_SYSTEM "DISARMED"</value>
+    </util:list>
+
+    <util:list id="onStartCommands" value-type="java.lang.String">
+        <value>/usr/bin/logger -t HOME_SYSTEM "STARTED"</value>
+    </util:list>
+
+    <util:list id="onStopCommands" value-type="java.lang.String">
+        <value>/usr/bin/logger -t HOME_SYSTEM "STOPPED"</value>
+    </util:list>
+
     <!--IP List of master devices-->
     <util:list id="masterIpList" value-type="java.lang.String">
         <value>192.168.1.5</value>
