@@ -86,8 +86,24 @@ public class FirebaseService {
         this.serverAlias = uuidService.getServerAlias();
     }
 
+    @EventListener(ServerKeyUpdatedEvent.class)
     @PostConstruct
     private void init() {
+        Map<String, String> state = new HashMap<>();
+
+        state.put("armedState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
+        state.put("armedMode", armedStateService.getArmedMode().toString());
+
+        requests.put("state", state);
+        requests.put("resendHourly", random.nextInt(999));
+        requests.put("resendWeekly", random.nextInt(999));
+        requests.put("portsOpen", upnpService.isPortsOpen());
+
+        updateStatuses(armedStateService.isArmed() ? ARMED : DISARMED, armedStateService.getArmedMode());
+
+        pushData(uuidService.getServerKey() + "/statuses", statuses);
+        pushData(uuidService.getServerKey() + "/requests", requests);
+
         DatabaseReference serverNameRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/serverName");
         serverNameRef.setValueAsync(serverAlias);
 
@@ -119,27 +135,6 @@ public class FirebaseService {
         pushData(uuidService.getServerKey() + "/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
 
         unregisterListeners();
-    }
-
-    @EventListener(ServerKeyUpdatedEvent.class)
-    public void createStructure() {
-        Map<String, String> state = new HashMap<>();
-
-        state.put("armedState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
-        state.put("armedMode", armedStateService.getArmedMode().toString());
-
-        requests.put("state", state);
-        requests.put("resendHourly", random.nextInt(999));
-        requests.put("resendWeekly", random.nextInt(999));
-        requests.put("portsOpen", upnpService.isPortsOpen());
-
-        updateStatuses(armedStateService.isArmed() ? ARMED : DISARMED, armedStateService.getArmedMode());
-
-        pushData(uuidService.getServerKey() + "/statuses", statuses);
-        pushData(uuidService.getServerKey() + "/requests", requests);
-        init();
-        unregisterListeners();
-        registerListeners();
     }
 
     @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionDetectedEvent.class, UploadEvent.class})
