@@ -86,6 +86,10 @@
         <value>/usr/bin/logger -t HOME_SYSTEM "STOPPED"</value>
     </util:list>
 
+    <util:list id="onIspChangeCommands" value-type="java.lang.String">
+        <value>/usr/bin/logger -t HOME_SYSTEM "ISP CHANGED"</value>
+    </util:list>
+
     <!--IP List of master devices-->
     <util:list id="masterIpList" value-type="java.lang.String">
         <value>192.168.1.5</value>
