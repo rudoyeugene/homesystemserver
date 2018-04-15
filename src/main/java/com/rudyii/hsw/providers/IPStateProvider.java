@@ -11,8 +11,6 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -100,33 +98,6 @@ public class IPStateProvider {
             LOG.error("Error getting data from DB", e);
         }
         return false;
-    }
-
-    public ArrayList<String> getMasterListByState(IPStateEnum state) {
-        ArrayList<String> aList = new ArrayList<>();
-        ResultSet rs;
-        try {
-            PreparedStatement statement = connection.prepareStatement("SELECT IP FROM IP_STATE WHERE STATE = '" + state + "' AND MASTER = 1");
-            rs = statement.executeQuery();
-            while (rs.next()) {
-                aList.add(rs.getString(1));
-            }
-        } catch (Exception e) {
-            LOG.error("Error getting data from DB", e);
-        }
-
-        return aList;
-    }
-
-    public Map<String, IPStateEnum> getMastersState() {
-        Map<String, IPStateEnum> mastersStates = new HashMap<>();
-
-        masterIpList.forEach((ip) -> {
-            IPStateEnum state = getIPState(ip);
-            mastersStates.put(ip, state);
-        });
-
-        return mastersStates;
     }
 
     @Async

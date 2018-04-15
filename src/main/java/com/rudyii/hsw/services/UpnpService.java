@@ -24,11 +24,10 @@ public class UpnpService {
     private boolean isPortsOpen;
 
     private GatewayDevice gateway;
-    private GatewayDiscover discover;
     private IspService ispService;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
 
-    public UpnpService(IspService ispService, CameraMotionDetectionController... cameraMotionDetectionControllers) throws Exception {
+    public UpnpService(IspService ispService, CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.ispService = ispService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
 
@@ -51,7 +50,7 @@ public class UpnpService {
 
     @Async
     @EventListener(ArmedEvent.class)
-    public void onEvent(ArmedEvent event) throws Exception {
+    public void onEvent(ArmedEvent event) {
         if (event.getArmedState().equals(ARMED)) {
             openPorts();
         } else if (event.getArmedState().equals(DISARMED)) {
@@ -136,7 +135,7 @@ public class UpnpService {
 
     private void reloadGateway() {
         try {
-            discover = new GatewayDiscover();
+            GatewayDiscover discover = new GatewayDiscover();
             discover.discover();
             gateway = discover.getValidGateway();
             LOG.info("Discovered gateway device: " + gateway.getModelName() + ", " + gateway.getModelDescription());

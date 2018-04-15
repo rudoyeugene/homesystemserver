@@ -32,43 +32,35 @@ public class ArmingController {
         this.armedStateService = armedStateService;
     }
 
-    public String forceArm() {
+    public void forceArm() {
         try {
             setSystemModeTo(MANUAL, ARMED);
-            return "System ARMED";
         } catch (Exception e) {
             LOG.error("Error fire action!", e);
-            return "Operation unsuccessful!";
         }
     }
 
-    public String delayedArm() {
+    public void delayedArm() {
         try {
             armingHelper.armWithDelayInSeconds();
-            return "System ARMED";
         } catch (Exception e) {
             LOG.error("Error fire action!", e);
-            return "Operation unsuccessful!";
         }
     }
 
-    public String forceDisarm() {
+    public void forceDisarm() {
         try {
             setSystemModeTo(MANUAL, DISARMED);
-            return "System DISARMED";
         } catch (Exception e) {
             LOG.error("Error fire action!", e);
-            return "Operation unsuccessful!";
         }
     }
 
-    public String automatic() {
+    public void automatic() {
         try {
             setSystemModeTo(AUTOMATIC, AUTO);
-            return "System is in the AUTOMATIC MODE";
         } catch (Exception e) {
             LOG.error("Error fire action!", e);
-            return "Operation unsuccessful!";
         }
     }
 

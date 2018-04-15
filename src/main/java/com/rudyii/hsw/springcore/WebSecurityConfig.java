@@ -27,6 +27,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     @Override
-    protected void configure(AuthenticationManagerBuilder authManagerBuilder) throws Exception {
+    protected void configure(AuthenticationManagerBuilder authManagerBuilder) {
     }
 }

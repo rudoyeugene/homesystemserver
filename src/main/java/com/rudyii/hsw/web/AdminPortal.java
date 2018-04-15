@@ -6,7 +6,6 @@ import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.services.ActionsService;
 import com.rudyii.hsw.services.ArmedStateService;
-import com.rudyii.hsw.services.FirebaseService;
 import com.rudyii.hsw.services.UuidService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,12 +36,10 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 @RequestMapping("/admin")
 @RestController
 public class AdminPortal {
-
     private Uptime uptime;
     private ArmedStateService armedStateService;
     private BoardMonitor boardMonitor;
     private UuidService uuidService;
-    private FirebaseService firebaseService;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
     private IpMonitor ipMonitor;
     private ActionsService actionsService;
@@ -60,7 +57,6 @@ public class AdminPortal {
     public AdminPortal(Uptime uptime, ArmedStateService armedStateService,
                        BoardMonitor boardMonitor, UuidService uuidService,
                        IpMonitor ipMonitor, ActionsService actionsService,
-                       FirebaseService firebaseService,
                        CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.uptime = uptime;
         this.armedStateService = armedStateService;
@@ -68,7 +64,6 @@ public class AdminPortal {
         this.uuidService = uuidService;
         this.ipMonitor = ipMonitor;
         this.actionsService = actionsService;
-        this.firebaseService = firebaseService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
@@ -153,8 +148,7 @@ public class AdminPortal {
 
     @RequestMapping(value = "/currentState", method = RequestMethod.GET)
     public String currentState() {
-        String result = "System is " + armedStateService.getArmedMode().toString() + " and " + (armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
-        return result;
+        return "System is " + armedStateService.getArmedMode().toString() + " and " + (armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
     }
 
     @RequestMapping(value = "/uptime", method = RequestMethod.GET)

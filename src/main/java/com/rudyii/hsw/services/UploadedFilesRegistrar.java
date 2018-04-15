@@ -23,7 +23,7 @@ public class UploadedFilesRegistrar {
     }
 
     @EventListener({UploadEvent.class})
-    private void registerUploadedFile(UploadEvent uploadEvent) {
+    public void registerUploadedFile(UploadEvent uploadEvent) {
         PreparedStatement statement;
         try {
             statement = connection.prepareStatement("INSERT OR REPLACE INTO DROPBOX_FILES (FILE_NAME) VALUES (?)");

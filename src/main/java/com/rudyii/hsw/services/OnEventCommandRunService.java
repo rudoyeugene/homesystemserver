@@ -30,6 +30,9 @@ public class OnEventCommandRunService {
     @Resource(name = "onStopCommands")
     private List<String> onStopCommands;
 
+    @Resource(name = "onIspChangeCommands")
+    private List<String> onIspChangeCommands;
+
     @PostConstruct
     private void executeOnStartCommands() {
         executeCommandList(onStartCommands);
@@ -40,8 +43,13 @@ public class OnEventCommandRunService {
         executeCommandList(onStopCommands);
     }
 
+    @PreDestroy
+    private void executeOnIspChangeCommands() {
+        executeCommandList(onIspChangeCommands);
+    }
+
     @EventListener(ArmedEvent.class)
-    private void executeOnArmDisarm(ArmedEvent event) {
+    public void executeOnArmDisarm(ArmedEvent event) {
         switch (event.getArmedState()) {
             case ARMED:
                 executeCommandList(onArmCommands);
@@ -49,8 +57,9 @@ public class OnEventCommandRunService {
             case DISARMED:
                 executeCommandList(onDisarmCommands);
                 break;
-            default:
+            case AUTO:
                 LOG.info("Ignoring ArmedEvent: " + event.getArmedState());
+            break;
         }
     }
 
@@ -76,7 +85,7 @@ public class OnEventCommandRunService {
 
                 LOG.info(command + " execution success");
             } catch (Exception e) {
-                LOG.error("Failed on command:\" " + String.valueOf(command), e);
+                LOG.error("Failed on command: " + String.valueOf(command), e);
             }
         });
     }

@@ -88,7 +88,7 @@ public class FirebaseService {
 
     @EventListener(ServerKeyUpdatedEvent.class)
     @PostConstruct
-    private void init() {
+    public void init() {
         Map<String, String> state = new HashMap<>();
 
         state.put("armedState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
@@ -138,7 +138,7 @@ public class FirebaseService {
     }
 
     @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionDetectedEvent.class, UploadEvent.class})
-    private void onEvent(EventBase event) {
+    public void onEvent(EventBase event) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("serverName", serverAlias);
 
@@ -400,12 +400,6 @@ public class FirebaseService {
         DatabaseReference reference = firebaseDatabase.getReference(path);
         return reference.setValueAsync(value);
     }
-
-    private ApiFuture pushData(String path, String value) {
-        DatabaseReference reference = firebaseDatabase.getReference(path);
-        return reference.setValueAsync(value);
-    }
-
 
     public void notifyServerStarted() {
         if (alreadyFired) {

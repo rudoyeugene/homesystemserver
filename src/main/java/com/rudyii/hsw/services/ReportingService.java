@@ -28,8 +28,6 @@ import java.util.ArrayList;
 @Service
 public class ReportingService {
     private static Logger LOG = LogManager.getLogger(ReportingService.class);
-    private final String SUBJECT_HOURLY = "Home System hourly report";
-    private final String SUBJECT_WEEKLY = "Home System weekly report";
     private Uptime uptime;
     private ArmedStateService armedStateService;
     private IpMonitor ipMonitor;
@@ -99,7 +97,7 @@ public class ReportingService {
             LOG.error("ERROR getting stats!", e);
         }
 
-        notificationsService.sendEmail(SUBJECT_WEEKLY, body, false);
+        notificationsService.sendEmail("Home System weekly report", body, false);
     }
 
     @Async
@@ -139,6 +137,6 @@ public class ReportingService {
             body.addAll(boardMonitor.getMonitoringResults());
         }
 
-        notificationsService.sendEmail(SUBJECT_HOURLY, body, attachments, false);
+        notificationsService.sendEmail("Home System hourly report", body, attachments, false);
     }
 }

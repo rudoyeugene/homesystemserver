@@ -75,7 +75,7 @@ public class PingService {
 
         } else {
             LOG.info("NON Linux OS detected! Reachability will be used!");
-            InetAddress host = null;
+            InetAddress host;
             try {
                 host = InetAddress.getByName(ip);
 

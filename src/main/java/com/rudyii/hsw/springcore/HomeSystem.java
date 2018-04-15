@@ -16,7 +16,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 @ImportResource("classpath:app-context.xml")
 public class HomeSystem extends SpringBootServletInitializer {
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         SpringApplication.run(HomeSystem.class, args);
     }
 }

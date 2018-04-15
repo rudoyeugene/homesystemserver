@@ -82,7 +82,7 @@ public class IspService {
         String whatsMyIpJson = "http://ip-api.com/json";
         Gson gson = new Gson();
         WanIp wanIp = null;
-        String response = null;
+        String response;
 
         try {
             response = IOUtil.toString(new URL(whatsMyIpJson).openStream());

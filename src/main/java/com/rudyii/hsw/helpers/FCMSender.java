@@ -44,18 +44,6 @@ public class FCMSender {
         return result;
     }
 
-    public FcmMessageEnum sendTopicData(String topic, JsonObject dataObject) throws IOException {
-        return sendData(TYPE_TO, "/topics/" + topic, dataObject);
-    }
-
-    public FcmMessageEnum sendTopicNotification(String topic, JsonObject notificationObject) throws IOException {
-        return sendNotification(TYPE_TO, "/topics/" + topic, notificationObject);
-    }
-
-    public FcmMessageEnum sendTopicNotificationAndData(String topic, JsonObject notificationObject, JsonObject dataObject) throws IOException {
-        return sendNotificationAndData(TYPE_TO, "/topics/" + topic, notificationObject, dataObject);
-    }
-
     private FcmMessageEnum sendFcmMessage(JsonObject recipientDetails, JsonObject notificationObject, JsonObject messageData) throws IOException {
         HttpPost httpPost = new HttpPost(URL_SEND);
         httpPost.setHeader("Content-Type", "application/json");
@@ -72,7 +60,7 @@ public class FCMSender {
         HttpClient httpClient = HttpClientBuilder.create().build();
 
         BasicResponseHandler responseHandler = new BasicResponseHandler();
-        String response = (String) httpClient.execute(httpPost, responseHandler);
+        String response = httpClient.execute(httpPost, responseHandler);
 
         return processResults(response);
     }

@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class UploadService {
-
     private static Logger LOG = LogManager.getLogger(UploadService.class);
 
     private ActionsFactory actionsFactory;
