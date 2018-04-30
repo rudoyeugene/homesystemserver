@@ -27,7 +27,7 @@ public class StatisticsService {
     }
 
     @Async
-    @Scheduled(cron = "${cron.stats.collect}")
+    @Scheduled(cron = "0 */1 * * * *")
     public void run() {
         if (armedStateService.isArmed() && collectStats) {
             try {

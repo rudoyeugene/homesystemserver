@@ -1,9 +1,12 @@
 package com.rudyii.hsw.services;
 
-import com.google.api.core.ApiFuture;
-import com.google.firebase.database.*;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
 import com.rudyii.hsw.events.*;
@@ -43,8 +46,7 @@ public class FirebaseService {
 
     private String serverAlias;
     private Random random = new Random();
-    private FirebaseDatabase firebaseDatabase;
-    private UuidService uuidService;
+    private FirebaseDatabaseProvider firebaseDatabaseProvider;
     private ArmedStateService armedStateService;
     private Uptime uptime;
     private ReportingService reportingService;
@@ -60,13 +62,12 @@ public class FirebaseService {
     private Map<String, String> localConnectedClients;
     private boolean alreadyFired;
 
-    public FirebaseService(FirebaseDatabase firebaseDatabase, UuidService uuidService,
+    public FirebaseService(FirebaseDatabaseProvider firebaseDatabaseProvider, UuidService uuidService,
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
                            NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor) {
-        this.firebaseDatabase = firebaseDatabase;
-        this.uuidService = uuidService;
+        this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
         this.uptime = uptime;
         this.reportingService = reportingService;
@@ -101,22 +102,22 @@ public class FirebaseService {
 
         updateStatuses(armedStateService.isArmed() ? ARMED : DISARMED, armedStateService.getArmedMode());
 
-        pushData(uuidService.getServerKey() + "/statuses", statuses);
-        pushData(uuidService.getServerKey() + "/requests", requests);
+        firebaseDatabaseProvider.pushData("/statuses", statuses);
+        firebaseDatabaseProvider.pushData("/requests", requests);
 
-        DatabaseReference serverNameRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/serverName");
+        DatabaseReference serverNameRef = firebaseDatabaseProvider.getReference("/info/serverName");
         serverNameRef.setValueAsync(serverAlias);
 
-        DatabaseReference pidRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/pid");
+        DatabaseReference pidRef = firebaseDatabaseProvider.getReference("/info/pid");
         pidRef.setValueAsync(getPid());
 
-        DatabaseReference pingRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/ping");
+        DatabaseReference pingRef = firebaseDatabaseProvider.getReference("/info/ping");
         pingRef.setValueAsync(System.currentTimeMillis());
 
-        DatabaseReference serverVersionRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/serverVersion");
+        DatabaseReference serverVersionRef = firebaseDatabaseProvider.getReference("/info/serverVersion");
         serverVersionRef.setValueAsync(appVersion);
 
-        DatabaseReference uptimeRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/uptime");
+        DatabaseReference uptimeRef = firebaseDatabaseProvider.getReference("/info/uptime");
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
         updateConnectedClients();
@@ -132,7 +133,7 @@ public class FirebaseService {
 
         sendFcmMessage(jsonObject);
 
-        pushData(uuidService.getServerKey() + "/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
+        firebaseDatabaseProvider.pushData("/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
 
         unregisterListeners();
     }
@@ -189,7 +190,7 @@ public class FirebaseService {
                 LOG.error("Error occurred: ", e);
             }
 
-            pushData(uuidService.getServerKey() + "/log/" + currentMotionTimestamp, new Gson().fromJson(jsonObject, HashMap.class)).addListener(new Runnable() {
+            firebaseDatabaseProvider.pushData("/log/" + currentMotionTimestamp, new Gson().fromJson(jsonObject, HashMap.class)).addListener(new Runnable() {
                 private JsonObject thisJsonObject;
 
                 @Override
@@ -229,7 +230,7 @@ public class FirebaseService {
             sendFcmMessage(jsonObject);
         }
 
-        pushData(uuidService.getServerKey() + "/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
+        firebaseDatabaseProvider.pushData("/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
     }
 
     private void updateStatuses(ArmedStateEnum armedState, ArmedModeEnum armedMode) {
@@ -243,29 +244,29 @@ public class FirebaseService {
         }
         statuses.put("timeStamp", System.currentTimeMillis());
 
-        pushData(uuidService.getServerKey() + "/statuses", statuses);
+        firebaseDatabaseProvider.pushData("/statuses", statuses);
     }
 
     private void registerListeners() {
-        DatabaseReference openPortsRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/requests/portsOpen");
+        DatabaseReference openPortsRef = firebaseDatabaseProvider.getReference("/requests/portsOpen");
         databaseReferences.add(openPortsRef);
         ValueEventListener openPortsRefValueEventListener = getOpenPortsValueEventListener();
         valueEventListeners.add(openPortsRefValueEventListener);
         openPortsRef.addValueEventListener(openPortsRefValueEventListener);
 
-        DatabaseReference armRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/requests/state");
+        DatabaseReference armRef = firebaseDatabaseProvider.getReference("/requests/state");
         databaseReferences.add(armRef);
         ValueEventListener armRefValueEventListener = getArmedEventValueEventListener();
         valueEventListeners.add(armRefValueEventListener);
         armRef.addValueEventListener(armRefValueEventListener);
 
-        DatabaseReference resendHourlyRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/requests/resendHourly");
+        DatabaseReference resendHourlyRef = firebaseDatabaseProvider.getReference("/requests/resendHourly");
         databaseReferences.add(resendHourlyRef);
         ValueEventListener resendHourlyRefValueEventListener = getResendHourlyValueEventListener();
         valueEventListeners.add(resendHourlyRefValueEventListener);
         resendHourlyRef.addValueEventListener(resendHourlyRefValueEventListener);
 
-        DatabaseReference resendWeeklyRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/requests/resendWeekly");
+        DatabaseReference resendWeeklyRef = firebaseDatabaseProvider.getReference("/requests/resendWeekly");
         databaseReferences.add(resendWeeklyRef);
         ValueEventListener resendWeeklyRefValueEventListener = getResendWeeklyValueEventListener();
         valueEventListeners.add(resendWeeklyRefValueEventListener);
@@ -293,7 +294,7 @@ public class FirebaseService {
                     }
 
                     statuses.put("timeStamp", System.currentTimeMillis());
-                    pushData(uuidService.getServerKey() + "/statuses", statuses);
+                    firebaseDatabaseProvider.pushData("/statuses", statuses);
                 }
             }
 
@@ -370,10 +371,10 @@ public class FirebaseService {
 
     @Scheduled(cron = "0 */1 * * * *")
     public void ping() {
-        DatabaseReference pingRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/ping");
+        DatabaseReference pingRef = firebaseDatabaseProvider.getReference("/info/ping");
         pingRef.setValueAsync(System.currentTimeMillis());
 
-        DatabaseReference uptimeRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/info/uptime");
+        DatabaseReference uptimeRef = firebaseDatabaseProvider.getReference("/info/uptime");
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
         updateConnectedClients();
@@ -382,7 +383,7 @@ public class FirebaseService {
     }
 
     private void updateConnectedClients() {
-        DatabaseReference connectedClientsRef = firebaseDatabase.getReference(uuidService.getServerKey() + "/connectedClients");
+        DatabaseReference connectedClientsRef = firebaseDatabaseProvider.getReference("/connectedClients");
         connectedClientsRef.addListenerForSingleValueEvent(getConnectedClientsValueEventListener());
     }
 
@@ -393,15 +394,10 @@ public class FirebaseService {
         wanInfo.put("wanIp", wanIp.getQuery());
         wanInfo.put("isp", wanIp.getIsp());
 
-        pushData(uuidService.getServerKey() + "/info/wanInfo", wanInfo);
+        firebaseDatabaseProvider.pushData("/info/wanInfo", wanInfo);
     }
 
-    private ApiFuture pushData(String path, Map<?, ?> value) {
-        DatabaseReference reference = firebaseDatabase.getReference(path);
-        return reference.setValueAsync(value);
-    }
-
-    public void notifyServerStarted() {
+    private void notifyServerStarted() {
         if (alreadyFired) {
             return;
         }
@@ -414,7 +410,7 @@ public class FirebaseService {
 
         sendFcmMessage(jsonObject);
 
-        pushData(uuidService.getServerKey() + "/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
+        firebaseDatabaseProvider.pushData("/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
 
         alreadyFired = true;
     }

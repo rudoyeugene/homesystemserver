@@ -1,7 +1,6 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.enums.ArmedModeEnum;
-import com.rudyii.hsw.enums.ArmedStateEnum;
 import com.rudyii.hsw.events.ArmedEvent;
 import com.rudyii.hsw.providers.IPStateProvider;
 import org.apache.logging.log4j.LogManager;
@@ -12,10 +11,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
@@ -28,13 +23,11 @@ public class ArmedStateService {
     private long count = 1L;
     private Boolean systemArmed = false;
     private ArmedModeEnum armedMode = AUTOMATIC;
-    private Connection connection;
     private IPStateProvider ipStateProvider;
 
     @Autowired
-    public ArmedStateService(EventService eventService, Connection connection, IPStateProvider ipStateProvider) {
+    public ArmedStateService(EventService eventService, IPStateProvider ipStateProvider) {
         this.eventService = eventService;
-        this.connection = connection;
         this.ipStateProvider = ipStateProvider;
     }
 
@@ -68,7 +61,6 @@ public class ArmedStateService {
         }
 
         LOG.info("System " + DISARMED);
-        updateArmedStateHistory(DISARMED);
     }
 
     private void arm(boolean publishEvent) {
@@ -78,18 +70,6 @@ public class ArmedStateService {
         }
 
         LOG.info("System " + ARMED);
-        updateArmedStateHistory(ARMED);
-    }
-
-    private void updateArmedStateHistory(ArmedStateEnum state) {
-        PreparedStatement statement;
-        try {
-            statement = connection.prepareStatement("INSERT OR REPLACE INTO ARMED_STATE_HIST (STATE) VALUES (?)");
-            statement.setString(1, state.toString());
-            statement.execute();
-        } catch (SQLException e) {
-            LOG.error("Error while updating DB to the " + state + " state!", e);
-        }
     }
 
     @Async

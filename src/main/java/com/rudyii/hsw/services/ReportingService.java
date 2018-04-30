@@ -67,7 +67,7 @@ public class ReportingService {
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
-    @Scheduled(cron = "${cron.hourly.report}")
+    @Scheduled(cron = "0 0 * * * *")
     public void sendHourlyReportScheduled() {
         LOG.info("Generating hourly report...");
         if (armedStateService.isArmed() && hourlyReportEnabled) {
