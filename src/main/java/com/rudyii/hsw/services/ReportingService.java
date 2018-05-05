@@ -7,7 +7,6 @@ import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.providers.NotificationsService;
-import com.rudyii.hsw.providers.StatsProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,7 +34,6 @@ public class ReportingService {
     private NotificationsService notificationsService;
     private BoardMonitor boardMonitor;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
-    private StatsProvider statsProvider;
     private EventService eventService;
 
     @Value("${weekly.report.enabled}")
@@ -53,15 +51,13 @@ public class ReportingService {
     @Autowired
     public ReportingService(ArmedStateService armedStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
-                            Uptime uptime, StatsProvider statsProvider,
-                            BoardMonitor boardMonitor, EventService eventService,
+                            Uptime uptime, BoardMonitor boardMonitor, EventService eventService,
                             CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.armedStateService = armedStateService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
         this.ipMonitor = ipMonitor;
         this.uptime = uptime;
-        this.statsProvider = statsProvider;
         this.boardMonitor = boardMonitor;
         this.eventService = eventService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
@@ -77,27 +73,6 @@ public class ReportingService {
         } else {
             LOG.info("System neither ARMED nor hourly report forced, skipping hourly report sending.");
         }
-    }
-
-    @Scheduled(cron = "${cron.weekly.report}")
-    public void sendWeeklyReportScheduled() {
-        LOG.info("Generating weekly report.");
-        if (weeklyReportEnabled) {
-            sendWeeklyReport();
-        }
-    }
-
-    @Async
-    public void sendWeeklyReport() {
-        ArrayList<String> body = new ArrayList<>();
-
-        try {
-            body = statsProvider.generateReportBody();
-        } catch (Exception e) {
-            LOG.error("ERROR getting stats!", e);
-        }
-
-        notificationsService.sendEmail("Home System weekly report", body, false);
     }
 
     @Async

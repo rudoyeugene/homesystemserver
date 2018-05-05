@@ -56,15 +56,6 @@
             var response = JSON.parse(xhttp.responseText);
         }
 
-        function resendWeekly(message) {
-            confirm(message);
-            var xhttp = new XMLHttpRequest();
-            xhttp.open("POST", "/admin/fireAction?action=RESEND_WEEKLY", true);
-            xhttp.setRequestHeader("Content-type", "application/json");
-            xhttp.send();
-            var response = JSON.parse(xhttp.responseText);
-        }
-
         function openPorts(message) {
             confirm(message);
             var xhttp = new XMLHttpRequest();
@@ -147,11 +138,6 @@
         <tr>
             <td style="text-align: center">
                 <button type="submit" onclick="return resendHourly('Are you sure?')" class="button btnInfo">RESEND HOURLY REPORT</button>
-            </td>
-        </tr>
-        <tr>
-            <td style="text-align: center">
-                <button type="submit" onclick="return resendWeekly('Are you sure?')" class="button btnInfo">RESEND WEEKLY REPORT</button>
             </td>
         </tr>
         <tr>

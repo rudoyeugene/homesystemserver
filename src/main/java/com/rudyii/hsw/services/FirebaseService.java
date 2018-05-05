@@ -97,7 +97,6 @@ public class FirebaseService {
 
         requests.put("state", state);
         requests.put("resendHourly", random.nextInt(999));
-        requests.put("resendWeekly", random.nextInt(999));
         requests.put("portsOpen", upnpService.isPortsOpen());
 
         updateStatuses(armedStateService.isArmed() ? ARMED : DISARMED, armedStateService.getArmedMode());
@@ -265,12 +264,6 @@ public class FirebaseService {
         ValueEventListener resendHourlyRefValueEventListener = getResendHourlyValueEventListener();
         valueEventListeners.add(resendHourlyRefValueEventListener);
         resendHourlyRef.addValueEventListener(resendHourlyRefValueEventListener);
-
-        DatabaseReference resendWeeklyRef = firebaseDatabaseProvider.getReference("/requests/resendWeekly");
-        databaseReferences.add(resendWeeklyRef);
-        ValueEventListener resendWeeklyRefValueEventListener = getResendWeeklyValueEventListener();
-        valueEventListeners.add(resendWeeklyRefValueEventListener);
-        resendWeeklyRef.addValueEventListener(resendWeeklyRefValueEventListener);
     }
 
     private void unregisterListeners() {
@@ -300,20 +293,6 @@ public class FirebaseService {
 
             public void onCancelled(DatabaseError databaseError) {
                 LOG.error("Failed to fetch Ports State Firebase data!");
-            }
-        };
-    }
-
-    private ValueEventListener getResendWeeklyValueEventListener() {
-        return new ValueEventListener() {
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (!requests.get("resendWeekly").toString().equals(dataSnapshot.getValue().toString()) && isHomeSystemInitComplete()) {
-                    reportingService.sendWeeklyReport();
-                }
-            }
-
-            public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Weekly Resend Firebase data!");
             }
         };
     }

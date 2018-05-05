@@ -40,9 +40,6 @@ public class ActionsService {
             case "RESEND_HOURLY":
                 reportingService.sendHourlyReport();
                 break;
-            case "RESEND_WEEKLY":
-                reportingService.sendWeeklyReport();
-                break;
             case "OPEN_PORTS":
                 upnpService.openPorts();
                 break;

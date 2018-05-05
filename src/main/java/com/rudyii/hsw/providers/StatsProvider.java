@@ -10,19 +10,24 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
+import static com.rudyii.hsw.providers.StatsProvider.Action.*;
 import static java.math.BigInteger.ZERO;
 
 @Component
 public class StatsProvider {
     private static Logger LOG = LogManager.getLogger(StatsProvider.class);
-
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private Map<String, Long> weeklyStats;
+    private ThreadPoolTaskExecutor hswExecutor;
+    private Map<String, Long> usageStats;
 
     @Value("${statistics.keep.stats.days}")
     private Long keepDays;
@@ -31,14 +36,13 @@ public class StatsProvider {
     private Boolean statsReset;
 
     @Autowired
-    public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider) {
+    public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider, ThreadPoolTaskExecutor hswExecutor) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
+        this.hswExecutor = hswExecutor;
     }
 
     public void increaseArmedStatistic() {
-        String today = getTodayAsString();
-
-        firebaseDatabaseProvider.getReference("/weeklyStats").addListenerForSingleValueEvent(getWeeklyStatsValueEventListener(today, true));
+        firebaseDatabaseProvider.getReference("/usageStats").addListenerForSingleValueEvent(getWeeklyStatsValueEventListener(getTodayAsString(), INCREASE));
     }
 
     @NotNull
@@ -46,62 +50,63 @@ public class StatsProvider {
         return new SimpleDateFormat("yyyyMMdd").format(new Date());
     }
 
-    public void reset() {
-        if (statsReset) {
-            firebaseDatabaseProvider.pushData("/weeklyStats", null);
-        }
-    }
-
-    public ArrayList<String> generateReportBody() throws Exception {
-        ArrayList<String> report = new ArrayList<>();
-        report.add("Will be moved to Client application");
-
-        reset();
-
-        return report;
-    }
-
     @Scheduled(cron = "0 0 0 * * *")
     public void cleanupObsolete() {
-        initStatsMapIfNullForToday();
-
         LOG.info("Cleanup of obsolete statistics started");
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.add(Calendar.DATE, -keepDays.intValue());
 
-        String today = new SimpleDateFormat("yyyyMMdd").format(calendar.getTime());
-
-        firebaseDatabaseProvider.getReference("/weeklyStats").addListenerForSingleValueEvent(getWeeklyStatsValueEventListener(today, false));
+        firebaseDatabaseProvider.getReference("/usageStats").addListenerForSingleValueEvent(getWeeklyStatsValueEventListener(getTodayAsString(), INIT,
+                () -> firebaseDatabaseProvider.getReference("/usageStats").addListenerForSingleValueEvent(getWeeklyStatsValueEventListener(getTodayAsString(), CLEANUP))));
     }
 
-    private ValueEventListener getWeeklyStatsValueEventListener(String today, boolean doIncrease) {
+    private ValueEventListener getWeeklyStatsValueEventListener(String today, Action action) {
+        return getWeeklyStatsValueEventListener(today, action, null);
+    }
+
+    private ValueEventListener getWeeklyStatsValueEventListener(String today, Action action, Runnable runnable) {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                weeklyStats = (Map<String, Long>) dataSnapshot.getValue();
-                initStatsMapIfNullForToday();
+                usageStats = (Map<String, Long>) dataSnapshot.getValue();
 
-                if (doIncrease) {
-                    increaseArmedCount();
-                } else {
-                    doCleanup();
+                if (usageStats == null) {
+                    usageStats = new HashMap<>();
                 }
 
-                firebaseDatabaseProvider.pushData("/weeklyStats", weeklyStats);
+                switch (action) {
+                    case INIT:
+                        putTodayWithZero(today);
+                        break;
+
+                    case CLEANUP:
+                        doCleanup();
+                        break;
+
+                    case INCREASE:
+                        putTodayWithZero(today);
+                        increaseArmedCount();
+                }
+
+                if (runnable == null) {
+                    firebaseDatabaseProvider.pushData("/usageStats", usageStats);
+                } else {
+                    firebaseDatabaseProvider.pushData("/usageStats", usageStats).addListener(runnable, hswExecutor);
+                }
             }
 
             private void doCleanup() {
-                weeklyStats.forEach((k, v) -> {
+                usageStats.forEach((k, v) -> {
                     if (Long.valueOf(k) < Long.valueOf(today)) {
-                        weeklyStats.remove(today);
+                        usageStats.remove(today);
                     }
                 });
             }
 
             private void increaseArmedCount() {
-                Long armedTodayCount = weeklyStats.get(today);
-                weeklyStats.put(today, armedTodayCount + 1);
+                Long armedTodayCount = usageStats.get(today);
+                usageStats.put(today, armedTodayCount + 1);
             }
 
             @Override
@@ -111,13 +116,11 @@ public class StatsProvider {
         };
     }
 
-    private void initStatsMapIfNullForToday() {
-        String today = getTodayAsString();
-
-        if (weeklyStats == null) {
-            weeklyStats = new HashMap<>();
-        } else if (weeklyStats.get(today) == null) {
-            weeklyStats.put(today, ZERO.longValue());
+    private void putTodayWithZero(String today) {
+        if (usageStats.get(today) == null) {
+            usageStats.put(today, ZERO.longValue());
         }
     }
+
+    enum Action {INCREASE, CLEANUP, INIT}
 }
