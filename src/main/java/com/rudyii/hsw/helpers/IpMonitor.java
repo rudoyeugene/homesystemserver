@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,13 +15,13 @@ import java.util.Map;
 @Component
 public class IpMonitor {
 
-    private Map<String, String> ipResolver;
+    private HashMap<String, String> ipResolver;
     private List<String> monitoringIpList;
     private PingService pingService;
 
     @Autowired
-    public IpMonitor(Map ipResolver, List monitoringIpList, PingService pingService){
-        this.ipResolver = ipResolver;
+    public IpMonitor(Map ipResolver, List monitoringIpList, PingService pingService) {
+        this.ipResolver = (HashMap<String, String>) ipResolver;
         this.monitoringIpList = monitoringIpList;
         this.pingService = pingService;
     }

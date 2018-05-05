@@ -2,6 +2,7 @@ package com.rudyii.hsw.helpers;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.internal.LinkedTreeMap;
 import com.rudyii.hsw.enums.FcmMessageEnum;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Map;
 
 import static com.rudyii.hsw.enums.FcmMessageEnum.*;
 
@@ -67,9 +67,9 @@ public class FCMSender {
 
     private FcmMessageEnum processResults(String response) {
         Gson gson = new Gson();
-        Map<String, Object> result = gson.fromJson(response, Map.class);
+        LinkedTreeMap<String, Object> result = gson.fromJson(response, LinkedTreeMap.class);
         ArrayList<Object> detailedResult = (ArrayList<Object>) result.get("results");
-        Map<String, Object> results = (Map<String, Object>) detailedResult.get(0);
+        LinkedTreeMap<String, Object> results = (LinkedTreeMap<String, Object>) detailedResult.get(0);
 
         String error = (String) results.get("error");
 

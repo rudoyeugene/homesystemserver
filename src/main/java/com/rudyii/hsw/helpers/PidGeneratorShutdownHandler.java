@@ -28,7 +28,7 @@ public class PidGeneratorShutdownHandler {
     @PostConstruct
     public void hookSigTerm() throws FileNotFoundException {
         pid = getProcessPid();
-        PrintWriter out = new PrintWriter("pid");
+        PrintWriter out = new PrintWriter("homesystemserver.pid");
         out.println(pid);
         out.close();
 
@@ -39,7 +39,7 @@ public class PidGeneratorShutdownHandler {
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            new File("pid").delete();
+            new File("homesystemserver.pid").delete();
             LOG.info("Home system application closed at: " + (new Date()).toString());
         }));
     }

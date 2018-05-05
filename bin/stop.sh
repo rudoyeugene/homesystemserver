@@ -5,9 +5,9 @@ cd ${SCRIPT_DIR}/../
 
 if [ -e pid ]; then
 	echo "Previous run detected."
-	if [ -e /proc/`cat pid` ]; then
+	if [ -e /proc/`cat homesystemserver.pid` ]; then
 		echo "Closing Home System."
-		kill `cat pid`
+		kill `cat homesystemserver.pid`
 	else
 		echo "Unclean stop detected, exiting."
 		exit 1

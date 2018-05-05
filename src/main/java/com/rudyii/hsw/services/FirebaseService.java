@@ -27,7 +27,10 @@ import javax.annotation.PreDestroy;
 import javax.imageio.ImageIO;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
@@ -58,8 +61,8 @@ public class FirebaseService {
     private ArrayList<DatabaseReference> databaseReferences;
     private ArrayList<ValueEventListener> valueEventListeners;
 
-    private Map<String, Object> statuses, motions, requests;
-    private Map<String, String> localConnectedClients;
+    private ConcurrentHashMap<String, Object> statuses, motions, requests;
+    private ConcurrentHashMap<String, String> localConnectedClients;
     private boolean alreadyFired;
 
     public FirebaseService(FirebaseDatabaseProvider firebaseDatabaseProvider, UuidService uuidService,
@@ -77,10 +80,10 @@ public class FirebaseService {
         this.notificationsService = notificationsService;
         this.hswExecutor = hswExecutor;
 
-        this.statuses = Collections.synchronizedMap(new HashMap<>());
-        this.motions = Collections.synchronizedMap(new HashMap<>());
-        this.requests = Collections.synchronizedMap(new HashMap<>());
-        this.localConnectedClients = Collections.synchronizedMap(new HashMap<>());
+        this.statuses = new ConcurrentHashMap<>();
+        this.motions = new ConcurrentHashMap<>();
+        this.requests = new ConcurrentHashMap<>();
+        this.localConnectedClients = new ConcurrentHashMap<>();
         this.databaseReferences = new ArrayList();
         this.valueEventListeners = new ArrayList();
 
@@ -90,7 +93,7 @@ public class FirebaseService {
     @EventListener(ServerKeyUpdatedEvent.class)
     @PostConstruct
     public void init() {
-        Map<String, String> state = new HashMap<>();
+        HashMap<String, String> state = new HashMap<>();
 
         state.put("armedState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
         state.put("armedMode", armedStateService.getArmedMode().toString());
@@ -315,7 +318,7 @@ public class FirebaseService {
         return new ValueEventListener() {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (isHomeSystemInitComplete()) {
-                    Map<String, Object> state = (Map<String, Object>) dataSnapshot.getValue();
+                    HashMap<String, Object> state = (HashMap<String, Object>) dataSnapshot.getValue();
 
                     ArmedEvent armedEvent = new ArmedEvent(ArmedModeEnum.valueOf(state.get("armedMode").toString()), ArmedStateEnum.valueOf(state.get("armedState").toString()));
 
@@ -333,7 +336,7 @@ public class FirebaseService {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Map<String, String> connectedClients = (Map<String, String>) dataSnapshot.getValue();
+                HashMap<String, String> connectedClients = (HashMap<String, String>) dataSnapshot.getValue();
 
                 if (connectedClients != null) {
                     localConnectedClients.clear();
@@ -367,7 +370,7 @@ public class FirebaseService {
     }
 
     private void refreshWanInfo() {
-        Map<String, Object> wanInfo = new HashMap<>();
+        HashMap<String, Object> wanInfo = new HashMap<>();
         WanIp wanIp = ispService.getCurrentWanIp();
 
         wanInfo.put("wanIp", wanIp.getQuery());

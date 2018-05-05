@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +27,7 @@ public class PingService {
     private List<String> masterIpList;
     private ArmedStateService armedStateService;
     private EventService eventService;
-    private Map<String, String> ipResolver;
+    private HashMap<String, String> ipResolver;
 
     @Autowired
     public PingService(List masterIpList, ArmedStateService armedStateService,
@@ -34,7 +35,7 @@ public class PingService {
         this.masterIpList = masterIpList;
         this.armedStateService = armedStateService;
         this.eventService = eventService;
-        this.ipResolver = ipResolver;
+        this.ipResolver = (HashMap<String, String>) ipResolver;
     }
 
     @Scheduled(fixedRateString = "${cron.ip.check.millis}")

@@ -17,7 +17,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.rudyii.hsw.providers.StatsProvider.Action.*;
 import static java.math.BigInteger.ZERO;
@@ -27,7 +27,7 @@ public class StatsProvider {
     private static Logger LOG = LogManager.getLogger(StatsProvider.class);
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
     private ThreadPoolTaskExecutor hswExecutor;
-    private Map<String, Long> usageStats;
+    private ConcurrentHashMap<String, Long> usageStats;
 
     @Value("${statistics.keep.stats.days}")
     private Long keepDays;
@@ -52,7 +52,7 @@ public class StatsProvider {
 
     @Scheduled(cron = "0 0 0 * * *")
     public void cleanupObsolete() {
-        LOG.info("Cleanup of obsolete statistics started");
+        LOG.info("Cleanup of obsolete usage stats started, also adding a new day into usage stats");
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.add(Calendar.DATE, -keepDays.intValue());
@@ -69,10 +69,13 @@ public class StatsProvider {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                usageStats = (Map<String, Long>) dataSnapshot.getValue();
+                HashMap<String, Long> tempUsageStats = (HashMap<String, Long>) dataSnapshot.getValue();
 
-                if (usageStats == null) {
-                    usageStats = new HashMap<>();
+                if (tempUsageStats == null) {
+                    usageStats = new ConcurrentHashMap<>();
+                } else {
+                    usageStats.clear();
+                    usageStats.putAll(tempUsageStats);
                 }
 
                 switch (action) {
