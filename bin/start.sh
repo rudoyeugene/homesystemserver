@@ -1,8 +1,8 @@
 #!/bin/sh
 
 SCRIPT_DIR=$(dirname $0)
-COMMAND_LINE_DEBUG="java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n -jar *.war &"
-COMMAND_LINE_NORMAL="java -jar *.war &"
+COMMAND_LINE_DEBUG="java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n -jar *.war"
+COMMAND_LINE_NORMAL="java -jar *.war"
 cd ${SCRIPT_DIR}/../
 
 if [ "$1" = "debug" ]; then
@@ -20,9 +20,9 @@ if [ -e homesystemserver.pid ]; then
 		exit 1
 	else
 		echo "Starting Home System..."
-		$COMMAND_LINE
+		$COMMAND_LINE &
 	fi
 else
 	echo "Starting Home System..."
-	$COMMAND_LINE
+	$COMMAND_LINE &
 fi
