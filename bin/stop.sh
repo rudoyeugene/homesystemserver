@@ -3,7 +3,7 @@
 SCRIPT_DIR=$(dirname $0)
 cd ${SCRIPT_DIR}/../
 
-if [ -e pid ]; then
+if [ -e homesystemserver.pid ]; then
 	echo "Previous run detected."
 	if [ -e /proc/`cat homesystemserver.pid` ]; then
 		echo "Closing Home System."

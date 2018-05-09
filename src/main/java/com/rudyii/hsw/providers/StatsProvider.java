@@ -27,7 +27,7 @@ public class StatsProvider {
     private static Logger LOG = LogManager.getLogger(StatsProvider.class);
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
     private ThreadPoolTaskExecutor hswExecutor;
-    private ConcurrentHashMap<String, Long> usageStats;
+    private ConcurrentHashMap<String, Long> usageStats = new ConcurrentHashMap<>();
 
     @Value("${statistics.keep.stats.days}")
     private Long keepDays;
@@ -71,9 +71,7 @@ public class StatsProvider {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 HashMap<String, Long> tempUsageStats = (HashMap<String, Long>) dataSnapshot.getValue();
 
-                if (tempUsageStats == null) {
-                    usageStats = new ConcurrentHashMap<>();
-                } else {
+                if (tempUsageStats != null) {
                     usageStats.clear();
                     usageStats.putAll(tempUsageStats);
                 }
