@@ -8,17 +8,21 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 
 import static com.rudyii.hsw.enums.IPStateEnum.ERROR;
 import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 
 @Component
 public class IPStateProvider {
-    private HashMap<String, IPStateEnum> ipStates;
+    private HashMap<String, IPStateEnum> ipStates = new HashMap<>();
+    ;
+
+    private List<String> masterIpList;
 
     @Autowired
-    public IPStateProvider() {
-        this.ipStates = new HashMap<>();
+    public IPStateProvider(List masterIpList) {
+        this.masterIpList = masterIpList;
     }
 
     public IPStateEnum getIPState(String ip) {
@@ -30,7 +34,7 @@ public class IPStateProvider {
     }
 
     public Boolean mastersOnline() {
-        return ipStates.containsValue(ONLINE);
+        return masterIpList.stream().anyMatch(ip -> ONLINE.equals(ipStates.get(ip)));
     }
 
     @Async

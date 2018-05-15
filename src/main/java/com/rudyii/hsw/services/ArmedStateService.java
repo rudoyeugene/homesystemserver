@@ -44,14 +44,13 @@ public class ArmedStateService {
                 disarm(true);
             }
             System.out.println(getMessage());
-        } else {
-            System.out.println(count + ": system state is unchanged because of system is in MANUAL mode");
         }
+        System.out.println("System is UP for " + count + " minutes");
     }
 
     @NotNull
     private String getMessage() {
-        return count + ": system is " + (systemArmed ? ARMED : DISARMED) + "; " + (ipStateProvider.mastersOnline() ? "Master is present." : "Master is absent.");
+        return "System is " + (systemArmed ? ARMED : DISARMED) + "; " + (ipStateProvider.mastersOnline() ? "Any master is present." : "Any master is absent.");
     }
 
     private void disarm(boolean publishEvent) {

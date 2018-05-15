@@ -4,12 +4,12 @@ import com.rudyii.hsw.events.ArmedEvent;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
@@ -18,20 +18,21 @@ import java.util.List;
 public class OnEventCommandRunService {
     private static Logger LOG = LogManager.getLogger(OnEventCommandRunService.class);
 
-    @Resource(name = "onArmCommands")
     private List<String> onArmCommands;
-
-    @Resource(name = "onDisarmCommands")
     private List<String> onDisarmCommands;
-
-    @Resource(name = "onStartCommands")
     private List<String> onStartCommands;
-
-    @Resource(name = "onStopCommands")
     private List<String> onStopCommands;
-
-    @Resource(name = "onIspChangeCommands")
     private List<String> onIspChangeCommands;
+
+    @Autowired
+    public OnEventCommandRunService(List onArmCommands, List onDisarmCommands, List onStartCommands, List onStopCommands, List onIspChangeCommands) {
+
+        this.onArmCommands = onArmCommands;
+        this.onDisarmCommands = onDisarmCommands;
+        this.onStartCommands = onStartCommands;
+        this.onStopCommands = onStopCommands;
+        this.onIspChangeCommands = onIspChangeCommands;
+    }
 
     @PostConstruct
     private void executeOnStartCommands() {
@@ -59,7 +60,7 @@ public class OnEventCommandRunService {
                 break;
             case AUTO:
                 LOG.info("Ignoring ArmedEvent: " + event.getArmedState());
-            break;
+                break;
         }
     }
 
