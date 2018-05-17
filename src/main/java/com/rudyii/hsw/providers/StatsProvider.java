@@ -6,12 +6,14 @@ import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +51,8 @@ public class StatsProvider {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                String today = new SimpleDateFormat("yyyyMMdd").format(new Date());
+                String today = getToday();
+                Long historicalToday = calculateHistoricalToday();
                 final ConcurrentHashMap<String, Long> usageStats = new ConcurrentHashMap<>((HashMap<String, Long>) dataSnapshot.getValue());
 
                 if (usageStats.get(today) == null) {
@@ -61,7 +64,7 @@ public class StatsProvider {
                     case CLEANUP:
                         LOG.info("Cleaning obsolete usage stats");
                         usageStats.forEach((k, v) -> {
-                            if (Long.valueOf(k) < Long.valueOf(today)) {
+                            if (Long.valueOf(k) < historicalToday) {
                                 usageStats.remove(k);
                             }
                         });
@@ -73,6 +76,20 @@ public class StatsProvider {
                 }
 
                 firebaseDatabaseProvider.pushData("/usageStats", usageStats);
+            }
+
+            @NotNull
+            private String getToday() {
+                return new SimpleDateFormat("yyyyMMdd").format(new Date());
+            }
+
+            private Long calculateHistoricalToday() {
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(new Date());
+
+                calendar.add(Calendar.DATE, -keepDays.intValue());
+
+                return Long.valueOf(new SimpleDateFormat("yyyyMMdd").format(calendar.getTime()));
             }
 
             @Override
