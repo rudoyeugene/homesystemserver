@@ -1,5 +1,6 @@
 package com.rudyii.hsw.services;
 
+import com.rudyii.hsw.configuration.Options;
 import com.rudyii.hsw.events.CameraRebootEvent;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
@@ -10,7 +11,6 @@ import com.rudyii.hsw.providers.NotificationsService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -33,25 +33,15 @@ public class ReportingService {
     private IspService ispService;
     private NotificationsService notificationsService;
     private BoardMonitor boardMonitor;
+    private Options options;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
     private EventService eventService;
-
-    @Value("${weekly.report.enabled}")
-    private Boolean weeklyReportEnabled;
-
-    @Value("${hourly.report.forced}")
-    private Boolean hourlyReportForced;
-
-    @Value("${hourly.report.enabled}")
-    private Boolean hourlyReportEnabled;
-
-    @Value("${monitoring.enabled}")
-    private Boolean monitoringEnabled;
 
     @Autowired
     public ReportingService(ArmedStateService armedStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
                             Uptime uptime, BoardMonitor boardMonitor, EventService eventService,
+                            Options options,
                             CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.armedStateService = armedStateService;
         this.ispService = ispService;
@@ -60,15 +50,16 @@ public class ReportingService {
         this.uptime = uptime;
         this.boardMonitor = boardMonitor;
         this.eventService = eventService;
+        this.options = options;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
     @Scheduled(cron = "0 0 * * * *")
     public void sendHourlyReportScheduled() {
         LOG.info("Generating hourly report...");
-        if (armedStateService.isArmed() && hourlyReportEnabled) {
+        if (armedStateService.isArmed() && (boolean) options.getOption("hourlyReportEnabled")) {
             sendHourlyReport();
-        } else if (hourlyReportForced) {
+        } else if ((boolean) options.getOption("hourlyReportForced")) {
             sendHourlyReport();
         } else {
             LOG.info("System neither ARMED nor hourly report forced, skipping hourly report sending.");
@@ -103,7 +94,7 @@ public class ReportingService {
         body.add("Current internal IP: <b>" + ispService.getLocalIpAddress() + "</b>");
         body.add("Total monitored cameras: <b>" + cameraMotionDetectionControllers.length + "</b>");
 
-        if (monitoringEnabled) {
+        if ((boolean) options.getOption("monitoringEnabled")) {
             body.add("Monitored targets states:");
             body.add("<ul>");
             ipMonitor.getStates().forEach(line -> body.add("<li>" + line));

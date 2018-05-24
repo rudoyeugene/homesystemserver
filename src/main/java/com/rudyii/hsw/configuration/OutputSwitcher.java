@@ -1,9 +1,12 @@
 package com.rudyii.hsw.configuration;
 
+import com.rudyii.hsw.events.OptionsChangedEvent;
 import com.rudyii.hsw.springcore.HomeSystem;
 import org.apache.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -15,25 +18,44 @@ import static org.apache.log4j.Level.INFO;
 @Component
 public class OutputSwitcher {
     private static Logger LOG = LogManager.getLogger(HomeSystem.class);
+    private PrintStream defaultOutPrintStream = System.out;
+    private PrintStream defaultErrPrintStream = System.err;
+    private Options options;
+
+    @Autowired
+    public OutputSwitcher(Options options) {
+        this.options = options;
+    }
 
     @PostConstruct
     public void tieSystemOutAndErrToLog() {
-        System.setOut(createLoggingProxy(System.out, INFO));
-        System.setErr(createLoggingProxy(System.err, ERROR));
+        if ((boolean) options.getOption("redirectSystemOutToLogFile")) {
+            System.setOut(createLoggingProxy(System.out, INFO));
+            System.setErr(createLoggingProxy(System.err, ERROR));
+        }
+    }
+
+    @EventListener(OptionsChangedEvent.class)
+    public void switchOutput(OptionsChangedEvent event) {
+        if ((boolean) event.getOption("redirectSystemOutToLogFile")) {
+            System.setOut(createLoggingProxy(System.out, INFO));
+            System.setErr(createLoggingProxy(System.err, ERROR));
+        } else {
+            System.setOut(defaultOutPrintStream);
+            System.setErr(defaultErrPrintStream);
+        }
     }
 
     private PrintStream createLoggingProxy(final PrintStream realPrintStream, Level level) {
         if (level.equals(ERROR)) {
             return new PrintStream(realPrintStream) {
                 public void print(final String string) {
-                    realPrintStream.print(string);
                     LOG.error(string);
                 }
             };
         } else {
             return new PrintStream(realPrintStream) {
                 public void print(final String string) {
-                    realPrintStream.print(string);
                     LOG.info(string);
                 }
             };

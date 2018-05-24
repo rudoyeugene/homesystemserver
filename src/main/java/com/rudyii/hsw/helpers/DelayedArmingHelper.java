@@ -1,11 +1,11 @@
 package com.rudyii.hsw.helpers;
 
+import com.rudyii.hsw.configuration.Options;
 import com.rudyii.hsw.events.ArmedEvent;
 import com.rudyii.hsw.services.EventService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -20,15 +20,14 @@ public class DelayedArmingHelper {
     private static Logger LOG = LogManager.getLogger(DelayedArmingHelper.class);
 
     private EventService eventService;
-
-    @Value("${arm.delay.seconds}")
-    private int armDelaySeconds;
+    private Options options;
 
     private boolean idle;
 
     @Autowired
-    public DelayedArmingHelper(EventService eventService) {
+    public DelayedArmingHelper(EventService eventService, Options options) {
         this.eventService = eventService;
+        this.options = options;
         this.idle = true;
     }
 
@@ -36,7 +35,7 @@ public class DelayedArmingHelper {
     void armWithDelayInSeconds() throws InterruptedException {
         if (idle) {
             this.idle = false;
-            int seconds = armDelaySeconds;
+            Long seconds = (Long) options.getOption("delayedArmInterval");
 
             while (seconds != 0) {
                 System.out.println("System will be ARMED in " + seconds + " seconds...");

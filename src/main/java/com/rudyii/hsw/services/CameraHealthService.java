@@ -37,7 +37,7 @@ public class CameraHealthService {
         }
     }
 
-    @Scheduled(initialDelayString = "${cron.camera.health.init.delay.millis}", fixedDelayString = "${cron.camera.health.period.millis}")
+    @Scheduled(initialDelayString = "10000", fixedDelayString = "600000")
     public void run() {
         if (healthList.size() > 0) {
             healthList.forEach((cameraMotionDetectionController) -> {

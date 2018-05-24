@@ -19,10 +19,6 @@ public class MotionDetectedEvent extends EventBase {
         return currentImage;
     }
 
-    public BufferedImage getMotionObject() {
-        return motionObject;
-    }
-
     public String getCameraName() {
         return cameraName;
     }

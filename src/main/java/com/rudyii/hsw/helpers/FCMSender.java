@@ -20,21 +20,17 @@ import static com.rudyii.hsw.enums.FcmMessageEnum.*;
 @Component
 public class FCMSender {
     public static final String TYPE_TO = "to";  // Use for single devices, device groups and topics
-    public static final String TYPE_CONDITION = "condition"; // Use for Conditions
+    private static final String TYPE_CONDITION = "condition"; // Use for Conditions
     private static final String URL_SEND = "https://fcm.googleapis.com/fcm/send";
 
     @Value("${fcm.server.key}")
     private String fcmServerKey;
 
-    public FcmMessageEnum sendNotification(String type, String typeParameter, JsonObject notificationObject) throws IOException {
-        return sendNotificationAndData(type, typeParameter, notificationObject, null);
-    }
-
     public FcmMessageEnum sendData(String recipientType, String recipientToken, JsonObject messageData) throws IOException {
         return sendNotificationAndData(recipientType, recipientToken, null, messageData);
     }
 
-    public FcmMessageEnum sendNotificationAndData(String recipientType, String recipientToken, JsonObject notificationObject, JsonObject messageData) throws IOException {
+    private FcmMessageEnum sendNotificationAndData(String recipientType, String recipientToken, JsonObject notificationObject, JsonObject messageData) throws IOException {
         FcmMessageEnum result = null;
         if (recipientType.equals(TYPE_TO) || recipientType.equals(TYPE_CONDITION)) {
             JsonObject recipientDetails = new JsonObject();

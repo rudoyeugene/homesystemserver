@@ -1,5 +1,6 @@
 package com.rudyii.hsw.motion;
 
+import com.rudyii.hsw.configuration.Options;
 import com.rudyii.hsw.events.CameraRebootEvent;
 import com.rudyii.hsw.events.MotionDetectedEvent;
 import com.rudyii.hsw.objects.Camera;
@@ -7,7 +8,6 @@ import com.rudyii.hsw.services.EventService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -21,10 +21,7 @@ import java.net.URL;
 @Scope(value = "prototype")
 public class CameraMotionDetector {
     private static Logger LOG = LogManager.getLogger(CameraMotionDetector.class);
-
-    private long interval = 500L;
-    private double motionArea = 25D;
-    private int noiseLevel = 0;
+    private final Options options;
 
     private EventService eventService;
     private BufferedImage previousImage, currentImage, motionObject;
@@ -33,12 +30,10 @@ public class CameraMotionDetector {
     private boolean enabled = false;
     private boolean eventFired = false;
 
-    @Value("${show.motion.area}")
-    private boolean showMotionArea;
-
     @Autowired
-    public CameraMotionDetector(EventService eventService) {
+    public CameraMotionDetector(EventService eventService, Options options) {
         this.eventService = eventService;
+        this.options = options;
     }
 
     @Async
@@ -81,7 +76,7 @@ public class CameraMotionDetector {
                 LOG.error("Failed to get current image from camera: " + camera.getName());
                 fireRebootEvent();
             }
-            Thread.sleep(interval);
+            Thread.sleep(interval());
         }
     }
 
@@ -112,7 +107,7 @@ public class CameraMotionDetector {
                 int g2 = (rgb2 >> 8) & 0xff;
                 int b2 = (rgb2) & 0xff;
 
-                if ((Math.abs(r1 - r2) > noiseLevel) && (Math.abs(g1 - g2) > noiseLevel) && (Math.abs(b1 - b2) > noiseLevel)) {
+                if ((Math.abs(r1 - r2) > noiseLevel()) && (Math.abs(g1 - g2) > noiseLevel()) && (Math.abs(b1 - b2) > noiseLevel())) {
                     motionObject.setRGB(x, y, rgb2);
                     diff++;
                 }
@@ -122,11 +117,11 @@ public class CameraMotionDetector {
         double imageSize = previousImageWidth * previousImageHeight;
         double differenceInPercentage = (100 * diff) / imageSize;
 
-        if (showMotionArea) {
-            System.out.println(camera.getName() + " noise level: " + noiseLevel + " and motion area size: " + differenceInPercentage + "%");
+        if (showMotionArea()) {
+            System.out.println(camera.getName() + " noise level: " + noiseLevel() + " and motion area size: " + differenceInPercentage + "%");
         }
 
-        if (differenceInPercentage > motionArea) {
+        if (differenceInPercentage > motionAreaSize()) {
             LOG.info("Motion detected on " + camera.getName() + " with motion area size : " + differenceInPercentage + "%");
             eventService.publish(new MotionDetectedEvent(camera.getName(), differenceInPercentage, currentImage, motionObject));
         }
@@ -140,20 +135,27 @@ public class CameraMotionDetector {
         }
     }
 
-    public void setInterval(Long interval) {
-        this.interval = interval;
+    private boolean showMotionArea() {
+        return (boolean) options.getOption("showMotionArea");
     }
 
-    public void setMotionArea(Double motionArea) {
-        this.motionArea = motionArea;
+    private long motionAreaSize() {
+        return ((long) options.getCameraOptions(camera.getName()).get("motionArea"));
     }
 
-    public void setNoiseLevel(int noiseLevel) {
-        this.noiseLevel = noiseLevel;
+    private long interval() {
+        return (long) options.getCameraOptions(camera.getName()).get("interval");
     }
 
-    public void setCamera(Camera camera) throws MalformedURLException {
+    private long noiseLevel() {
+        return (long) options.getCameraOptions(camera.getName()).get("noiseLevel");
+    }
+
+
+    public CameraMotionDetector onCamera(Camera camera) throws MalformedURLException {
         this.camera = camera;
         this.sourceUrl = new URL(camera.getJpegUrl());
+
+        return this;
     }
 }

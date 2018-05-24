@@ -31,7 +31,7 @@ public class ArmedStateService {
         this.ipStateProvider = ipStateProvider;
     }
 
-    @Scheduled(initialDelayString = "${cron.armed.state.check.init.delay.millis}", fixedRateString = "${cron.armed.state.check.millis}")
+    @Scheduled(initialDelayString = "10000", fixedRateString = "60000")
     public void run() {
         this.count++;
 

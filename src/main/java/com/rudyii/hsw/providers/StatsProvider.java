@@ -3,12 +3,12 @@ package com.rudyii.hsw.providers;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
+import com.rudyii.hsw.configuration.Options;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -26,16 +26,12 @@ import static java.math.BigInteger.ZERO;
 public class StatsProvider {
     private static Logger LOG = LogManager.getLogger(StatsProvider.class);
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
-
-    @Value("${statistics.keep.stats.days}")
-    private Long keepDays;
-
-    @Value("${statistics.reset.enabled}")
-    private Boolean statsReset;
+    private Options options;
 
     @Autowired
-    public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider) {
+    public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider, Options options) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
+        this.options = options;
     }
 
     public void increaseArmedStatistic() {
@@ -87,7 +83,7 @@ public class StatsProvider {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(new Date());
 
-                calendar.add(Calendar.DATE, -keepDays.intValue());
+                calendar.add(Calendar.DATE, -((Long) options.getOption("keepDays")).intValue());
 
                 return Long.valueOf(new SimpleDateFormat("yyyyMMdd").format(calendar.getTime()));
             }

@@ -2,6 +2,7 @@ package com.rudyii.hsw.motion;
 
 import com.rudyii.hsw.events.ArmedEvent;
 import com.rudyii.hsw.events.CameraRebootEvent;
+import com.rudyii.hsw.events.EventBase;
 import com.rudyii.hsw.events.MotionDetectedEvent;
 import com.rudyii.hsw.objects.Camera;
 import com.rudyii.hsw.services.ArmedStateService;
@@ -32,9 +33,8 @@ public class CameraMotionDetectionController {
     private static Logger LOG = LogManager.getLogger(CameraMotionDetectionController.class);
 
     private String mjpegUrl, jpegUrl, rtspUrl, rebootUrl, cameraName, monitoringMode;
-    private Long interval, rebootTimeout;
-    private Double motionArea;
-    private int noiseLevel;
+    private Long interval, rebootTimeout, noiseLevel;
+    private Long motionArea;
     private boolean detectorEnabled, healthCheckEnabled, rebootInProgress;
     private ArmedStateService armedStateService;
     private ApplicationContext context;
@@ -126,13 +126,8 @@ public class CameraMotionDetectionController {
         this.detectorEnabled = true;
 
         this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
+        currentCameraMotionDetector.onCamera(camera).start();
 
-        currentCameraMotionDetector.setCamera(camera);
-        currentCameraMotionDetector.setInterval(interval);
-        currentCameraMotionDetector.setMotionArea(motionArea);
-        currentCameraMotionDetector.setNoiseLevel(noiseLevel);
-
-        currentCameraMotionDetector.start();
         LOG.info("Motion detector enabled for camera:" + cameraName);
     }
 
@@ -173,7 +168,7 @@ public class CameraMotionDetectionController {
 
         StringBuilder response = new StringBuilder();
         try {
-            URL url = new URL(getRebootUrl());
+            URL url = new URL(rebootUrl);
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
 
@@ -212,24 +207,24 @@ public class CameraMotionDetectionController {
     }
 
     @Async
-    @EventListener(ArmedEvent.class)
-    public void onEvent(ArmedEvent event) throws Exception {
-        if (monitoringMode.equals("AUTO")) {
-            if (event.getArmedState().equals(ARMED) && !detectorEnabled) {
-                enableMotionDetection();
-            } else if (event.getArmedState().equals(DISARMED) && detectorEnabled) {
-                disableMotionDetection();
-            } else {
-                LOG.warn("New ArmedEvent received but system state unchanged.");
+    @EventListener(EventBase.class)
+    public void onEvent(EventBase event) throws Exception {
+        if (event instanceof ArmedEvent){
+            ArmedEvent armedEvent = (ArmedEvent) event;
+            if (monitoringMode.equals("AUTO")) {
+                if (armedEvent.getArmedState().equals(ARMED) && !detectorEnabled) {
+                    enableMotionDetection();
+                } else if (armedEvent.getArmedState().equals(DISARMED) && detectorEnabled) {
+                    disableMotionDetection();
+                } else {
+                    LOG.warn("New ArmedEvent received but system state unchanged.");
+                }
             }
-        }
-    }
-
-    @Async
-    @EventListener(CameraRebootEvent.class)
-    public void onEvent(CameraRebootEvent event) throws Exception {
-        if (event.getCameraName().equals(cameraName) && !rebootInProgress) {
-            performRebootSequence();
+        } else if (event instanceof CameraRebootEvent){
+            CameraRebootEvent rebootEvent = (CameraRebootEvent) event;
+            if (rebootEvent.getCameraName().equals(cameraName) && !rebootInProgress) {
+                performRebootSequence();
+            }
         }
     }
 
@@ -243,10 +238,6 @@ public class CameraMotionDetectionController {
 
     public String getRtspUrl() {
         return rtspUrl;
-    }
-
-    public String getRebootUrl() {
-        return rebootUrl;
     }
 
     public String getCameraName() {
@@ -293,11 +284,11 @@ public class CameraMotionDetectionController {
         return useOuterRtspPort;
     }
 
-    public Double getMotionArea() {
+    public Long getMotionArea() {
         return motionArea;
     }
 
-    public void setMotionArea(Double motionArea) {
+    public void setMotionArea(Long motionArea) {
         this.motionArea = motionArea;
     }
 
@@ -309,11 +300,11 @@ public class CameraMotionDetectionController {
         this.interval = interval;
     }
 
-    public int getNoiseLevel() {
+    public Long getNoiseLevel() {
         return noiseLevel;
     }
 
-    public void setNoiseLevel(int noiseLevel) {
+    public void setNoiseLevel(Long noiseLevel) {
         this.noiseLevel = noiseLevel;
     }
 

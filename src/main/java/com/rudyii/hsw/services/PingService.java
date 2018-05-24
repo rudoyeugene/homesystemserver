@@ -38,7 +38,7 @@ public class PingService {
         this.ipResolver = (HashMap<String, String>) ipResolver;
     }
 
-    @Scheduled(fixedRateString = "${cron.ip.check.millis}")
+    @Scheduled(fixedRateString = "60000")
     public void run() {
         if (armedStateService.isSystemInAutoMode()) {
             for (String ip : masterIpList) {

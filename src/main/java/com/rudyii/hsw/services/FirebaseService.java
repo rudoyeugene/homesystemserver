@@ -6,6 +6,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.rudyii.hsw.configuration.Options;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
@@ -44,9 +45,6 @@ public class FirebaseService {
     @Value("${application.version}")
     private String appVersion;
 
-    @Value("${motion.record.length.millis}")
-    private Long recordInterval;
-
     private String serverAlias;
     private Random random = new Random();
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
@@ -56,19 +54,21 @@ public class FirebaseService {
     private UpnpService upnpService;
     private EventService eventService;
     private IspService ispService;
+    private Options options;
     private NotificationsService notificationsService;
     private ThreadPoolTaskExecutor hswExecutor;
     private ArrayList<DatabaseReference> databaseReferences;
     private ArrayList<ValueEventListener> valueEventListeners;
 
     private ConcurrentHashMap<String, Object> statuses, motions, requests;
-    private ConcurrentHashMap<String, String> localConnectedClients;
+    private ConcurrentHashMap<String, Object> localConnectedClients;
     private boolean alreadyFired;
 
     public FirebaseService(FirebaseDatabaseProvider firebaseDatabaseProvider, UuidService uuidService,
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
+                           Options options,
                            NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
@@ -77,13 +77,13 @@ public class FirebaseService {
         this.upnpService = upnpService;
         this.eventService = eventService;
         this.ispService = ispService;
+        this.options = options;
         this.notificationsService = notificationsService;
         this.hswExecutor = hswExecutor;
 
         this.statuses = new ConcurrentHashMap<>();
         this.motions = new ConcurrentHashMap<>();
         this.requests = new ConcurrentHashMap<>();
-        this.localConnectedClients = new ConcurrentHashMap<>();
         this.databaseReferences = new ArrayList();
         this.valueEventListeners = new ArrayList();
 
@@ -123,6 +123,7 @@ public class FirebaseService {
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
         updateConnectedClients();
+        unregisterListeners();
         registerListeners();
     }
 
@@ -165,7 +166,7 @@ public class FirebaseService {
 
             if (lastMotionTimestamp == null) {
                 motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
-            } else if ((currentMotionTimestamp - lastMotionTimestamp) < recordInterval) {
+            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (long) options.getOption("recordInterval")) {
                 System.out.println("Motion event for camera " + (motionDetectedEvent.getCameraName() + " was ignored"));
                 return;
             } else {
@@ -267,6 +268,12 @@ public class FirebaseService {
         ValueEventListener resendHourlyRefValueEventListener = getResendHourlyValueEventListener();
         valueEventListeners.add(resendHourlyRefValueEventListener);
         resendHourlyRef.addValueEventListener(resendHourlyRefValueEventListener);
+
+        DatabaseReference connectedClientsRef = firebaseDatabaseProvider.getReference("/connectedClients");
+        databaseReferences.add(connectedClientsRef);
+        ValueEventListener connectedClientsValueEventListener = getConnectedClientsValueEventListener();
+        valueEventListeners.add(connectedClientsValueEventListener);
+        connectedClientsRef.addValueEventListener(connectedClientsValueEventListener);
     }
 
     private void unregisterListeners() {
@@ -336,12 +343,7 @@ public class FirebaseService {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                HashMap<String, String> connectedClients = (HashMap<String, String>) dataSnapshot.getValue();
-
-                if (connectedClients != null) {
-                    localConnectedClients.clear();
-                    localConnectedClients.putAll(connectedClients);
-                }
+                localConnectedClients = new ConcurrentHashMap<>((HashMap<String, Object>) dataSnapshot.getValue());
             }
 
             @Override
@@ -359,7 +361,6 @@ public class FirebaseService {
         DatabaseReference uptimeRef = firebaseDatabaseProvider.getReference("/info/uptime");
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
-        updateConnectedClients();
         refreshWanInfo();
         notifyServerStarted();
     }
@@ -398,11 +399,18 @@ public class FirebaseService {
     }
 
     private void sendFcmMessage(JsonObject messageData) {
-        localConnectedClients.forEach((name, token) -> {
+        //TODO add support of the additional event model
+        localConnectedClients.forEach((key, value) -> {
             try {
-                notificationsService.sendFcmMessage(name, token, messageData);
+                String device = ((HashMap<String, String>) value).get("device");
+                String appVersion = ((HashMap<String, String>) value).get("appVersion");
+                String token = ((HashMap<String, String>) value).get("token");
+
+                LOG.info("Ready to send message to the Client on device " + device + " with client version " + appVersion);
+
+                notificationsService.sendFcmMessage(device, token, messageData);
             } catch (Exception e) {
-                LOG.error("Failed to send FCM Message to " + name, e);
+                LOG.error("Failed to send FCM Message to " + key, e);
             }
         });
     }

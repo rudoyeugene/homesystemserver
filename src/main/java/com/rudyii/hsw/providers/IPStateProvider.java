@@ -16,7 +16,6 @@ import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 @Component
 public class IPStateProvider {
     private HashMap<String, IPStateEnum> ipStates = new HashMap<>();
-    ;
 
     private List<String> masterIpList;
 

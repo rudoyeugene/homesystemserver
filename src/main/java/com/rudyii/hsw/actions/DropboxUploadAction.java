@@ -29,7 +29,7 @@ import java.util.Date;
 public class DropboxUploadAction implements Action {
     private static Logger LOG = LogManager.getLogger(DropboxUploadAction.class);
 
-    final DbxClientV2 client;
+    private DbxClientV2 client;
     private File uploadCandidate;
     private IspService ispService;
     private EventService eventService;

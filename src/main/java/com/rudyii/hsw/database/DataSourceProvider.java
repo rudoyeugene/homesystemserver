@@ -49,7 +49,7 @@ public class DataSourceProvider {
         return connection;
     }
 
-    public synchronized void closeConnection() {
+    private synchronized void closeConnection() {
         try {
             jdbcDataSource().getConnection().close();
         } catch (SQLException e) {
