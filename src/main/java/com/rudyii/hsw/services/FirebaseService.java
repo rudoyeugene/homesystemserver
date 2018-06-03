@@ -6,7 +6,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
@@ -54,7 +54,7 @@ public class FirebaseService {
     private UpnpService upnpService;
     private EventService eventService;
     private IspService ispService;
-    private Options options;
+    private OptionsService optionsService;
     private NotificationsService notificationsService;
     private ThreadPoolTaskExecutor hswExecutor;
     private ArrayList<DatabaseReference> databaseReferences;
@@ -68,7 +68,7 @@ public class FirebaseService {
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
-                           Options options,
+                           OptionsService optionsService,
                            NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
@@ -77,7 +77,7 @@ public class FirebaseService {
         this.upnpService = upnpService;
         this.eventService = eventService;
         this.ispService = ispService;
-        this.options = options;
+        this.optionsService = optionsService;
         this.notificationsService = notificationsService;
         this.hswExecutor = hswExecutor;
 
@@ -166,7 +166,7 @@ public class FirebaseService {
 
             if (lastMotionTimestamp == null) {
                 motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
-            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (long) options.getOption("recordInterval")) {
+            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (long) optionsService.getOption("recordInterval")) {
                 System.out.println("Motion event for camera " + (motionDetectedEvent.getCameraName() + " was ignored"));
                 return;
             } else {

@@ -1,6 +1,6 @@
 package com.rudyii.hsw.motion;
 
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.events.CameraRebootEvent;
 import com.rudyii.hsw.events.MotionDetectedEvent;
 import com.rudyii.hsw.objects.Camera;
@@ -21,7 +21,7 @@ import java.net.URL;
 @Scope(value = "prototype")
 public class CameraMotionDetector {
     private static Logger LOG = LogManager.getLogger(CameraMotionDetector.class);
-    private final Options options;
+    private final OptionsService optionsService;
 
     private EventService eventService;
     private BufferedImage previousImage, currentImage, motionObject;
@@ -31,9 +31,9 @@ public class CameraMotionDetector {
     private boolean eventFired = false;
 
     @Autowired
-    public CameraMotionDetector(EventService eventService, Options options) {
+    public CameraMotionDetector(EventService eventService, OptionsService optionsService) {
         this.eventService = eventService;
-        this.options = options;
+        this.optionsService = optionsService;
     }
 
     @Async
@@ -136,19 +136,19 @@ public class CameraMotionDetector {
     }
 
     private boolean showMotionArea() {
-        return (boolean) options.getOption("showMotionArea");
+        return (boolean) optionsService.getOption("showMotionArea");
     }
 
     private long motionAreaSize() {
-        return ((long) options.getCameraOptions(camera.getName()).get("motionArea"));
+        return ((long) optionsService.getCameraOptions(camera.getName()).get("motionArea"));
     }
 
     private long interval() {
-        return (long) options.getCameraOptions(camera.getName()).get("interval");
+        return (long) optionsService.getCameraOptions(camera.getName()).get("interval");
     }
 
     private long noiseLevel() {
-        return (long) options.getCameraOptions(camera.getName()).get("noiseLevel");
+        return (long) optionsService.getCameraOptions(camera.getName()).get("noiseLevel");
     }
 
 

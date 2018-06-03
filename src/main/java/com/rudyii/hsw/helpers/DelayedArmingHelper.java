@@ -1,6 +1,6 @@
 package com.rudyii.hsw.helpers;
 
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.events.ArmedEvent;
 import com.rudyii.hsw.services.EventService;
 import org.apache.logging.log4j.LogManager;
@@ -20,14 +20,14 @@ public class DelayedArmingHelper {
     private static Logger LOG = LogManager.getLogger(DelayedArmingHelper.class);
 
     private EventService eventService;
-    private Options options;
+    private OptionsService optionsService;
 
     private boolean idle;
 
     @Autowired
-    public DelayedArmingHelper(EventService eventService, Options options) {
+    public DelayedArmingHelper(EventService eventService, OptionsService optionsService) {
         this.eventService = eventService;
-        this.options = options;
+        this.optionsService = optionsService;
         this.idle = true;
     }
 
@@ -35,7 +35,7 @@ public class DelayedArmingHelper {
     void armWithDelayInSeconds() throws InterruptedException {
         if (idle) {
             this.idle = false;
-            Long seconds = (Long) options.getOption("delayedArmInterval");
+            Long seconds = (Long) optionsService.getOption("delayedArmInterval");
 
             while (seconds != 0) {
                 System.out.println("System will be ARMED in " + seconds + " seconds...");

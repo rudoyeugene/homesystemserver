@@ -1,6 +1,6 @@
 package com.rudyii.hsw.web;
 
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
 import com.rudyii.hsw.helpers.Uptime;
@@ -41,7 +41,7 @@ public class AdminPortal {
     private ArmedStateService armedStateService;
     private BoardMonitor boardMonitor;
     private UuidService uuidService;
-    private Options options;
+    private OptionsService optionsService;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
     private IpMonitor ipMonitor;
     private ActionsService actionsService;
@@ -56,7 +56,7 @@ public class AdminPortal {
     public AdminPortal(Uptime uptime, ArmedStateService armedStateService,
                        BoardMonitor boardMonitor, UuidService uuidService,
                        IpMonitor ipMonitor, ActionsService actionsService,
-                       Options options,
+                       OptionsService optionsService,
                        CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.uptime = uptime;
         this.armedStateService = armedStateService;
@@ -64,7 +64,7 @@ public class AdminPortal {
         this.uuidService = uuidService;
         this.ipMonitor = ipMonitor;
         this.actionsService = actionsService;
-        this.options = options;
+        this.optionsService = optionsService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
@@ -72,7 +72,7 @@ public class AdminPortal {
     public ModelAndView buildIndexPage() {
         ModelAndView modelAndView = new ModelAndView("index");
         modelAndView.addObject("title", "Home System " + appVersion);
-        modelAndView.addObject("armDelaySeconds", options.getOption("delayedArmInterval"));
+        modelAndView.addObject("armDelaySeconds", optionsService.getOption("delayedArmInterval"));
         modelAndView.addObject("currentState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
         modelAndView.addObject("currentMode", armedStateService.getArmedMode() == AUTOMATIC ? AUTOMATIC.toString() : "MANUAL");
         modelAndView.addObject("uptime", uptime.getUptime());

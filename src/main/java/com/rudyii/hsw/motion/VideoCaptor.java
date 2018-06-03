@@ -1,6 +1,6 @@
 package com.rudyii.hsw.motion;
 
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.events.CaptureEvent;
 import com.rudyii.hsw.objects.Camera;
 import com.rudyii.hsw.services.EventService;
@@ -30,7 +30,7 @@ public class VideoCaptor {
     private static Logger LOG = LogManager.getLogger(VideoCaptor.class);
 
     private EventService eventService;
-    private Options options;
+    private OptionsService optionsService;
 
     @Value("${video.archive.location}")
     private String archiveLocation;
@@ -40,9 +40,9 @@ public class VideoCaptor {
     private File result;
 
     @Autowired
-    public VideoCaptor(EventService eventService, Options options) {
+    public VideoCaptor(EventService eventService, OptionsService optionsService) {
         this.eventService = eventService;
-        this.options = options;
+        this.optionsService = optionsService;
     }
 
     @Async
@@ -101,7 +101,7 @@ public class VideoCaptor {
         }
 
         captureCommand.add(camera.getRtspUrl());
-        captureCommand.add(String.valueOf((Long) options.getOption("recordInterval") / 1000));
+        captureCommand.add(String.valueOf((Long) optionsService.getOption("recordInterval") / 1000));
         captureCommand.add(result.getCanonicalPath());
         captureCommand.add(camera.getName());
 
@@ -111,7 +111,7 @@ public class VideoCaptor {
 
     private void printParametersIntoLog() throws IOException {
         LOG.info("#1 as source: " + camera.getRtspUrl());
-        LOG.info("#2 as record interval in seconds: " + String.valueOf((Long) options.getOption("recordInterval") / 1000));
+        LOG.info("#2 as record interval in seconds: " + String.valueOf((Long) optionsService.getOption("recordInterval") / 1000));
         LOG.info("#3 as a capture result: " + result.getCanonicalPath());
         LOG.info("#4 as a camera name: " + camera.getName());
     }
@@ -119,9 +119,9 @@ public class VideoCaptor {
     private void runProcess(ProcessBuilder process) {
         try {
             Process runningProcess = process.inheritIO().start();
-            runningProcess.waitFor((Long) options.getOption("recordInterval") + 1000, TimeUnit.MILLISECONDS);
+            runningProcess.waitFor((Long) optionsService.getOption("recordInterval") + 1000, TimeUnit.MILLISECONDS);
             if (runningProcess.isAlive()) {
-                runningProcess.waitFor((Long) options.getOption("recordInterval"), TimeUnit.MILLISECONDS);
+                runningProcess.waitFor((Long) optionsService.getOption("recordInterval"), TimeUnit.MILLISECONDS);
                 runningProcess.destroy();
 
                 if (runningProcess.isAlive()) {

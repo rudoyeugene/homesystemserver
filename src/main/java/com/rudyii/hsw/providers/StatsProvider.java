@@ -3,7 +3,7 @@ package com.rudyii.hsw.providers;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,12 +26,12 @@ import static java.math.BigInteger.ZERO;
 public class StatsProvider {
     private static Logger LOG = LogManager.getLogger(StatsProvider.class);
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private Options options;
+    private OptionsService optionsService;
 
     @Autowired
-    public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider, Options options) {
+    public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider, OptionsService optionsService) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
-        this.options = options;
+        this.optionsService = optionsService;
     }
 
     public void increaseArmedStatistic() {
@@ -83,7 +83,7 @@ public class StatsProvider {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(new Date());
 
-                calendar.add(Calendar.DATE, -((Long) options.getOption("keepDays")).intValue());
+                calendar.add(Calendar.DATE, -((Long) optionsService.getOption("keepDays")).intValue());
 
                 return Long.valueOf(new SimpleDateFormat("yyyyMMdd").format(calendar.getTime()));
             }

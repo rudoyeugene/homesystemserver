@@ -1,6 +1,6 @@
 package com.rudyii.hsw.services;
 
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.providers.StatsProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,19 +16,19 @@ public class StatisticsService {
 
     private StatsProvider statsProvider;
     private ArmedStateService armedStateService;
-    private Options options;
+    private OptionsService optionsService;
 
     @Autowired
-    public StatisticsService(StatsProvider statsProvider, ArmedStateService armedStateService, Options options) {
+    public StatisticsService(StatsProvider statsProvider, ArmedStateService armedStateService, OptionsService optionsService) {
         this.statsProvider = statsProvider;
         this.armedStateService = armedStateService;
-        this.options = options;
+        this.optionsService = optionsService;
     }
 
     @Async
     @Scheduled(cron = "0 */1 * * * *")
     public void run() {
-        if (armedStateService.isArmed() && (boolean) options.getOption("collectStatistics")) {
+        if (armedStateService.isArmed() && (boolean) optionsService.getOption("collectStatistics")) {
             try {
                 statsProvider.increaseArmedStatistic();
             } catch (Exception e) {

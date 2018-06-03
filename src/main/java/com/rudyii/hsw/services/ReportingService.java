@@ -1,6 +1,6 @@
 package com.rudyii.hsw.services;
 
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.events.CameraRebootEvent;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
@@ -33,7 +33,7 @@ public class ReportingService {
     private IspService ispService;
     private NotificationsService notificationsService;
     private BoardMonitor boardMonitor;
-    private Options options;
+    private OptionsService optionsService;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
     private EventService eventService;
 
@@ -41,7 +41,7 @@ public class ReportingService {
     public ReportingService(ArmedStateService armedStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
                             Uptime uptime, BoardMonitor boardMonitor, EventService eventService,
-                            Options options,
+                            OptionsService optionsService,
                             CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.armedStateService = armedStateService;
         this.ispService = ispService;
@@ -50,16 +50,16 @@ public class ReportingService {
         this.uptime = uptime;
         this.boardMonitor = boardMonitor;
         this.eventService = eventService;
-        this.options = options;
+        this.optionsService = optionsService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
     @Scheduled(cron = "0 0 * * * *")
     public void sendHourlyReportScheduled() {
         LOG.info("Generating hourly report...");
-        if (armedStateService.isArmed() && (boolean) options.getOption("hourlyReportEnabled")) {
+        if (armedStateService.isArmed() && (boolean) optionsService.getOption("hourlyReportEnabled")) {
             sendHourlyReport();
-        } else if ((boolean) options.getOption("hourlyReportForced")) {
+        } else if ((boolean) optionsService.getOption("hourlyReportForced")) {
             sendHourlyReport();
         } else {
             LOG.info("System neither ARMED nor hourly report forced, skipping hourly report sending.");
@@ -94,7 +94,7 @@ public class ReportingService {
         body.add("Current internal IP: <b>" + ispService.getLocalIpAddress() + "</b>");
         body.add("Total monitored cameras: <b>" + cameraMotionDetectionControllers.length + "</b>");
 
-        if ((boolean) options.getOption("monitoringEnabled")) {
+        if ((boolean) optionsService.getOption("monitoringEnabled")) {
             body.add("Monitored targets states:");
             body.add("<ul>");
             ipMonitor.getStates().forEach(line -> body.add("<li>" + line));

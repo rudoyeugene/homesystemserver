@@ -1,7 +1,7 @@
 package com.rudyii.hsw.services;
 
 import com.dropbox.core.v2.DbxClientV2;
-import com.rudyii.hsw.configuration.Options;
+import com.rudyii.hsw.configuration.OptionsService;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,24 +29,24 @@ public class HouseKeepingService {
     private DbxClientV2 client;
     private IspService ispService;
     private Connection connection;
-    private Options options;
+    private OptionsService optionsService;
 
     @Value("${video.archive.location}")
     private String archiveLocation;
 
     @Autowired
     public HouseKeepingService(DbxClientV2 client, IspService ispService,
-                               Connection connection, Options options) {
+                               Connection connection, OptionsService optionsService) {
         this.client = client;
         this.ispService = ispService;
         this.connection = connection;
-        this.options = options;
+        this.optionsService = optionsService;
     }
 
     @Scheduled(cron = "0 0 * * * *")
     public void houseKeep() throws ParseException {
         if (ispService.internetIsAvailable()) {
-            Date olderThan = DateUtils.addDays(new Date(), -((Long) options.getOption("keepDays")).intValue());
+            Date olderThan = DateUtils.addDays(new Date(), -((Long) optionsService.getOption("keepDays")).intValue());
             File localStorage = new File(archiveLocation);
 
             ArrayList<String> filesToDelete = new ArrayList<>();

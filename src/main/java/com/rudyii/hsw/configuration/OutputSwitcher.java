@@ -20,16 +20,16 @@ public class OutputSwitcher {
     private static Logger LOG = LogManager.getLogger(HomeSystem.class);
     private PrintStream defaultOutPrintStream = System.out;
     private PrintStream defaultErrPrintStream = System.err;
-    private Options options;
+    private OptionsService optionsService;
 
     @Autowired
-    public OutputSwitcher(Options options) {
-        this.options = options;
+    public OutputSwitcher(OptionsService optionsService) {
+        this.optionsService = optionsService;
     }
 
     @PostConstruct
     public void tieSystemOutAndErrToLog() {
-        if ((boolean) options.getOption("redirectSystemOutToLogFile")) {
+        if ((boolean) optionsService.getOption("redirectSystemOutToLogFile")) {
             System.setOut(createLoggingProxy(System.out, INFO));
             System.setErr(createLoggingProxy(System.err, ERROR));
         }
