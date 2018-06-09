@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
+import static com.rudyii.hsw.configuration.OptionsService.DELAYED_ARM_INTERVAL;
 import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
@@ -72,7 +73,7 @@ public class AdminPortal {
     public ModelAndView buildIndexPage() {
         ModelAndView modelAndView = new ModelAndView("index");
         modelAndView.addObject("title", "Home System " + appVersion);
-        modelAndView.addObject("armDelaySeconds", optionsService.getOption("delayedArmInterval"));
+        modelAndView.addObject("armDelaySeconds", optionsService.getOption(DELAYED_ARM_INTERVAL));
         modelAndView.addObject("currentState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
         modelAndView.addObject("currentMode", armedStateService.getArmedMode() == AUTOMATIC ? AUTOMATIC.toString() : "MANUAL");
         modelAndView.addObject("uptime", uptime.getUptime());

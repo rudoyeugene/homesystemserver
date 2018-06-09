@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.io.PrintStream;
 
+import static com.rudyii.hsw.configuration.OptionsService.VERBOSE_OUTPUT_ENABLED;
 import static org.apache.log4j.Level.ERROR;
 import static org.apache.log4j.Level.INFO;
 
@@ -29,7 +30,7 @@ public class OutputSwitcher {
 
     @PostConstruct
     public void tieSystemOutAndErrToLog() {
-        if ((boolean) optionsService.getOption("redirectSystemOutToLogFile")) {
+        if ((boolean) optionsService.getOption(VERBOSE_OUTPUT_ENABLED)) {
             System.setOut(createLoggingProxy(System.out, INFO));
             System.setErr(createLoggingProxy(System.err, ERROR));
         }
@@ -37,7 +38,7 @@ public class OutputSwitcher {
 
     @EventListener(OptionsChangedEvent.class)
     public void switchOutput(OptionsChangedEvent event) {
-        if ((boolean) event.getOption("redirectSystemOutToLogFile")) {
+        if ((boolean) event.getOption(VERBOSE_OUTPUT_ENABLED)) {
             System.setOut(createLoggingProxy(System.out, INFO));
             System.setErr(createLoggingProxy(System.err, ERROR));
         } else {

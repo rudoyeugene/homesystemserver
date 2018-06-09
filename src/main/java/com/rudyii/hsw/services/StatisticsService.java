@@ -9,6 +9,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import static com.rudyii.hsw.configuration.OptionsService.COLLECT_STATISTICS;
+
 @Service
 public class StatisticsService {
 
@@ -28,7 +30,7 @@ public class StatisticsService {
     @Async
     @Scheduled(cron = "0 */1 * * * *")
     public void run() {
-        if (armedStateService.isArmed() && (boolean) optionsService.getOption("collectStatistics")) {
+        if (armedStateService.isArmed() && (boolean) optionsService.getOption(COLLECT_STATISTICS)) {
             try {
                 statsProvider.increaseArmedStatistic();
             } catch (Exception e) {

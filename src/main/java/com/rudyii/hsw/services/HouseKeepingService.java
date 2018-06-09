@@ -20,6 +20,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 
+import static com.rudyii.hsw.configuration.OptionsService.KEEP_DAYS;
+
 /**
  * Created by jack on 16.02.17.
  */
@@ -46,7 +48,7 @@ public class HouseKeepingService {
     @Scheduled(cron = "0 0 * * * *")
     public void houseKeep() throws ParseException {
         if (ispService.internetIsAvailable()) {
-            Date olderThan = DateUtils.addDays(new Date(), -((Long) optionsService.getOption("keepDays")).intValue());
+            Date olderThan = DateUtils.addDays(new Date(), -((Long) optionsService.getOption(KEEP_DAYS)).intValue());
             File localStorage = new File(archiveLocation);
 
             ArrayList<String> filesToDelete = new ArrayList<>();

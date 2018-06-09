@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Date;
@@ -33,6 +34,7 @@ public class DropboxUploadAction implements Action {
     private File uploadCandidate;
     private IspService ispService;
     private EventService eventService;
+    private BufferedImage image;
 
     @Autowired
     public DropboxUploadAction(DbxClientV2 client, IspService ispService, EventService eventService) {
@@ -70,10 +72,16 @@ public class DropboxUploadAction implements Action {
             SharedLinkMetadata slm = client.sharing().createSharedLinkWithSettings(metadata.getPathLower(), SharedLinkSettings.newBuilder().withRequestedVisibility(RequestedVisibility.PUBLIC).build());
             String url = slm.getUrl();
 
-            eventService.publish(new UploadEvent(uploadCandidate.getName(), url));
+            eventService.publish(new UploadEvent(uploadCandidate.getName(),image,  url));
 
         } catch (Exception e) {
             LOG.error("Upload to Dropbox FAILED!", e);
         }
+    }
+
+    public DropboxUploadAction andImage(BufferedImage image) {
+        this.image = image;
+
+        return this;
     }
 }

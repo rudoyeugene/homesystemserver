@@ -23,6 +23,15 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class OptionsService {
+    public static final String RECORD_INTERVAL = "recordInterval";
+    public static final String SHOW_MOTION_AREA = "showMotionArea";
+    public static final String HOURLY_REPORT_ENABLED = "hourlyReportEnabled";
+    public static final String HOURLY_REPORT_FORCED = "hourlyReportForced";
+    public static final String MONITORING_ENABLED = "monitoringEnabled";
+    public static final String COLLECT_STATISTICS = "collectStatistics";
+    public static final String KEEP_DAYS = "keepDays";
+    public static final String VERBOSE_OUTPUT_ENABLED = "verboseOutputEnabled";
+    public static final String DELAYED_ARM_INTERVAL = "delayedArmInterval";
     private static Logger LOG = LogManager.getLogger(OptionsService.class);
 
     private ConcurrentHashMap<String, Object> localOptions = new ConcurrentHashMap<>();
@@ -44,21 +53,21 @@ public class OptionsService {
     @PostConstruct
     private void populateDefaultOptions() {
         //Motion detection settings
-        localOptions.put("recordInterval", 10000L);
-        localOptions.put("showMotionArea", true);
+        localOptions.put(RECORD_INTERVAL, 10L);
+        localOptions.put(SHOW_MOTION_AREA, true);
 
         //Reporting settings
-        localOptions.put("hourlyReportEnabled", true);
-        localOptions.put("hourlyReportForced", false);
-        localOptions.put("monitoringEnabled", true);
+        localOptions.put(HOURLY_REPORT_ENABLED, true);
+        localOptions.put(HOURLY_REPORT_FORCED, false);
+        localOptions.put(MONITORING_ENABLED, true);
 
         //Stats settings
-        localOptions.put("collectStatistics", true);
-        localOptions.put("keepDays", 30L);
+        localOptions.put(COLLECT_STATISTICS, true);
+        localOptions.put(KEEP_DAYS, 30L);
 
         //System settings
-        localOptions.put("redirectSystemOutToLogFile", true);
-        localOptions.put("delayedArmInterval", 60L);
+        localOptions.put(VERBOSE_OUTPUT_ENABLED, true);
+        localOptions.put(DELAYED_ARM_INTERVAL, 60L);
 
         fillOptionsFromCameras();
 

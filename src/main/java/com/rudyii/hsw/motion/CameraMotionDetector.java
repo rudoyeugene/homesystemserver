@@ -17,6 +17,8 @@ import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import static com.rudyii.hsw.configuration.OptionsService.SHOW_MOTION_AREA;
+
 @Component
 @Scope(value = "prototype")
 public class CameraMotionDetector {
@@ -136,7 +138,7 @@ public class CameraMotionDetector {
     }
 
     private boolean showMotionArea() {
-        return (boolean) optionsService.getOption("showMotionArea");
+        return (boolean) optionsService.getOption(SHOW_MOTION_AREA);
     }
 
     private long motionAreaSize() {

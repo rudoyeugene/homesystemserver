@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.rudyii.hsw.configuration.OptionsService.KEEP_DAYS;
 import static com.rudyii.hsw.providers.StatsProvider.Action.CLEANUP;
 import static com.rudyii.hsw.providers.StatsProvider.Action.INCREASE;
 import static java.math.BigInteger.ZERO;
@@ -83,7 +84,7 @@ public class StatsProvider {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(new Date());
 
-                calendar.add(Calendar.DATE, -((Long) optionsService.getOption("keepDays")).intValue());
+                calendar.add(Calendar.DATE, -((Long) optionsService.getOption(KEEP_DAYS)).intValue());
 
                 return Long.valueOf(new SimpleDateFormat("yyyyMMdd").format(calendar.getTime()));
             }

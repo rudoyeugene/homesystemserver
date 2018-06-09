@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -20,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static com.rudyii.hsw.configuration.OptionsService.RECORD_INTERVAL;
 
 /**
  * Created by jack on 31.01.17.
@@ -38,6 +41,7 @@ public class VideoCaptor {
     private String timeStamp;
     private Camera camera;
     private File result;
+    private BufferedImage image;
 
     @Autowired
     public VideoCaptor(EventService eventService, OptionsService optionsService) {
@@ -50,6 +54,7 @@ public class VideoCaptor {
         this.camera = camera;
 
         generateTimestamps();
+
         this.result = new File(archiveLocation + "/" + camera.getName() + "_" + timeStamp + ".mp4");
 
         System.out.println("A new motion detected: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
@@ -65,7 +70,7 @@ public class VideoCaptor {
 
     private void publishCaptureEvent() {
         //TODO addbufferedImage to publish with motion record
-        eventService.publish(new CaptureEvent(result));
+        eventService.publish(new CaptureEvent(result, image));
     }
 
     private void generateTimestamps() {
@@ -101,7 +106,7 @@ public class VideoCaptor {
         }
 
         captureCommand.add(camera.getRtspUrl());
-        captureCommand.add(String.valueOf((Long) optionsService.getOption("recordInterval") / 1000));
+        captureCommand.add(String.valueOf(optionsService.getOption(RECORD_INTERVAL)));
         captureCommand.add(result.getCanonicalPath());
         captureCommand.add(camera.getName());
 
@@ -111,7 +116,7 @@ public class VideoCaptor {
 
     private void printParametersIntoLog() throws IOException {
         LOG.info("#1 as source: " + camera.getRtspUrl());
-        LOG.info("#2 as record interval in seconds: " + String.valueOf((Long) optionsService.getOption("recordInterval") / 1000));
+        LOG.info("#2 as record interval in seconds: " + String.valueOf(optionsService.getOption(RECORD_INTERVAL)));
         LOG.info("#3 as a capture result: " + result.getCanonicalPath());
         LOG.info("#4 as a camera name: " + camera.getName());
     }
@@ -119,9 +124,9 @@ public class VideoCaptor {
     private void runProcess(ProcessBuilder process) {
         try {
             Process runningProcess = process.inheritIO().start();
-            runningProcess.waitFor((Long) optionsService.getOption("recordInterval") + 1000, TimeUnit.MILLISECONDS);
+            runningProcess.waitFor((Long) optionsService.getOption(RECORD_INTERVAL) + 1, TimeUnit.SECONDS);
             if (runningProcess.isAlive()) {
-                runningProcess.waitFor((Long) optionsService.getOption("recordInterval"), TimeUnit.MILLISECONDS);
+                runningProcess.waitFor((Long) optionsService.getOption(RECORD_INTERVAL) / 2, TimeUnit.SECONDS);
                 runningProcess.destroy();
 
                 if (runningProcess.isAlive()) {
@@ -129,7 +134,7 @@ public class VideoCaptor {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Conversion failed!", e);
+            LOG.error("Video capture failed!", e);
         }
     }
 }

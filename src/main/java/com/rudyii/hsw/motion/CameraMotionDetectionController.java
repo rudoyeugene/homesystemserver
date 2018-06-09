@@ -115,7 +115,7 @@ public class CameraMotionDetectionController {
             try {
                 lock.createNewFile();
                 context.getBean(VideoCaptor.class).startCaptureFrom(camera);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 LOG.error("Failed to lock " + lock.getAbsolutePath(), e);
             }
         }

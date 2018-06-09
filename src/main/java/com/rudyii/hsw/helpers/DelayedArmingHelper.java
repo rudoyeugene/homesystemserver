@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import static com.rudyii.hsw.configuration.OptionsService.DELAYED_ARM_INTERVAL;
 import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 
@@ -35,7 +36,7 @@ public class DelayedArmingHelper {
     void armWithDelayInSeconds() throws InterruptedException {
         if (idle) {
             this.idle = false;
-            Long seconds = (Long) optionsService.getOption("delayedArmInterval");
+            Long seconds = (Long) optionsService.getOption(DELAYED_ARM_INTERVAL);
 
             while (seconds != 0) {
                 System.out.println("System will be ARMED in " + seconds + " seconds...");

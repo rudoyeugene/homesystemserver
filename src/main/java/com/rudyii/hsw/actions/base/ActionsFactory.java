@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,8 +55,8 @@ public class ActionsFactory {
     }
 
     @Async
-    public void addToQueueDropboxUploadAction(File uploadCandidate) {
-        DropboxUploadAction currentAction = context.getBean(DropboxUploadAction.class).withUploadCandidate(uploadCandidate);
+    public void addToQueueDropboxUploadAction(File uploadCandidate, BufferedImage image) {
+        DropboxUploadAction currentAction = context.getBean(DropboxUploadAction.class).withUploadCandidate(uploadCandidate).andImage(image);
         if (!currentAction.fireAction()) {
             actionsListToBeFired.add(currentAction);
         }

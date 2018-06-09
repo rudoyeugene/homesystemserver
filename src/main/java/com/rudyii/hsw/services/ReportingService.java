@@ -21,6 +21,8 @@ import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 
+import static com.rudyii.hsw.configuration.OptionsService.*;
+
 /**
  * Created by jack on 13.04.17.
  */
@@ -57,9 +59,9 @@ public class ReportingService {
     @Scheduled(cron = "0 0 * * * *")
     public void sendHourlyReportScheduled() {
         LOG.info("Generating hourly report...");
-        if (armedStateService.isArmed() && (boolean) optionsService.getOption("hourlyReportEnabled")) {
+        if (armedStateService.isArmed() && (boolean) optionsService.getOption(HOURLY_REPORT_ENABLED)) {
             sendHourlyReport();
-        } else if ((boolean) optionsService.getOption("hourlyReportForced")) {
+        } else if ((boolean) optionsService.getOption(HOURLY_REPORT_FORCED)) {
             sendHourlyReport();
         } else {
             LOG.info("System neither ARMED nor hourly report forced, skipping hourly report sending.");
@@ -94,7 +96,7 @@ public class ReportingService {
         body.add("Current internal IP: <b>" + ispService.getLocalIpAddress() + "</b>");
         body.add("Total monitored cameras: <b>" + cameraMotionDetectionControllers.length + "</b>");
 
-        if ((boolean) optionsService.getOption("monitoringEnabled")) {
+        if ((boolean) optionsService.getOption(MONITORING_ENABLED)) {
             body.add("Monitored targets states:");
             body.add("<ul>");
             ipMonitor.getStates().forEach(line -> body.add("<li>" + line));

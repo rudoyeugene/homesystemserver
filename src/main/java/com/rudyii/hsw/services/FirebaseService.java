@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.rudyii.hsw.configuration.OptionsService.RECORD_INTERVAL;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 import static com.rudyii.hsw.helpers.PidGeneratorShutdownHandler.getPid;
@@ -143,6 +144,7 @@ public class FirebaseService {
 
     @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionDetectedEvent.class, UploadEvent.class})
     public void onEvent(EventBase event) {
+        final boolean[] logRecordPushed = {false};
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("serverName", serverAlias);
 
@@ -166,7 +168,7 @@ public class FirebaseService {
 
             if (lastMotionTimestamp == null) {
                 motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
-            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (long) optionsService.getOption("recordInterval")) {
+            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (long) optionsService.getOption(RECORD_INTERVAL) * 1000) {
                 System.out.println("Motion event for camera " + (motionDetectedEvent.getCameraName() + " was ignored"));
                 return;
             } else {
@@ -205,6 +207,7 @@ public class FirebaseService {
                     thisJsonObject.remove("image");
 
                     sendFcmMessage(thisJsonObject);
+                    logRecordPushed[0] = true;
                 }
             }, hswExecutor);
 
@@ -214,6 +217,34 @@ public class FirebaseService {
             jsonObject.addProperty("reason", "videoRecorded");
             jsonObject.addProperty("fileName", uploadEvent.getFileName());
             jsonObject.addProperty("url", uploadEvent.getUrl());
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+            try {
+                ImageIO.write(uploadEvent.getImage(), "PNG", bos);
+                byte[] imageBytes = bos.toByteArray();
+
+                BASE64Encoder encoder = new BASE64Encoder();
+                jsonObject.addProperty("image", encoder.encode(imageBytes));
+
+                bos.close();
+            } catch (IOException e) {
+                LOG.error("Error occurred: ", e);
+            }
+
+            firebaseDatabaseProvider.pushData("/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class)).addListener(new Runnable() {
+                private JsonObject thisJsonObject;
+
+                @Override
+                public void run() {
+                    this.thisJsonObject = jsonObject;
+                    thisJsonObject.remove("image");
+
+                    sendFcmMessage(thisJsonObject);
+
+                    logRecordPushed[0] = true;
+                }
+            }, hswExecutor);
+
 
         } else if (event instanceof IspEvent) {
             refreshWanInfo();
@@ -233,7 +264,11 @@ public class FirebaseService {
             sendFcmMessage(jsonObject);
         }
 
-        firebaseDatabaseProvider.pushData("/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
+        if (logRecordPushed[0]) {
+            logRecordPushed[0] = false;
+        } else {
+            firebaseDatabaseProvider.pushData("/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
+        }
     }
 
     private void updateStatuses(ArmedStateEnum armedState, ArmedModeEnum armedMode) {
@@ -402,13 +437,16 @@ public class FirebaseService {
         //TODO add support of the additional event model
         localConnectedClients.forEach((key, value) -> {
             try {
-                String device = ((HashMap<String, String>) value).get("device");
-                String appVersion = ((HashMap<String, String>) value).get("appVersion");
-                String token = ((HashMap<String, String>) value).get("token");
+                String user = key;
+                HashMap<String, String> userProperties = (HashMap<String, String>) value;
 
-                LOG.info("Ready to send message to the Client on device " + device + " with client version " + appVersion);
+                String device = userProperties.get("device");
+                String appVersion = userProperties.get("appVersion");
+                String token = userProperties.get("token");
 
-                notificationsService.sendFcmMessage(device, token, messageData);
+                LOG.info("Ready to send message to the Client:" + user + " on device " + device + " with client version " + appVersion);
+
+                notificationsService.sendFcmMessage(user, token, messageData);
             } catch (Exception e) {
                 LOG.error("Failed to send FCM Message to " + key, e);
             }
