@@ -1,7 +1,7 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.actions.base.ActionsFactory;
-import com.rudyii.hsw.events.CaptureEvent;
+import com.rudyii.hsw.objects.events.CaptureEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,8 +1,8 @@
 package com.rudyii.hsw.services;
 
 import com.google.gson.Gson;
-import com.rudyii.hsw.events.IspEvent;
 import com.rudyii.hsw.objects.WanIp;
+import com.rudyii.hsw.objects.events.IspEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.util.IOUtil;

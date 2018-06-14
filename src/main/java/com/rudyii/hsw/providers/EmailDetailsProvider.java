@@ -9,22 +9,22 @@ import org.springframework.stereotype.Component;
 @Component
 public class EmailDetailsProvider {
 
-    @Value("${mail.smtp.port}")
+    @Value("#{hswProperties['mail.smtp.port']}")
     private Integer smptPort;
 
-    @Value("${mail.smtp.host}")
+    @Value("#{hswProperties['mail.smtp.host']}")
     private String smptServer;
 
-    @Value("${mail.username}")
+    @Value("#{hswProperties['mail.username']}")
     private String username;
 
-    @Value("${mail.password}")
+    @Value("#{hswProperties['mail.password']}")
     private String password;
 
-    @Value("${mail.recipients}")
+    @Value("#{hswProperties['mail.recipients']}")
     private String recipients;
 
-    @Value("${mail.admin}")
+    @Value("#{hswProperties['mail.admin']}")
     private String admin;
 
     public Integer getSmptPort() {

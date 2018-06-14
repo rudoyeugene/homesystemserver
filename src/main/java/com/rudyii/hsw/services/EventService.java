@@ -1,6 +1,6 @@
 package com.rudyii.hsw.services;
 
-import com.rudyii.hsw.events.EventBase;
+import com.rudyii.hsw.objects.events.EventBase;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Service;

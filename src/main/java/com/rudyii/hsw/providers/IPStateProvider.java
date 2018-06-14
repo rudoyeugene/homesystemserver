@@ -1,7 +1,7 @@
 package com.rudyii.hsw.providers;
 
 import com.rudyii.hsw.enums.IPStateEnum;
-import com.rudyii.hsw.events.IPEvent;
+import com.rudyii.hsw.objects.events.IPEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;

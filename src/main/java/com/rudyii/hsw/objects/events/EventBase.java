@@ -1,4 +1,4 @@
-package com.rudyii.hsw.events;
+package com.rudyii.hsw.objects.events;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

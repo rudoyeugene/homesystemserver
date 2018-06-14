@@ -1,8 +1,8 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hsw.configuration.OptionsService;
-import com.rudyii.hsw.events.CaptureEvent;
 import com.rudyii.hsw.objects.Camera;
+import com.rudyii.hsw.objects.events.CaptureEvent;
 import com.rudyii.hsw.services.EventService;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.logging.log4j.LogManager;
@@ -13,9 +13,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
+import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -35,7 +37,7 @@ public class VideoCaptor {
     private EventService eventService;
     private OptionsService optionsService;
 
-    @Value("${video.archive.location}")
+    @Value("#{hswProperties['video.archive.location']}")
     private String archiveLocation;
 
     private String timeStamp;
@@ -52,7 +54,6 @@ public class VideoCaptor {
     @Async
     void startCaptureFrom(Camera camera) {
         this.camera = camera;
-
         generateTimestamps();
 
         this.result = new File(archiveLocation + "/" + camera.getName() + "_" + timeStamp + ".mp4");
@@ -60,6 +61,7 @@ public class VideoCaptor {
         System.out.println("A new motion detected: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 
         try {
+            this.image = ImageIO.read(new URL(camera.getJpegUrl()));
             getFfmpegStream();
         } catch (IOException e) {
             LOG.error("Failed to proess output file", e);

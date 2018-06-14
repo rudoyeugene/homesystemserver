@@ -11,7 +11,7 @@ public class DropboxClientProvider {
 
     private DbxClientV2 client;
 
-    @Value("${dropbox.token}")
+    @Value("#{hswProperties['dropbox.token']}")
     private String dropboxToken;
 
     @Bean

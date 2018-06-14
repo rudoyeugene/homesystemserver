@@ -1,6 +1,6 @@
 package com.rudyii.hsw.services;
 
-import com.rudyii.hsw.events.ServerKeyUpdatedEvent;
+import com.rudyii.hsw.objects.events.ServerKeyUpdatedEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +22,7 @@ public class UuidService {
 
     private String serverKey;
 
-    @Value("${server.alias}")
+    @Value("#{hswProperties['server.alias']}")
     private String serverAlias;
 
     public UuidService(Connection connection, EventService eventService) {

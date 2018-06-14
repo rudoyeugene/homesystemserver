@@ -50,7 +50,7 @@ public class AdminPortal {
     @Value("${application.version}")
     private String appVersion;
 
-    @Value("${client.apk.path}")
+    @Value("#{hswProperties['client.apk.path']}")
     private String apkFileLocation;
 
     @Autowired

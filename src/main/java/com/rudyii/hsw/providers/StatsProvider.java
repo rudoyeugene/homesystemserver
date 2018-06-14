@@ -48,9 +48,15 @@ public class StatsProvider {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                ConcurrentHashMap<String, Long> usageStats;
                 String today = getToday();
-                Long historicalToday = calculateHistoricalToday();
-                final ConcurrentHashMap<String, Long> usageStats = new ConcurrentHashMap<>((HashMap<String, Long>) dataSnapshot.getValue());
+                HashMap<String, Long> data = (HashMap<String, Long>) dataSnapshot.getValue();
+
+                if (data == null) {
+                    usageStats = new ConcurrentHashMap<>();
+                } else {
+                    usageStats = new ConcurrentHashMap<>(data);
+                }
 
                 if (usageStats.get(today) == null) {
                     LOG.info("Initialized today with ZERO");
@@ -59,6 +65,7 @@ public class StatsProvider {
 
                 switch (action) {
                     case CLEANUP:
+                        Long historicalToday = calculateHistoricalToday();
                         LOG.info("Cleaning obsolete usage stats");
                         usageStats.forEach((k, v) -> {
                             if (Long.valueOf(k) < historicalToday) {

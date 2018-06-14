@@ -16,14 +16,14 @@
 
     <context:component-scan base-package="com.rudyii.hsw.*"/>
 
-    <context:property-placeholder location="classpath:application.properties, file:conf/system.properties"
+    <context:property-placeholder location="classpath:application.properties"
                                   ignore-unresolvable="true"/>
 
     <import resource="file:conf/system-settings.xml"/>
 
     <task:annotation-driven executor="hswExecutor" scheduler="hswScheduler" proxy-target-class="true"/>
-    <task:executor id="hswExecutor" pool-size="${pool.size}" queue-capacity="${queue.capacity}"/>
-    <task:scheduler id="hswScheduler" pool-size="${pool.size}"/>
+    <task:executor id="hswExecutor" pool-size="#{hswProperties['pool.size']}" queue-capacity="#{hswProperties['queue.capacity']}"/>
+    <task:scheduler id="hswScheduler" pool-size="#{hswProperties['pool.size']}"/>
 
     <bean id="applicationEventMulticaster"
           class="org.springframework.context.event.SimpleApplicationEventMulticaster">

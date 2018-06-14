@@ -1,6 +1,6 @@
 package com.rudyii.hsw.services;
 
-import com.rudyii.hsw.events.ArmedEvent;
+import com.rudyii.hsw.objects.events.ArmedEvent;
 import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

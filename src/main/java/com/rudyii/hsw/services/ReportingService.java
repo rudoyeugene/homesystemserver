@@ -1,12 +1,12 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.configuration.OptionsService;
-import com.rudyii.hsw.events.CameraRebootEvent;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
 import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.Attachment;
+import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.providers.NotificationsService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -1,6 +1,6 @@
 package com.rudyii.hsw.configuration;
 
-import com.rudyii.hsw.events.OptionsChangedEvent;
+import com.rudyii.hsw.objects.events.OptionsChangedEvent;
 import com.rudyii.hsw.springcore.HomeSystem;
 import org.apache.log4j.Level;
 import org.apache.logging.log4j.LogManager;

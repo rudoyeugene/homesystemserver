@@ -1,9 +1,9 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hsw.configuration.OptionsService;
-import com.rudyii.hsw.events.CameraRebootEvent;
-import com.rudyii.hsw.events.MotionDetectedEvent;
 import com.rudyii.hsw.objects.Camera;
+import com.rudyii.hsw.objects.events.CameraRebootEvent;
+import com.rudyii.hsw.objects.events.MotionDetectedEvent;
 import com.rudyii.hsw.services.EventService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

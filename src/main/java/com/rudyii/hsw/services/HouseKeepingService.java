@@ -33,7 +33,7 @@ public class HouseKeepingService {
     private Connection connection;
     private OptionsService optionsService;
 
-    @Value("${video.archive.location}")
+    @Value("#{hswProperties['video.archive.location']}")
     private String archiveLocation;
 
     @Autowired

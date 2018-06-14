@@ -1,4 +1,4 @@
-package com.rudyii.hsw.events;
+package com.rudyii.hsw.objects.events;
 
 /**
  * Created by jack on 04.02.17.

@@ -1,7 +1,7 @@
 package com.rudyii.hsw.services;
 
-import com.rudyii.hsw.events.CameraRebootEvent;
 import com.rudyii.hsw.helpers.ArmingController;
+import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;

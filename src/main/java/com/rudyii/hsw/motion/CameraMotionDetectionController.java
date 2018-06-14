@@ -1,10 +1,10 @@
 package com.rudyii.hsw.motion;
 
-import com.rudyii.hsw.events.ArmedEvent;
-import com.rudyii.hsw.events.CameraRebootEvent;
-import com.rudyii.hsw.events.EventBase;
-import com.rudyii.hsw.events.MotionDetectedEvent;
 import com.rudyii.hsw.objects.Camera;
+import com.rudyii.hsw.objects.events.ArmedEvent;
+import com.rudyii.hsw.objects.events.CameraRebootEvent;
+import com.rudyii.hsw.objects.events.EventBase;
+import com.rudyii.hsw.objects.events.MotionDetectedEvent;
 import com.rudyii.hsw.services.ArmedStateService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -1,7 +1,7 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.enums.ArmedModeEnum;
-import com.rudyii.hsw.events.ArmedEvent;
+import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.providers.IPStateProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

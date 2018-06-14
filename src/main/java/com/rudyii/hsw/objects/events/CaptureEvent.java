@@ -1,4 +1,4 @@
-package com.rudyii.hsw.events;
+package com.rudyii.hsw.objects.events;
 
 import java.awt.image.BufferedImage;
 import java.io.File;

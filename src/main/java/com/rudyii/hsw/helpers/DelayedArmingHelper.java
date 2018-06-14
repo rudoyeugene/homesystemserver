@@ -1,7 +1,7 @@
 package com.rudyii.hsw.helpers;
 
 import com.rudyii.hsw.configuration.OptionsService;
-import com.rudyii.hsw.events.ArmedEvent;
+import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.services.EventService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

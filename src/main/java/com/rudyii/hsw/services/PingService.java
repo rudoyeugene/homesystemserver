@@ -1,7 +1,7 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.enums.IPStateEnum;
-import com.rudyii.hsw.events.IPEvent;
+import com.rudyii.hsw.objects.events.IPEvent;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

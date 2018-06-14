@@ -7,7 +7,7 @@ import com.dropbox.core.v2.sharing.RequestedVisibility;
 import com.dropbox.core.v2.sharing.SharedLinkMetadata;
 import com.dropbox.core.v2.sharing.SharedLinkSettings;
 import com.rudyii.hsw.actions.base.Action;
-import com.rudyii.hsw.events.UploadEvent;
+import com.rudyii.hsw.objects.events.UploadEvent;
 import com.rudyii.hsw.services.EventService;
 import com.rudyii.hsw.services.IspService;
 import org.apache.logging.log4j.LogManager;
