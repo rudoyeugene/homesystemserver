@@ -5,6 +5,28 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-4.1.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
+    <!--System settings-->
+    <util:properties id="hswProperties">
+        <prop key="mail.smtp.host">smtp.gmail.com</prop>
+        <prop key="mail.smtp.port">587</prop>
+        <prop key="mail.username">my.home.system@gmail.com</prop>
+        <prop key="mail.password">myPassword</prop>
+        <prop key="mail.recipients">master1@gmail.com,master2@gmail.com</prop>
+        <prop key="mail.admin">admin@gmail.com</prop>
+
+        <prop key="dropbox.token">{visit https://www.dropbox.com/developers/apps/create to create and generate your own}</prop>
+
+        <prop key="video.archive.location">/home/pi/videoarchive</prop>
+
+        <prop key="server.alias">dummy_server</prop>
+        <prop key="pool.size">50</prop>
+        <prop key="queue.capacity">50</prop>
+        <prop key="client.apk.path">
+            /mnt/storage/apps/homesystem/apk/app-release.apk
+        </prop>
+
+    </util:properties>
+
     <!--Camera settings section below, VSTARCAM C7824WIP recommended-->
     <bean id="Corridor" class="com.rudyii.hsw.motion.CameraMotionDetectionController">
         <property name="ip" value="192.168.1.9"/>
