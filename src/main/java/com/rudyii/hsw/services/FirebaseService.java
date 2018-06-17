@@ -71,7 +71,7 @@ public class FirebaseService {
     public static final String PID = "pid";
     public static final String STARTING = "starting";
     public static final String RECORD_ID = "recordId";
-    public static final String BOTH = "both";
+    public static final String ALL = "all";
     private static Logger LOG = LogManager.getLogger(FirebaseService.class);
 
     @Value("${application.version}")
@@ -166,7 +166,7 @@ public class FirebaseService {
         jsonObject.addProperty(REASON, SERVER_STARTUP_OR_SHUTDOWN);
         jsonObject.addProperty(ACTION, STOPPING);
 
-        sendFcmMessage(jsonObject, BOTH);
+        sendFcmMessage(jsonObject, ALL);
 
         firebaseDatabaseProvider.pushData("/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
 
@@ -189,7 +189,7 @@ public class FirebaseService {
             jsonObject.addProperty(ARMED_STATE, armedEvent.getArmedState().toString());
             jsonObject.addProperty(PORTS_OPEN, upnpService.isPortsOpen());
 
-            sendFcmMessage(jsonObject, BOTH);
+            sendFcmMessage(jsonObject, ALL);
 
         } else if (event instanceof MotionDetectedEvent) {
             MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
@@ -266,7 +266,7 @@ public class FirebaseService {
             jsonObject.addProperty(ISP, ispService.getCurrentWanIp().getIsp());
             jsonObject.addProperty(IP, ispService.getCurrentWanIp().getQuery());
 
-            sendFcmMessage(jsonObject, BOTH);
+            sendFcmMessage(jsonObject, ALL);
 
         } else if (event instanceof CameraRebootEvent) {
             CameraRebootEvent cameraRebootEvent = (CameraRebootEvent) event;
@@ -274,7 +274,7 @@ public class FirebaseService {
             jsonObject.addProperty(REASON, CAMERA_REBOOT);
             jsonObject.addProperty(CAMERA_NAME, cameraRebootEvent.getCameraName());
 
-            sendFcmMessage(jsonObject, BOTH);
+            sendFcmMessage(jsonObject, ALL);
         }
 
         if (logRecordPushed[0]) {
@@ -451,7 +451,7 @@ public class FirebaseService {
         jsonObject.addProperty(PID, getPid());
         jsonObject.addProperty(SERVER_NAME, serverAlias);
 
-        sendFcmMessage(jsonObject, BOTH);
+        sendFcmMessage(jsonObject, ALL);
 
         firebaseDatabaseProvider.pushData("/log/" + System.currentTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
 
@@ -475,7 +475,7 @@ public class FirebaseService {
 
     private void sendFcmMessage(JsonObject messageData, String notificationType) {
         clients.forEach(client -> {
-            if (client.getNotificationType().equals(notificationType) || notificationType.equals(BOTH)) {
+            if (client.getNotificationType().equals(notificationType) || notificationType.equals(ALL)) {
                 String userId = client.getUserId();
                 String device = client.getDevice();
                 String appVersion = client.getAppVersion();
