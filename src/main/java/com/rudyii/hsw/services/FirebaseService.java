@@ -476,6 +476,10 @@ public class FirebaseService {
     private void sendFcmMessage(JsonObject messageData, String notificationType) {
         clients.forEach(client -> {
             String clientNotificationType = client.getNotificationType();
+            String userId = client.getUserId();
+            String device = client.getDevice();
+            String appVersion = client.getAppVersion();
+
             boolean notify = false;
 
             if (notificationType.equals(ALL)) {
@@ -485,16 +489,13 @@ public class FirebaseService {
             }
 
             if (notify) {
-                String userId = client.getUserId();
-                String device = client.getDevice();
-                String appVersion = client.getAppVersion();
                 String token = client.getToken();
 
                 LOG.info("Ready to send message to the Client:" + userId + " on device " + device + " with client version " + appVersion);
 
                 notificationsService.sendFcmMessage(userId, token, messageData);
             } else {
-                LOG.warn("Nobody interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
+                LOG.warn("Client:" + userId + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
             }
         });
     }
