@@ -475,7 +475,9 @@ public class FirebaseService {
 
     private void sendFcmMessage(JsonObject messageData, String notificationType) {
         clients.forEach(client -> {
-            if (client.getNotificationType().equals(notificationType) || notificationType.equals(ALL)) {
+            String clientNotificationType = client.getNotificationType();
+
+            if (notificationType.equals(clientNotificationType) || ALL.equals(clientNotificationType)) {
                 String userId = client.getUserId();
                 String device = client.getDevice();
                 String appVersion = client.getAppVersion();
