@@ -11,7 +11,6 @@ import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
 import com.rudyii.hsw.helpers.Uptime;
-import com.rudyii.hsw.objects.Client;
 import com.rudyii.hsw.objects.WanIp;
 import com.rudyii.hsw.objects.events.*;
 import com.rudyii.hsw.providers.NotificationsService;
@@ -59,6 +58,7 @@ public class FirebaseService {
     public static final String CAMERA_NAME = "cameraName";
     public static final String MOTION_AREA = "motionArea";
     public static final String VIDEO_RECORDED = "videoRecorded";
+    public static final String NOTIFICATIONS_MUTED = "true";
     public static final String FILE_NAME = "fileName";
     public static final String URL = "url";
     public static final String ISP_CHANGED = "ispChanged";
@@ -89,9 +89,9 @@ public class FirebaseService {
     private OptionsService optionsService;
     private NotificationsService notificationsService;
     private ThreadPoolTaskExecutor hswExecutor;
+    private ClientsService clientsService;
     private ArrayList<DatabaseReference> databaseReferences;
     private ArrayList<ValueEventListener> valueEventListeners;
-    private ArrayList<Client> clients = new ArrayList<>();
 
     private ConcurrentHashMap<String, Object> statuses, motions, requests;
     private boolean alreadyFired;
@@ -101,7 +101,8 @@ public class FirebaseService {
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
                            OptionsService optionsService,
-                           NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor) {
+                           NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor,
+                           ClientsService clientsService) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
         this.uptime = uptime;
@@ -112,6 +113,7 @@ public class FirebaseService {
         this.optionsService = optionsService;
         this.notificationsService = notificationsService;
         this.hswExecutor = hswExecutor;
+        this.clientsService = clientsService;
 
         this.statuses = new ConcurrentHashMap<>();
         this.motions = new ConcurrentHashMap<>();
@@ -154,7 +156,6 @@ public class FirebaseService {
         DatabaseReference uptimeRef = firebaseDatabaseProvider.getReference("/info/uptime");
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
-        updateConnectedClients();
         unregisterListeners();
         registerListeners();
     }
@@ -316,12 +317,6 @@ public class FirebaseService {
         ValueEventListener resendHourlyRefValueEventListener = getResendHourlyValueEventListener();
         valueEventListeners.add(resendHourlyRefValueEventListener);
         resendHourlyRef.addValueEventListener(resendHourlyRefValueEventListener);
-
-        DatabaseReference connectedClientsRef = firebaseDatabaseProvider.getReference("/connectedClients");
-        databaseReferences.add(connectedClientsRef);
-        ValueEventListener connectedClientsValueEventListener = getConnectedClientsValueEventListener();
-        valueEventListeners.add(connectedClientsValueEventListener);
-        connectedClientsRef.addValueEventListener(connectedClientsValueEventListener);
     }
 
     private void unregisterListeners() {
@@ -387,32 +382,6 @@ public class FirebaseService {
         };
     }
 
-    private ValueEventListener getConnectedClientsValueEventListener() {
-        return new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                HashMap<String, Object> connectedClients = (HashMap<String, Object>) dataSnapshot.getValue();
-
-                if (connectedClients == null) {
-                    LOG.warn("No connected clients found!");
-                } else {
-                    clients.clear();
-
-                    connectedClients.forEach((userId, value) -> {
-                        HashMap<String, String> userProperties = (HashMap<String, String>) value;
-                        clients.add(new Client(userId, userProperties));
-                    });
-
-                }
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Connected Clients Firebase data!");
-            }
-        };
-    }
-
     @Scheduled(cron = "0 */1 * * * *")
     public void ping() {
         DatabaseReference pingRef = firebaseDatabaseProvider.getReference("/info/ping");
@@ -423,11 +392,6 @@ public class FirebaseService {
 
         refreshWanInfo();
         notifyServerStarted();
-    }
-
-    private void updateConnectedClients() {
-        DatabaseReference connectedClientsRef = firebaseDatabaseProvider.getReference("/connectedClients");
-        connectedClientsRef.addListenerForSingleValueEvent(getConnectedClientsValueEventListener());
     }
 
     private void refreshWanInfo() {
@@ -461,7 +425,7 @@ public class FirebaseService {
     private void tryToFillJsonObjectWithImage(JsonObject jsonObject, BufferedImage image) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
-            ImageIO.write(image, "PNG", bos);
+            ImageIO.write(image, "JPG", bos);
             byte[] imageBytes = bos.toByteArray();
 
             BASE64Encoder encoder = new BASE64Encoder();
@@ -474,7 +438,7 @@ public class FirebaseService {
     }
 
     private void sendFcmMessage(JsonObject messageData, String notificationType) {
-        clients.forEach(client -> {
+        clientsService.getClients().forEach(client -> {
             String clientNotificationType = client.getNotificationType();
             String userId = client.getUserId();
             String device = client.getDevice();
@@ -482,10 +446,14 @@ public class FirebaseService {
 
             boolean notify = false;
 
-            if (notificationType.equals(ALL)) {
+            if (notificationType.equals(clientNotificationType)
+                    || ALL.equals(clientNotificationType)
+                    || notificationType.equals(ALL)) {
                 notify = true;
-            } else if (notificationType.equals(clientNotificationType) || ALL.equals(clientNotificationType)) {
-                notify = true;
+            }
+
+            if (client.isNotificationsMuted()){
+                notify = false;
             }
 
             if (notify) {

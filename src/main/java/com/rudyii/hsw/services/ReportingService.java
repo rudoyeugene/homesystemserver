@@ -105,6 +105,6 @@ public class ReportingService {
             body.addAll(boardMonitor.getMonitoringResults());
         }
 
-        notificationsService.sendEmail("Home System hourly report", body, attachments, false);
+        notificationsService.sendEmail("Home System hourly report", body, attachments);
     }
 }

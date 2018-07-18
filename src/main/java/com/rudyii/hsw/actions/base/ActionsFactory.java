@@ -39,8 +39,8 @@ public class ActionsFactory {
     }
 
     @Async
-    public void addToQueueMailSenderAction(String subject, ArrayList<String> body, ArrayList<Attachment> attachments, boolean forAdmin) {
-        MailSendAction currentAction = context.getBean(MailSendAction.class).withData(subject, body, attachments, forAdmin);
+    public void addToQueueMailSenderAction(String subject, ArrayList<String> body, ArrayList<Attachment> attachments) {
+        MailSendAction currentAction = context.getBean(MailSendAction.class).withData(subject, body, attachments);
         if (!currentAction.fireAction()) {
             actionsListToBeFired.add(currentAction);
         }

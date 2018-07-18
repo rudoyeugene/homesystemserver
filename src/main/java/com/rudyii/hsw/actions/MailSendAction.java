@@ -2,7 +2,9 @@ package com.rudyii.hsw.actions;
 
 import com.rudyii.hsw.actions.base.Action;
 import com.rudyii.hsw.objects.Attachment;
+import com.rudyii.hsw.objects.Client;
 import com.rudyii.hsw.providers.EmailDetailsProvider;
+import com.rudyii.hsw.services.ClientsService;
 import com.rudyii.hsw.services.IspService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,16 +24,18 @@ public class MailSendAction implements Action {
     private static Logger LOG = LogManager.getLogger(MailSendAction.class);
 
     private EmailDetailsProvider emailDetailsProvider;
+    private ClientsService clientsService;
     private String subject;
     private ArrayList<String> body;
     private ArrayList<Attachment> attachments;
 
     private IspService ispService;
-    private boolean forAdmin;
 
-    public MailSendAction(IspService ispService, EmailDetailsProvider emailDetailsProvider) {
+    public MailSendAction(IspService ispService, EmailDetailsProvider emailDetailsProvider,
+                          ClientsService clientsService) {
         this.ispService = ispService;
         this.emailDetailsProvider = emailDetailsProvider;
+        this.clientsService = clientsService;
     }
 
     @Override
@@ -44,35 +48,25 @@ public class MailSendAction implements Action {
         }
     }
 
-    public MailSendAction withData(String subject, ArrayList<String> body, ArrayList<Attachment> attachments, boolean forAdmin) {
+    public MailSendAction withData(String subject, ArrayList<String> body, ArrayList<Attachment> attachments) {
         this.subject = subject;
         this.body = body;
         this.attachments = attachments;
-        this.forAdmin = forAdmin;
 
         return this;
     }
 
     @Async
     public void sendMessage() {
-        String currentRecipients;
-
-        if (forAdmin) {
-            currentRecipients = emailDetailsProvider.getAdmin();
-        } else {
-            currentRecipients = emailDetailsProvider.getRecipients();
-        }
-
-        String logLine = "Email successfully sent to " + emailDetailsProvider.getRecipients() + " with subject: " + subject + ".";
-
         Mailer mailer = new Mailer(emailDetailsProvider.getSmptServer(), emailDetailsProvider.getSmptPort(), emailDetailsProvider.getUsername(), emailDetailsProvider.getPassword(), TransportStrategy.SMTP_TLS);
         Email email = new Email();
         email.setSubject(subject);
         email.setFromAddress("Home System", emailDetailsProvider.getUsername());
-        String[] recipientsList = currentRecipients.split(",");
 
-        for (String recipient : recipientsList) {
-            email.addRecipient(null, recipient, RecipientType.TO);
+        for (Client client : clientsService.getClients()) {
+            if (!client.isHourlyReportMuted()) {
+                email.addRecipient(null, client.getEmail(), RecipientType.TO);
+            }
         }
 
         if (body != null) {
@@ -86,22 +80,14 @@ public class MailSendAction implements Action {
             for (Attachment attachment : attachments) {
                 email.addAttachment(attachment.getName(), attachment.getData(), attachment.getMimeType());
             }
-
-            logLine = "Email successfully sent to " + emailDetailsProvider.getRecipients() + " with subject: " + subject + " and " + attachments.size() + " attachment(s)";
         }
 
         try {
-            if (subject != null) {
+            if (subject != null && email.getRecipients().size() > 0) {
                 mailer.sendMail(email);
-            } else {
-                logLine = "Mail sending skipped due to subject is null";
             }
         } catch (Exception e) {
-            logLine = "ERROR during sending mail:";
-            LOG.error(logLine, e);
-            return;
+            LOG.error("Failed to send mail: ", e);
         }
-
-        LOG.info(logLine);
     }
 }

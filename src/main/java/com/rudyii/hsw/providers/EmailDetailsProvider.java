@@ -21,12 +21,6 @@ public class EmailDetailsProvider {
     @Value("#{hswProperties['mail.password']}")
     private String password;
 
-    @Value("#{hswProperties['mail.recipients']}")
-    private String recipients;
-
-    @Value("#{hswProperties['mail.admin']}")
-    private String admin;
-
     public Integer getSmptPort() {
         return smptPort;
     }
@@ -41,13 +35,5 @@ public class EmailDetailsProvider {
 
     public String getPassword() {
         return password;
-    }
-
-    public String getRecipients() {
-        return recipients;
-    }
-
-    public String getAdmin() {
-        return admin;
     }
 }

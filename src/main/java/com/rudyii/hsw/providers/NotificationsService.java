@@ -22,8 +22,8 @@ public class NotificationsService {
         this.actionsFactory = actionsFactory;
     }
 
-    public void sendEmail(String subject, ArrayList<String> body, ArrayList<Attachment> attachments, boolean forAdmin) {
-        actionsFactory.addToQueueMailSenderAction(subject, body, attachments, forAdmin);
+    public void sendEmail(String subject, ArrayList<String> body, ArrayList<Attachment> attachments) {
+        actionsFactory.addToQueueMailSenderAction(subject, body, attachments);
     }
 
     public void sendFcmMessage(String name, String recipientToken, JsonObject messageData) {
