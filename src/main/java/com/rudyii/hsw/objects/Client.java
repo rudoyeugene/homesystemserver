@@ -19,8 +19,8 @@ public class Client {
         this.appVersion = (String) userProperties.get("appVersion");
         this.token = (String) userProperties.get("token");
         this.notificationType = (String) userProperties.get("notificationType");
-        this.notificationsMuted = (Boolean) userProperties.get("notificationsMuted");
-        this.hourlyReportMuted = (Boolean) userProperties.get("hourlyReportMuted");
+        this.notificationsMuted = Boolean.TRUE.equals(userProperties.get("notificationsMuted"));
+        this.hourlyReportMuted = Boolean.TRUE.equals(userProperties.get("hourlyReportMuted"));
         this.email = (String) userProperties.get("email");
     }
 
