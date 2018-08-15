@@ -36,6 +36,7 @@ public class ReportingService {
     private NotificationsService notificationsService;
     private BoardMonitor boardMonitor;
     private OptionsService optionsService;
+    private UuidService uuidService;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
     private EventService eventService;
 
@@ -43,7 +44,7 @@ public class ReportingService {
     public ReportingService(ArmedStateService armedStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
                             Uptime uptime, BoardMonitor boardMonitor, EventService eventService,
-                            OptionsService optionsService,
+                            OptionsService optionsService, UuidService uuidService,
                             CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.armedStateService = armedStateService;
         this.ispService = ispService;
@@ -53,6 +54,7 @@ public class ReportingService {
         this.boardMonitor = boardMonitor;
         this.eventService = eventService;
         this.optionsService = optionsService;
+        this.uuidService = uuidService;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
@@ -105,6 +107,6 @@ public class ReportingService {
             body.addAll(boardMonitor.getMonitoringResults());
         }
 
-        notificationsService.sendEmail("Home System hourly report", body, attachments);
+        notificationsService.sendEmail(uuidService.getServerAlias() + " hourly report", body, attachments);
     }
 }
