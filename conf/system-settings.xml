@@ -19,6 +19,7 @@
         <prop key="video.archive.location">/home/pi/videoarchive</prop>
 
         <prop key="server.alias">dummy_server</prop>
+        <prop key="server.port">8080</prop>
         <prop key="pool.size">50</prop>
         <prop key="queue.capacity">50</prop>
         <prop key="client.apk.path">
