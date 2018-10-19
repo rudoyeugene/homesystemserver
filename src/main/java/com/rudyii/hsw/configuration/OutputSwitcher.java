@@ -2,7 +2,7 @@ package com.rudyii.hsw.configuration;
 
 import com.rudyii.hsw.objects.events.OptionsChangedEvent;
 import com.rudyii.hsw.springcore.HomeSystem;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +13,8 @@ import javax.annotation.PostConstruct;
 import java.io.PrintStream;
 
 import static com.rudyii.hsw.configuration.OptionsService.VERBOSE_OUTPUT_ENABLED;
-import static org.apache.log4j.Level.ERROR;
-import static org.apache.log4j.Level.INFO;
+import static org.apache.logging.log4j.Level.ERROR;
+import static org.apache.logging.log4j.Level.INFO;
 
 @Component
 public class OutputSwitcher {

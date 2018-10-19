@@ -9,8 +9,8 @@ import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.events.OptionsChangedEvent;
 import com.rudyii.hsw.objects.events.ServerKeyUpdatedEvent;
 import com.rudyii.hsw.services.EventService;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -174,11 +174,13 @@ public class OptionsService {
             Long rebootTimeout = cameraMotionDetectionController.getRebootTimeout();
             Long motionArea = cameraMotionDetectionController.getMotionArea();
             Long noiseLevel = cameraMotionDetectionController.getNoiseLevel();
+            boolean healthCheckEnabled = cameraMotionDetectionController.isHealthCheckEnabled();
 
             cameraOptions.put("interval", interval);
             cameraOptions.put("rebootTimeout", rebootTimeout);
             cameraOptions.put("motionArea", motionArea);
             cameraOptions.put("noiseLevel", noiseLevel);
+            cameraOptions.put("healthCheckEnabled", healthCheckEnabled);
 
             localCamerasOptions.put(cameraName, cameraOptions);
         }

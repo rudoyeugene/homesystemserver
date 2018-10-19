@@ -1,5 +1,6 @@
 package com.rudyii.hsw.services;
 
+import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import org.apache.commons.lang.SystemUtils;
@@ -22,28 +23,24 @@ import java.util.List;
 public class CameraHealthService {
     private static Logger LOG = LogManager.getLogger(CameraHealthService.class);
     private EventService eventService;
-    private ArrayList<CameraMotionDetectionController> healthList;
+    private OptionsService optionsService;
+    private CameraMotionDetectionController[] cameraMotionDetectionControllers;
 
     @Autowired
-    public CameraHealthService(EventService eventService, CameraMotionDetectionController... cameraMotionDetectionControllers) {
+    public CameraHealthService(EventService eventService, OptionsService optionsService,
+                               CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.eventService = eventService;
-        this.healthList = new ArrayList<>();
-
-        for (CameraMotionDetectionController cameraMotionDetectionController : cameraMotionDetectionControllers) {
-            if (cameraMotionDetectionController.isHealthCheckEnabled()) {
-                healthList.add(cameraMotionDetectionController);
-                LOG.info("CameraHealthService enabled for camera: " + cameraMotionDetectionController.getCameraName());
-            }
-        }
+        this.optionsService = optionsService;
+        this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
     @Scheduled(initialDelayString = "10000", fixedDelayString = "600000")
     public void run() {
-        if (healthList.size() > 0) {
-            healthList.forEach((cameraMotionDetectionController) -> {
+        for (CameraMotionDetectionController cameraMotionDetectionController : cameraMotionDetectionControllers) {
+            if ((boolean) optionsService.getCameraOptions(cameraMotionDetectionController.getCameraName()).get("healthCheckEnabled")) {
                 if (cameraMotionDetectionController.isRecordingInProgress()) {
                     LOG.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", recording in progress...");
-                } else if ( cameraMotionDetectionController.isDetectorEnabled()){
+                } else if (cameraMotionDetectionController.isDetectorEnabled()) {
                     LOG.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", detector enabled...");
                 } else {
                     try {
@@ -54,7 +51,9 @@ public class CameraHealthService {
                         rebootCamera(cameraMotionDetectionController);
                     }
                 }
-            });
+            } else {
+                LOG.info("Health checking is disabled for camera: " + cameraMotionDetectionController.getCameraName());
+            }
         }
     }
 

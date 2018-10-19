@@ -35,7 +35,7 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 /**
  * Created by jack on 13.04.17.
  */
-@RequestMapping("/admin")
+//@RequestMapping("/admin")
 @RestController
 public class AdminPortal {
     private Uptime uptime;

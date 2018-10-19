@@ -60,14 +60,8 @@ public class ReportingService {
 
     @Scheduled(cron = "0 0 * * * *")
     public void sendHourlyReportScheduled() {
-        LOG.info("Generating hourly report...");
-        if (armedStateService.isArmed() && (boolean) optionsService.getOption(HOURLY_REPORT_ENABLED)) {
+        if (armedStateService.isArmed() && (boolean) optionsService.getOption(HOURLY_REPORT_ENABLED) || (boolean) optionsService.getOption(HOURLY_REPORT_FORCED))
             sendHourlyReport();
-        } else if ((boolean) optionsService.getOption(HOURLY_REPORT_FORCED)) {
-            sendHourlyReport();
-        } else {
-            LOG.info("System neither ARMED nor hourly report forced, skipping hourly report sending.");
-        }
     }
 
     @Async

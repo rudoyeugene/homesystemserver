@@ -1,31 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration monitorinterval="30" status="info" strict="true">
-    <Properties>
-        <Property name="filename">HomeSystemWeb.log</Property>
-        <Property name="log-path">logs</Property>
-    </Properties>
+<Configuration monitorinterval="30" status="trace" strict="true">
+
     <Appenders>
-        <RollingFile name="RollingFile" fileName="${log-path}/HomeSystemWeb.log"
-                     filePattern="${log-path}/HomeSystemWeb-%i.log" >
+        <RollingFile name="hswRollingFile" fileName="logs/HomeSystemWeb.log"
+                     filePattern="logs/HomeSystemWeb-%i.log">
             <PatternLayout>
                 <pattern>[%-5level] %logger{1} %d{dd.MM.yyy HH:mm:ss.SSS} [%t] - %msg%n</pattern>
             </PatternLayout>
+            <Filters>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT"/>
+                <ThresholdFilter level="WARN" onMatch="ACCEPT"/>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT"/>
+                <ThresholdFilter level="FATAL" onMatch="ACCEPT"/>
+            </Filters>
             <Policies>
-                <SizeBasedTriggeringPolicy size="10 MB" />
+                <OnStartupTriggeringPolicy/>
+                <SizeBasedTriggeringPolicy size="10 MB"/>
             </Policies>
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
 
         <Console name="console" target="SYSTEM_OUT">
-            <PatternLayout pattern="[%-5level] %logger{1} %d{dd.MM.yyy HH:mm:ss.SSS} [%t] - %msg%n"/>
+            <PatternLayout>
+                <pattern>[%-5level] %logger{1} %d{dd.MM.yyy HH:mm:ss.SSS} [%t] - %msg%n</pattern>
+            </PatternLayout>
+            <Filters>
+                <ThresholdFilter level="INFO" onMatch="ACCEPT"/>
+                <ThresholdFilter level="WARN" onMatch="ACCEPT"/>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT"/>
+                <ThresholdFilter level="FATAL" onMatch="ACCEPT"/>
+            </Filters>
         </Console>
-
     </Appenders>
+
     <Loggers>
         <Root level="all">
             <AppenderRef ref="console"/>
-            <AppenderRef ref="RollingFile"/>
+            <AppenderRef ref="hswRollingFile"/>
         </Root>
     </Loggers>
-
 </Configuration>
