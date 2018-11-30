@@ -47,9 +47,10 @@ public class FcmMessageSendAction extends InternetBasedAction implements Runnabl
             switch (result) {
                 case SUCCESS:
                     LOG.info("FCMessage successfully sent to: " + name);
+                    break;
                 case WARNING:
                     LOG.warn("FCMessage was not sent to: " + name + " due to some internal Google issue.");
-                default:
+                    break;
             }
         } catch (IOException e) {
             LOG.error("Failed to send message to: " + name, e);
