@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.net.InetAddress;
@@ -26,13 +27,16 @@ public class PingService {
     private ArmedStateService armedStateService;
     private EventService eventService;
     private Map<String, String> ipResolver;
+    private ThreadPoolTaskExecutor hswExecutor;
 
     @Autowired
     public PingService(ArmedStateService armedStateService,
-                       EventService eventService, Map ipResolver) {
+                       EventService eventService, Map ipResolver,
+                       ThreadPoolTaskExecutor hswExecutor) {
         this.armedStateService = armedStateService;
         this.eventService = eventService;
         this.ipResolver = ipResolver;
+        this.hswExecutor = hswExecutor;
     }
 
     @Scheduled(initialDelay = 5000L, fixedRate = 60000L)
@@ -47,7 +51,7 @@ public class PingService {
     }
 
     private void firePing() {
-        ipResolver.forEach((ip, name) -> new PingRunnable(ip));
+        ipResolver.forEach((ip, name) -> hswExecutor.execute(new PingRunnable(ip)));
     }
 
     public IPStateEnum ping(String ip) {
@@ -107,12 +111,9 @@ public class PingService {
 
     private class PingRunnable implements Runnable {
         private String ip;
-        private Thread thread;
 
         PingRunnable(String ip) {
             this.ip = ip;
-            this.thread = new Thread(this);
-            thread.start();
         }
 
         @Override
