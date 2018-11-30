@@ -5,83 +5,42 @@ import com.rudyii.hsw.actions.DropboxUploadAction;
 import com.rudyii.hsw.actions.FcmMessageSendAction;
 import com.rudyii.hsw.actions.MailSendAction;
 import com.rudyii.hsw.objects.Attachment;
-import com.rudyii.hsw.services.IspService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Created by jack on 06.06.17.
  */
 @Component
 public class ActionsFactory {
-    private static Logger LOG = LogManager.getLogger(ActionsFactory.class);
-
-    private List<Action> actionsListToBeFired, actionsListSuccessfullyFired;
-
-    private IspService ispService;
     private ApplicationContext context;
+    private ThreadPoolTaskExecutor hswExecutor;
 
-    public ActionsFactory(IspService ispService, ApplicationContext context) {
-        this.ispService = ispService;
+    @Autowired
+    public ActionsFactory(ApplicationContext context, ThreadPoolTaskExecutor hswExecutor) {
         this.context = context;
-        this.actionsListToBeFired = Collections.synchronizedList(new ArrayList());
-        this.actionsListSuccessfullyFired = Collections.synchronizedList(new ArrayList());
+        this.hswExecutor = hswExecutor;
     }
 
     @Async
-    public void addToQueueMailSenderAction(String subject, ArrayList<String> body, ArrayList<Attachment> attachments) {
-        MailSendAction currentAction = context.getBean(MailSendAction.class).withData(subject, body, attachments);
-        if (!currentAction.fireAction()) {
-            actionsListToBeFired.add(currentAction);
-        }
+    public void orderMailSenderAction(String subject, ArrayList<String> body, ArrayList<Attachment> attachments) {
+        hswExecutor.execute(context.getBean(MailSendAction.class).withData(subject, body, attachments));
     }
 
     @Async
-    public void addToQueueFcmMessageSendAction(String name, String recipientToken, JsonObject messageData) {
-        FcmMessageSendAction currentAction = context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, messageData);
-        if (!currentAction.fireAction()) {
-            actionsListToBeFired.add(currentAction);
-        }
+    public void orderMessageSendAction(String name, String recipientToken, JsonObject messageData) {
+        hswExecutor.execute(context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, messageData));
     }
 
     @Async
-    public void addToQueueDropboxUploadAction(File uploadCandidate, BufferedImage image) {
-        DropboxUploadAction currentAction = context.getBean(DropboxUploadAction.class).withUploadCandidate(uploadCandidate).andImage(image);
-        if (!currentAction.fireAction()) {
-            actionsListToBeFired.add(currentAction);
-        }
-    }
-
-    @Scheduled(cron = "0 */1 * * * *")
-    public void retryActions() {
-        if (actionsListToBeFired.size() > 0) {
-            LOG.info("Actions queue size = " + actionsListToBeFired.size());
-            if (ispService.internetIsAvailable()) {
-                for (Action action : actionsListToBeFired) {
-                    if (action.fireAction()) {
-                        LOG.info(action.getClass().getSimpleName() + " successfully fired");
-                        actionsListSuccessfullyFired.add(action);
-                    } else {
-                        LOG.error(action.getClass().getSimpleName() + " action firing failed, will retry next time");
-                    }
-                }
-            } else {
-                LOG.warn("Internet is unavailable, next retry will be fired in a minute, actions queue size: " + actionsListToBeFired.size());
-            }
-
-            LOG.info("Actions queue size will be cut on  " + actionsListSuccessfullyFired.size());
-            actionsListToBeFired.removeAll(actionsListSuccessfullyFired);
-            actionsListSuccessfullyFired.clear();
-        }
+    public void orderDropboxUploadAction(File uploadCandidate, BufferedImage image) {
+        hswExecutor.execute(context.getBean(DropboxUploadAction.class).withUploadCandidate(uploadCandidate).andImage(image));
     }
 }

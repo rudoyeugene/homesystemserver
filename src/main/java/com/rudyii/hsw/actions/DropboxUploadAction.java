@@ -6,7 +6,7 @@ import com.dropbox.core.v2.files.WriteMode;
 import com.dropbox.core.v2.sharing.RequestedVisibility;
 import com.dropbox.core.v2.sharing.SharedLinkMetadata;
 import com.dropbox.core.v2.sharing.SharedLinkSettings;
-import com.rudyii.hsw.actions.base.Action;
+import com.rudyii.hsw.actions.base.InternetBasedAction;
 import com.rudyii.hsw.objects.events.UploadEvent;
 import com.rudyii.hsw.services.EventService;
 import com.rudyii.hsw.services.IspService;
@@ -27,19 +27,18 @@ import java.util.Date;
  */
 @Component
 @Scope(value = "prototype")
-public class DropboxUploadAction implements Action {
+public class DropboxUploadAction extends InternetBasedAction implements Runnable {
     private static Logger LOG = LogManager.getLogger(DropboxUploadAction.class);
 
     private DbxClientV2 client;
     private File uploadCandidate;
-    private IspService ispService;
     private EventService eventService;
     private BufferedImage image;
 
     @Autowired
     public DropboxUploadAction(DbxClientV2 client, IspService ispService, EventService eventService) {
+        super(ispService);
         this.client = client;
-        this.ispService = ispService;
         this.eventService = eventService;
     }
 
@@ -49,13 +48,9 @@ public class DropboxUploadAction implements Action {
     }
 
     @Override
-    public boolean fireAction() {
-        if (ispService.internetIsAvailable()) {
-            uploadFile();
-            return true;
-        } else {
-            return false;
-        }
+    public void run() {
+        ensureInternetIsAvailable();
+        uploadFile();
     }
 
     @Async
@@ -72,7 +67,7 @@ public class DropboxUploadAction implements Action {
             SharedLinkMetadata slm = client.sharing().createSharedLinkWithSettings(metadata.getPathLower(), SharedLinkSettings.newBuilder().withRequestedVisibility(RequestedVisibility.PUBLIC).build());
             String url = slm.getUrl();
 
-            eventService.publish(new UploadEvent(uploadCandidate.getName(),image,  url));
+            eventService.publish(new UploadEvent(uploadCandidate.getName(), image, url));
 
         } catch (Exception e) {
             LOG.error("Upload to Dropbox FAILED!", e);

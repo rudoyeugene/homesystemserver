@@ -23,10 +23,10 @@ public class NotificationsService {
     }
 
     public void sendEmail(String subject, ArrayList<String> body, ArrayList<Attachment> attachments) {
-        actionsFactory.addToQueueMailSenderAction(subject, body, attachments);
+        actionsFactory.orderMailSenderAction(subject, body, attachments);
     }
 
     public void sendFcmMessage(String name, String recipientToken, JsonObject messageData) {
-        actionsFactory.addToQueueFcmMessageSendAction(name, recipientToken, messageData);
+        actionsFactory.orderMessageSendAction(name, recipientToken, messageData);
     }
 }

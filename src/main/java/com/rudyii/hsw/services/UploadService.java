@@ -28,7 +28,7 @@ public class UploadService {
     public void onEvent(CaptureEvent event) {
         if (event.getUploadCandidate() != null && event.getUploadCandidate().exists()) {
             LOG.info("Invoking upload process for file: " + event.getUploadCandidate().getAbsolutePath());
-            actionsFactory.addToQueueDropboxUploadAction(event.getUploadCandidate(), event.getImage());
+            actionsFactory.orderDropboxUploadAction(event.getUploadCandidate(), event.getImage());
 
         } else {
             LOG.warn("File: " + event.getUploadCandidate().getAbsolutePath() + " does not exist. Upload skipped");

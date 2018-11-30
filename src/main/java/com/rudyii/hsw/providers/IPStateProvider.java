@@ -16,7 +16,6 @@ import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 @Component
 public class IPStateProvider {
     private HashMap<String, IPStateEnum> ipStates = new HashMap<>();
-
     private List<String> masterIpList;
 
     @Autowired
@@ -26,6 +25,10 @@ public class IPStateProvider {
 
     public IPStateEnum getIPState(String ip) {
         return ipStates.get(ip) == null ? ERROR : ipStates.get(ip);
+    }
+
+    public HashMap<String, IPStateEnum> getIpStates() {
+        return ipStates;
     }
 
     private void setIPState(String ip, IPStateEnum state) {

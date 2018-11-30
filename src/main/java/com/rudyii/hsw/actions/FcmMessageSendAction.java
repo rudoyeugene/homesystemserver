@@ -1,9 +1,10 @@
 package com.rudyii.hsw.actions;
 
 import com.google.gson.JsonObject;
-import com.rudyii.hsw.actions.base.Action;
+import com.rudyii.hsw.actions.base.InternetBasedAction;
 import com.rudyii.hsw.enums.FcmMessageEnum;
 import com.rudyii.hsw.helpers.FCMSender;
+import com.rudyii.hsw.services.IspService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,7 @@ import static com.rudyii.hsw.helpers.FCMSender.TYPE_TO;
 
 @Component
 @Scope(value = "prototype")
-public class FcmMessageSendAction implements Action {
+public class FcmMessageSendAction extends InternetBasedAction implements Runnable {
     private static Logger LOG = LogManager.getLogger(FcmMessageSendAction.class);
 
     private String recipientToken, name;
@@ -24,7 +25,8 @@ public class FcmMessageSendAction implements Action {
     private FCMSender fcmSender;
 
     @Autowired
-    public FcmMessageSendAction(FCMSender fcmSender) {
+    public FcmMessageSendAction(FCMSender fcmSender, IspService ispService) {
+        super(ispService);
         this.fcmSender = fcmSender;
     }
 
@@ -36,24 +38,21 @@ public class FcmMessageSendAction implements Action {
     }
 
     @Override
-    public boolean fireAction() {
-        FcmMessageEnum result;
+    public void run() {
+
+        ensureInternetIsAvailable();
+
         try {
-            result = fcmSender.sendData(TYPE_TO, recipientToken, messageData);
+            FcmMessageEnum result = fcmSender.sendData(TYPE_TO, recipientToken, messageData);
+            switch (result) {
+                case SUCCESS:
+                    LOG.info("FCMessage successfully sent to: " + name);
+                case WARNING:
+                    LOG.warn("FCMessage was not sent to: " + name + " due to some internal Google issue.");
+                default:
+            }
         } catch (IOException e) {
             LOG.error("Failed to send message to: " + name, e);
-            return false;
-        }
-
-        switch (result) {
-            case SUCCESS:
-                LOG.info("FCMessage successfully sent to: " + name);
-                return true;
-            case WARNING:
-                LOG.warn("FCMessage was not sent to: " + name + " due to some internal Google issue.");
-                return true;
-            default:
-                return true;
         }
     }
 }
