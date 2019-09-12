@@ -58,7 +58,6 @@ public class FirebaseService {
     public static final String CAMERA_NAME = "cameraName";
     public static final String MOTION_AREA = "motionArea";
     public static final String VIDEO_RECORDED = "videoRecorded";
-    public static final String NOTIFICATIONS_MUTED = "true";
     public static final String FILE_NAME = "fileName";
     public static final String URL = "url";
     public static final String ISP_CHANGED = "ispChanged";
@@ -100,9 +99,8 @@ public class FirebaseService {
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, UpnpService upnpService,
                            EventService eventService, IspService ispService,
-                           OptionsService optionsService,
-                           NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor,
-                           ClientsService clientsService) {
+                           OptionsService optionsService, NotificationsService notificationsService,
+                           ThreadPoolTaskExecutor hswExecutor, ClientsService clientsService) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
         this.uptime = uptime;
@@ -452,7 +450,7 @@ public class FirebaseService {
                 notify = true;
             }
 
-            if (client.isNotificationsMuted()){
+            if (client.isNotificationsMuted()) {
                 notify = false;
             }
 

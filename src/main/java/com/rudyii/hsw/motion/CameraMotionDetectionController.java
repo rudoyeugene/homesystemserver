@@ -1,10 +1,7 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hsw.objects.Camera;
-import com.rudyii.hsw.objects.events.ArmedEvent;
-import com.rudyii.hsw.objects.events.CameraRebootEvent;
-import com.rudyii.hsw.objects.events.EventBase;
-import com.rudyii.hsw.objects.events.MotionDetectedEvent;
+import com.rudyii.hsw.objects.events.*;
 import com.rudyii.hsw.services.ArmedStateService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,7 +19,9 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static com.rudyii.hsw.configuration.OptionsService.CONTINUOUS_MONITORING;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
@@ -30,12 +29,19 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
  * Created by jack on 02.10.16.
  */
 public class CameraMotionDetectionController {
+    public static final String CONTINUOUS = "CONTINUOUS";
     private static Logger LOG = LogManager.getLogger(CameraMotionDetectionController.class);
 
-    private String mjpegUrl, jpegUrl, rtspUrl, rebootUrl, cameraName, monitoringMode;
-    private Long interval, rebootTimeout, noiseLevel;
-    private Long motionArea;
-    private boolean detectorEnabled, healthCheckEnabled, rebootInProgress;
+    private String mjpegUrl, jpegUrl, rtspUrl, rebootUrl, cameraName;
+    private long interval = 500L;
+    private long rebootTimeout = 60L;
+    private long noiseLevel = 5L;
+    private long motionArea = 20L;
+    private boolean detectorEnabled;
+    private boolean healthCheckEnabled;
+    private boolean rebootInProgress;
+    private boolean autostartMonitoring;
+    private boolean continuousMonitoring;
     private ArmedStateService armedStateService;
     private ApplicationContext context;
     private CameraMotionDetector currentCameraMotionDetector;
@@ -72,71 +78,36 @@ public class CameraMotionDetectionController {
         camera.setJpegUrl(jpegUrl);
         camera.setRtspUrl(rtspUrl);
 
-        if (monitoringMode != null && monitoringMode.equals("CONTINUOUS")) {
+        this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
+
+        if (autostartMonitoring || continuousMonitoring) {
             enableMotionDetection();
         }
-
-        System.out.println("CameraMotionDetectionController for " + cameraName + " is initialized in " + monitoringMode + " mode");
     }
 
     private void buildUrls() {
-        jpegUrl = jpegUrlTemplate.replace("${ip}", ip)
-                .replace("${httpPort}", httpPort.toString())
-                .replace("${login}", login)
-                .replace("${password}", password);
-
-        mjpegUrl = mjpegUrlTemplate.replace("${ip}", ip)
-                .replace("${httpPort}", httpPort.toString())
-                .replace("${login}", login)
-                .replace("${password}", password);
-
-        rtspUrl = rtspUrlTemplate.replace("${ip}", ip)
-                .replace("${rtspPort}", rtspPort.toString())
-                .replace("${login}", login)
-                .replace("${password}", password);
-
-        rebootUrl = rebootUrlTemplate.replace("${ip}", ip)
-                .replace("${httpPort}", httpPort.toString())
-                .replace("${login}", login)
-                .replace("${password}", password);
-    }
-
-    @Async
-    @EventListener(MotionDetectedEvent.class)
-    public void motionDetected(MotionDetectedEvent motionDetectedEvent) {
-        if (!motionDetectedEvent.getCameraName().equals(cameraName)) {
-            return;
-        }
-
-        if (lock.exists()) {
-            System.out.println("New motion detected on camera: " + cameraName + " but previous capture is in progress, waiting...");
-        } else {
-            System.out.println("New motion detected at: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()) + " on camera: " + cameraName);
-            try {
-                lock.createNewFile();
-                context.getBean(VideoCaptor.class).startCaptureFrom(camera);
-            } catch (Exception e) {
-                LOG.error("Failed to lock " + lock.getAbsolutePath(), e);
-            }
-        }
+        jpegUrl = buildUrlFromTemplate(jpegUrlTemplate);
+        mjpegUrl = buildUrlFromTemplate(mjpegUrlTemplate);
+        rtspUrl = buildUrlFromTemplate(rtspUrlTemplate);
+        rebootUrl = buildUrlFromTemplate(rebootUrlTemplate);
     }
 
     @Async
     void enableMotionDetection() throws Exception {
         this.detectorEnabled = true;
 
-        this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
         currentCameraMotionDetector.onCamera(camera).start();
 
         LOG.info("Motion detector enabled for camera:" + cameraName);
     }
 
     private void disableMotionDetection() {
+        if (continuousMonitoring) return;
+
         this.detectorEnabled = false;
 
         try {
             currentCameraMotionDetector.stop();
-            this.currentCameraMotionDetector = null;
         } catch (Exception e) {
             LOG.warn("Some error occurred during disabling motion detector on camera " + cameraName, e);
         }
@@ -197,21 +168,29 @@ public class CameraMotionDetectionController {
     }
 
     private void waitForRebootCompletion() {
-        LOG.info(String.format("Camera: " + getCameraName() + " reboot in progress...\nWaiting for %s milliseconds...", rebootTimeout));
+        LOG.info(String.format("Camera: " + getCameraName() + " reboot in progress...\nWaiting for %s seconds...", rebootTimeout));
         try {
-            Thread.sleep(rebootTimeout);
+            Thread.sleep(rebootTimeout * 1000);
         } catch (InterruptedException e) {
             LOG.error("Error occurred: ", e);
         }
         LOG.info("Camera: " + getCameraName() + " reboot complete");
     }
 
+    private String buildUrlFromTemplate(String template) {
+        return template
+                .replace("${ip}", ip)
+                .replace("${httpPort}", httpPort.toString())
+                .replace("${login}", login)
+                .replace("${password}", password);
+    }
+
     @Async
     @EventListener(EventBase.class)
     public void onEvent(EventBase event) throws Exception {
-        if (event instanceof ArmedEvent){
+        if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
-            if (monitoringMode.equals("AUTO")) {
+            if (continuousMonitoring) {
                 if (armedEvent.getArmedState().equals(ARMED) && !detectorEnabled) {
                     enableMotionDetection();
                 } else if (armedEvent.getArmedState().equals(DISARMED) && detectorEnabled) {
@@ -220,10 +199,32 @@ public class CameraMotionDetectionController {
                     LOG.warn("New ArmedEvent received but system state unchanged.");
                 }
             }
-        } else if (event instanceof CameraRebootEvent){
+        } else if (event instanceof CameraRebootEvent) {
             CameraRebootEvent rebootEvent = (CameraRebootEvent) event;
             if (rebootEvent.getCameraName().equals(cameraName) && !rebootInProgress) {
                 performRebootSequence();
+            }
+        } else if (event instanceof MotionDetectedEvent) {
+            MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
+            if (!motionDetectedEvent.getCameraName().equals(cameraName)) {
+                return;
+            }
+
+            if (lock.exists()) {
+                System.out.println("New motion detected on camera: " + cameraName + " but previous capture is in progress, waiting...");
+            } else {
+                System.out.println("New motion detected at: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()) + " on camera: " + cameraName);
+                try {
+                    lock.createNewFile();
+                    context.getBean(VideoCaptor.class).startCaptureFrom(camera);
+                } catch (Exception e) {
+                    LOG.error("Failed to lock " + lock.getAbsolutePath(), e);
+                }
+            }
+        } else if (event instanceof OptionsChangedEvent) {
+            ConcurrentHashMap<String, Object> cameraOptions = ((OptionsChangedEvent) event).getCameraOptions(cameraName);
+            if (!detectorEnabled && (Boolean) cameraOptions.get(CONTINUOUS_MONITORING)) {
+                enableMotionDetection();
             }
         }
     }
@@ -308,14 +309,6 @@ public class CameraMotionDetectionController {
         this.noiseLevel = noiseLevel;
     }
 
-    public String getMonitoringMode() {
-        return monitoringMode;
-    }
-
-    public void setMonitoringMode(String monitoringMode) {
-        this.monitoringMode = monitoringMode;
-    }
-
     public Long getRebootTimeout() {
         return rebootTimeout;
     }
@@ -334,6 +327,22 @@ public class CameraMotionDetectionController {
 
     public void setHealthCheckEnabled(boolean healthCheckEnabled) {
         this.healthCheckEnabled = healthCheckEnabled;
+    }
+
+    public boolean isAutostartMonitoring() {
+        return autostartMonitoring;
+    }
+
+    public void setAutostartMonitoring(boolean autostartMonitoring) {
+        this.autostartMonitoring = autostartMonitoring;
+    }
+
+    public boolean isContinuousMonitoring() {
+        return continuousMonitoring;
+    }
+
+    public void setContinuousMonitoring(boolean continuousMonitoring) {
+        this.continuousMonitoring = continuousMonitoring;
     }
 
     public boolean isRecordingInProgress() {

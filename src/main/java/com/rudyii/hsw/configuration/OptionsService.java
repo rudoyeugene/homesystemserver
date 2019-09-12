@@ -32,6 +32,13 @@ public class OptionsService {
     public static final String KEEP_DAYS = "keepDays";
     public static final String VERBOSE_OUTPUT_ENABLED = "verboseOutputEnabled";
     public static final String DELAYED_ARM_INTERVAL = "delayedArmInterval";
+    public static final String CONTINUOUS_MONITORING = "continuousMonitoring";
+    public static final String HEALTH_CHECK_ENABLED = "healthCheckEnabled";
+    public static final String NOISE_LEVEL = "noiseLevel";
+    public static final String MOTION_AREA = "motionArea";
+    public static final String REBOOT_TIMEOUT = "rebootTimeout";
+    public static final String INTERVAL = "interval";
+    public static final String CAMERAS = "cameras";
     private static Logger LOG = LogManager.getLogger(OptionsService.class);
 
     private ConcurrentHashMap<String, Object> localOptions = new ConcurrentHashMap<>();
@@ -93,7 +100,7 @@ public class OptionsService {
 
                     HashMap<String, Object> tempOptions = new HashMap<>(localOptions);
                     HashMap<String, Object> tempCamerasOptions = new HashMap<>(localCamerasOptions);
-                    tempOptions.put("cameras", tempCamerasOptions);
+                    tempOptions.put(CAMERAS, tempCamerasOptions);
                     databaseProvider.pushData("/options", tempOptions);
 
                     return;
@@ -101,8 +108,8 @@ public class OptionsService {
 
                 HashMap<String, Object> cloudOptions = new HashMap<>(((HashMap<String, Object>) dataSnapshot.getValue()));
                 HashMap<String, Object> cloudOptionsWithoutCameras = new HashMap<>(cloudOptions);
-                cloudOptionsWithoutCameras.remove("cameras");
-                HashMap<String, Object> cloudCamerasOptionsOnly = new HashMap<>((HashMap<String, Object>) cloudOptions.get("cameras"));
+                cloudOptionsWithoutCameras.remove(CAMERAS);
+                HashMap<String, Object> cloudCamerasOptionsOnly = new HashMap<>((HashMap<String, Object>) cloudOptions.get(CAMERAS));
 
                 synchronizeOptions(cloudOptions, cloudOptionsWithoutCameras, localOptions);
                 synchronizeCameraOptions(cloudOptions, cloudCamerasOptionsOnly, localCamerasOptions);
@@ -147,7 +154,7 @@ public class OptionsService {
                         if (cloudValue == null) {
                             newOptionsAdded = true;
                             LOG.warn("Pushing new option for Camera " + cameraName + ": " + localCameraOption + "=" + localValue);
-                            ((HashMap<String, Object>) ((HashMap<String, Object>) cloudOptions.get("cameras")).get(cameraName)).put(localCameraOption, localValue);
+                            ((HashMap<String, Object>) ((HashMap<String, Object>) cloudOptions.get(CAMERAS)).get(cameraName)).put(localCameraOption, localValue);
                         } else if (!localValue.equals(cloudValue)) {
                             optionsUpdated = true;
                             LOG.warn("Option updated on Camera " + cameraName + ": " + localCameraOption + "=" + cloudValue);
@@ -174,13 +181,13 @@ public class OptionsService {
             Long rebootTimeout = cameraMotionDetectionController.getRebootTimeout();
             Long motionArea = cameraMotionDetectionController.getMotionArea();
             Long noiseLevel = cameraMotionDetectionController.getNoiseLevel();
-            boolean healthCheckEnabled = cameraMotionDetectionController.isHealthCheckEnabled();
 
-            cameraOptions.put("interval", interval);
-            cameraOptions.put("rebootTimeout", rebootTimeout);
-            cameraOptions.put("motionArea", motionArea);
-            cameraOptions.put("noiseLevel", noiseLevel);
-            cameraOptions.put("healthCheckEnabled", healthCheckEnabled);
+            cameraOptions.put(INTERVAL, interval);
+            cameraOptions.put(REBOOT_TIMEOUT, rebootTimeout);
+            cameraOptions.put(MOTION_AREA, motionArea);
+            cameraOptions.put(NOISE_LEVEL, noiseLevel);
+            cameraOptions.put(HEALTH_CHECK_ENABLED, cameraMotionDetectionController.isHealthCheckEnabled());
+            cameraOptions.put(CONTINUOUS_MONITORING, cameraMotionDetectionController.isContinuousMonitoring());
 
             localCamerasOptions.put(cameraName, cameraOptions);
         }

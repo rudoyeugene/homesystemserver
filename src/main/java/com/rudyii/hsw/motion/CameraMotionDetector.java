@@ -8,6 +8,7 @@ import com.rudyii.hsw.services.EventService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -32,6 +33,7 @@ public class CameraMotionDetector {
     private boolean enabled = false;
     private boolean eventFired = false;
 
+    @Lazy
     @Autowired
     public CameraMotionDetector(EventService eventService, OptionsService optionsService) {
         this.eventService = eventService;
@@ -64,11 +66,10 @@ public class CameraMotionDetector {
     public void stop() {
         this.enabled = false;
         LOG.info("Stopping CameraMotionDetector for " + camera.getName());
-        Thread.currentThread().interrupt();
     }
 
     private void startDetection() throws InterruptedException {
-        while (enabled) {
+        while (this.enabled) {
             this.previousImage = currentImage;
             try {
                 this.motionObject = new BufferedImage(previousImage.getWidth(), previousImage.getHeight(), previousImage.getType());
