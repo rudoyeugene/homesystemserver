@@ -9,8 +9,7 @@ import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.events.OptionsChangedEvent;
 import com.rudyii.hsw.objects.events.ServerKeyUpdatedEvent;
 import com.rudyii.hsw.services.EventService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -19,8 +18,10 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Slf4j
 @Service
 public class OptionsService {
     public static final String RECORD_INTERVAL = "recordInterval";
@@ -39,7 +40,6 @@ public class OptionsService {
     public static final String REBOOT_TIMEOUT = "rebootTimeout";
     public static final String INTERVAL = "interval";
     public static final String CAMERAS = "cameras";
-    private static Logger LOG = LogManager.getLogger(OptionsService.class);
 
     private ConcurrentHashMap<String, Object> localOptions = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Object> localCamerasOptions = new ConcurrentHashMap<>();
@@ -78,6 +78,8 @@ public class OptionsService {
 
         fillOptionsFromCameras();
 
+        syncCameras();
+
         registerListeners();
     }
 
@@ -96,7 +98,7 @@ public class OptionsService {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (!dataSnapshot.exists()) {
-                    LOG.warn("Initializing options");
+                    log.warn("Initializing options");
 
                     HashMap<String, Object> tempOptions = new HashMap<>(localOptions);
                     HashMap<String, Object> tempCamerasOptions = new HashMap<>(localCamerasOptions);
@@ -116,13 +118,13 @@ public class OptionsService {
 
                 if (optionsUpdated) {
                     optionsUpdated = false;
-                    LOG.warn("Options updated, firing event");
+                    log.warn("Options updated, firing event");
                     eventService.publish(new OptionsChangedEvent(localOptions));
                 }
 
                 if (newOptionsAdded) {
                     newOptionsAdded = false;
-                    LOG.warn("New option added, pushing");
+                    log.warn("New option added, pushing");
                     databaseProvider.pushData("/options", cloudOptions);
                 }
             }
@@ -133,11 +135,11 @@ public class OptionsService {
 
                     if (cloudValue == null) {
                         newOptionsAdded = true;
-                        LOG.warn("Pushing new option: " + localOption + "=" + localValue);
+                        log.warn("Pushing new option: " + localOption + "=" + localValue);
                         cloudOptions.put(localOption, localValue);
                     } else if (!localValue.equals(cloudValue)) {
                         optionsUpdated = true;
-                        LOG.warn("Option updated: " + localOption + "=" + cloudValue);
+                        log.warn("Option updated: " + localOption + "=" + cloudValue);
                         localOptions.put(localOption, cloudValue);
                     }
                 });
@@ -153,11 +155,11 @@ public class OptionsService {
 
                         if (cloudValue == null) {
                             newOptionsAdded = true;
-                            LOG.warn("Pushing new option for Camera " + cameraName + ": " + localCameraOption + "=" + localValue);
+                            log.warn("Pushing new option for Camera " + cameraName + ": " + localCameraOption + "=" + localValue);
                             ((HashMap<String, Object>) ((HashMap<String, Object>) cloudOptions.get(CAMERAS)).get(cameraName)).put(localCameraOption, localValue);
                         } else if (!localValue.equals(cloudValue)) {
                             optionsUpdated = true;
-                            LOG.warn("Option updated on Camera " + cameraName + ": " + localCameraOption + "=" + cloudValue);
+                            log.warn("Option updated on Camera " + cameraName + ": " + localCameraOption + "=" + cloudValue);
                             localCameraOptions.put(localCameraOption, cloudValue);
                         }
                     });
@@ -191,6 +193,34 @@ public class OptionsService {
 
             localCamerasOptions.put(cameraName, cameraOptions);
         }
+    }
+
+    private void syncCameras() {
+        DatabaseReference cloudCamerasOptions = databaseProvider.getReference("/options/cameras");
+
+        cloudCamerasOptions.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Map<String, Object> cloudCamerasOptions = (Map<String, Object>) dataSnapshot.getValue();
+
+                localCamerasOptions.forEach((cameraName, options) -> {
+                    if (!cloudCamerasOptions.containsKey(cameraName)) {
+                        databaseProvider.getReference("/options/cameras/" + cameraName).setValueAsync(localCamerasOptions.get(cameraName));
+                    }
+                });
+
+                cloudCamerasOptions.forEach((cameraName, options) -> {
+                    if (!localCamerasOptions.containsKey(cameraName)) {
+                        databaseProvider.getReference("/options/cameras/" + cameraName).removeValueAsync();
+                    }
+                });
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                log.error("Failed to retrieve Options data", databaseError.toException());
+            }
+        });
     }
 
     @EventListener(ServerKeyUpdatedEvent.class)

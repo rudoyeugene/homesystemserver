@@ -76,8 +76,10 @@ public class ReportingService {
                     ImageIO.write(currentImage, "jpeg", currentImageBOS);
                     byte[] currentImageByteArray = currentImageBOS.toByteArray();
 
-                    Attachment attachment = new Attachment(cameraMotionDetectionController.getCameraName(), currentImageByteArray, "image/jpeg");
-                    attachments.add(attachment);
+                    attachments.add(Attachment.builder()
+                            .name(cameraMotionDetectionController.getCameraName())
+                            .data(currentImageByteArray)
+                            .mimeType("image/jpeg").build());
                 }
             } catch (Exception e) {
                 LOG.error("Camera " + cameraMotionDetectionController.getCameraName() + " snapshot extraction failed:", e);
