@@ -1,8 +1,9 @@
-system-settings.xml
-database.dat
-server-global.json
-application.properties
+conf
+database
+**/server-global.json
+**/application.properties
 .idea
 logs
 *.iml
 pid
+target
