@@ -1,26 +1,18 @@
 package com.rudyii.hsw.objects.events;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-/**
- * Created by jack on 07.10.16.
- */
+@Data
+@Builder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class CaptureEvent extends EventBase {
     private File uploadCandidate;
     private BufferedImage image;
-
-    public CaptureEvent(File uploadCandidate, BufferedImage image) {
-        this.uploadCandidate = uploadCandidate;
-        this.image = image;
-        System.out.println("With upload candidate: " + uploadCandidate.getName());
-    }
-
-    public BufferedImage getImage() {
-        return image;
-    }
-
-    public File getUploadCandidate() {
-        return uploadCandidate;
-    }
 }

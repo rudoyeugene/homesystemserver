@@ -2,9 +2,8 @@ package com.rudyii.hsw.services;
 
 import com.dropbox.core.v2.DbxClientV2;
 import com.rudyii.hsw.configuration.OptionsService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.time.DateUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,12 +21,9 @@ import java.util.Date;
 
 import static com.rudyii.hsw.configuration.OptionsService.KEEP_DAYS;
 
-/**
- * Created by jack on 16.02.17.
- */
+@Slf4j
 @Service
 public class HouseKeepingService {
-    private static Logger LOG = LogManager.getLogger(HouseKeepingService.class);
     private DbxClientV2 client;
     private IspService ispService;
     private Connection connection;
@@ -67,7 +63,7 @@ public class HouseKeepingService {
                     }
                 }
             } catch (SQLException e) {
-                LOG.error("Failed to get Dropbox files list", e);
+                log.error("Failed to get Dropbox files list", e);
             }
             final int[] deletedLocalFilesCount = {0};
             final int[] deletedRemoteFilesCount = {0};
@@ -76,10 +72,10 @@ public class HouseKeepingService {
                 try {
                     File removeCandidate = new File(localStorage.getCanonicalPath() + "/" + fileName);
                     removeCandidate.delete();
-                    LOG.info("Local file removed as outdated: " + removeCandidate.getCanonicalPath());
+                    log.info("Local file removed as outdated: " + removeCandidate.getCanonicalPath());
                     deletedLocalFilesCount[0]++;
                 } catch (IOException e) {
-                    LOG.error("Failed to remove local file: " + fileName + " due to error:\n", e);
+                    log.error("Failed to remove local file: " + fileName + " due to error:\n", e);
                 }
             });
 
@@ -87,21 +83,21 @@ public class HouseKeepingService {
                 try {
 
                     client.files().delete("/" + fileName);
-                    LOG.info("Remote file removed as outdated: " + fileName);
+                    log.info("Remote file removed as outdated: " + fileName);
                     deletedRemoteFilesCount[0]++;
                 } catch (Exception e) {
-                    LOG.error("Failed to remove remote file: " + fileName + " due to error:\n", e);
+                    log.error("Failed to remove remote file: " + fileName + " due to error:\n", e);
                 }
 
             });
 
-            LOG.info("Totally deleted:\nLocal files: " + deletedLocalFilesCount[0] + "\nRemote files: " + deletedRemoteFilesCount[0]);
+            log.info("Totally deleted:\nLocal files: " + deletedLocalFilesCount[0] + "\nRemote files: " + deletedRemoteFilesCount[0]);
 
             filesToDelete.forEach(fileName -> {
                 try {
                     connection.createStatement().executeUpdate(String.format("DELETE FROM DROPBOX_FILES WHERE FILE_NAME = %s", "'" + fileName + "'"));
                 } catch (SQLException e) {
-                    LOG.error("Failed to remove remote data: " + fileName + " from database due to error:\n", e);
+                    log.error("Failed to remove remote data: " + fileName + " from database due to error:\n", e);
                 }
             });
         }

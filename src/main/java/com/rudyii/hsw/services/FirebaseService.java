@@ -14,8 +14,7 @@ import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.objects.WanIp;
 import com.rudyii.hsw.objects.events.*;
 import com.rudyii.hsw.providers.NotificationsService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -40,6 +39,7 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 import static com.rudyii.hsw.helpers.PidGeneratorShutdownHandler.getPid;
 import static com.rudyii.hsw.helpers.SimplePropertiesKeeper.isHomeSystemInitComplete;
 
+@Slf4j
 @Service
 public class FirebaseService {
     public static final String REASON = "reason";
@@ -71,7 +71,6 @@ public class FirebaseService {
     public static final String STARTING = "starting";
     public static final String RECORD_ID = "recordId";
     public static final String ALL = "all";
-    private static Logger LOG = LogManager.getLogger(FirebaseService.class);
 
     @Value("${application.version}")
     private String appVersion;
@@ -82,7 +81,6 @@ public class FirebaseService {
     private ArmedStateService armedStateService;
     private Uptime uptime;
     private ReportingService reportingService;
-    private UpnpService upnpService;
     private EventService eventService;
     private IspService ispService;
     private OptionsService optionsService;
@@ -97,15 +95,14 @@ public class FirebaseService {
 
     public FirebaseService(FirebaseDatabaseProvider firebaseDatabaseProvider, UuidService uuidService,
                            ArmedStateService armedStateService, Uptime uptime,
-                           ReportingService reportingService, UpnpService upnpService,
-                           EventService eventService, IspService ispService,
-                           OptionsService optionsService, NotificationsService notificationsService,
-                           ThreadPoolTaskExecutor hswExecutor, ClientsService clientsService) {
+                           ReportingService reportingService, EventService eventService,
+                           IspService ispService, OptionsService optionsService,
+                           NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor,
+                           ClientsService clientsService) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
         this.uptime = uptime;
         this.reportingService = reportingService;
-        this.upnpService = upnpService;
         this.eventService = eventService;
         this.ispService = ispService;
         this.optionsService = optionsService;
@@ -132,7 +129,6 @@ public class FirebaseService {
 
         requests.put(STATE, state);
         requests.put(RESEND_HOURLY, random.nextInt(999));
-        requests.put(PORTS_OPEN, upnpService.isPortsOpen());
 
         updateStatuses(armedStateService.isArmed() ? ARMED : DISARMED, armedStateService.getArmedMode());
 
@@ -186,7 +182,6 @@ public class FirebaseService {
             jsonObject.addProperty(REASON, SYSTEM_STATE_CHANGED);
             jsonObject.addProperty(ARMED_MODE, armedEvent.getArmedMode().toString());
             jsonObject.addProperty(ARMED_STATE, armedEvent.getArmedState().toString());
-            jsonObject.addProperty(PORTS_OPEN, upnpService.isPortsOpen());
 
             sendFcmMessage(jsonObject, ALL);
 
@@ -329,21 +324,13 @@ public class FirebaseService {
         return new ValueEventListener() {
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (isHomeSystemInitComplete()) {
-                    if ((boolean) dataSnapshot.getValue()) {
-                        upnpService.openPorts();
-                        statuses.put(PORTS_OPEN, true);
-                    } else {
-                        upnpService.closePorts();
-                        statuses.put(PORTS_OPEN, false);
-                    }
-
                     statuses.put(TIME_STAMP, System.currentTimeMillis());
                     firebaseDatabaseProvider.pushData("/statuses", statuses);
                 }
             }
 
             public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Ports State Firebase data!");
+                log.error("Failed to fetch Ports State Firebase data!");
             }
         };
     }
@@ -357,7 +344,7 @@ public class FirebaseService {
             }
 
             public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Hourly Resend Firebase data!");
+                log.error("Failed to fetch Hourly Resend Firebase data!");
             }
         };
     }
@@ -375,7 +362,7 @@ public class FirebaseService {
             }
 
             public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Armed Mode & Armed State Firebase data!");
+                log.error("Failed to fetch Armed Mode & Armed State Firebase data!");
             }
         };
     }
@@ -431,7 +418,7 @@ public class FirebaseService {
 
             bos.close();
         } catch (IOException e) {
-            LOG.error("Error occurred: ", e);
+            log.error("Error occurred: ", e);
         }
     }
 
@@ -450,18 +437,18 @@ public class FirebaseService {
                 notify = true;
             }
 
-            if (client.isNotificationsMuted()) {
+            if (client.getNotificationsMuted()) {
                 notify = false;
             }
 
             if (notify) {
                 String token = client.getToken();
 
-                LOG.info("Ready to send message to the Client:" + userId + " on device " + device + " with client version " + appVersion);
+                log.info("Ready to send message to the Client:" + userId + " on device " + device + " with client version " + appVersion);
 
                 notificationsService.sendFcmMessage(userId, token, messageData);
             } else {
-                LOG.warn("Client:" + userId + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
+                log.warn("Client:" + userId + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
             }
         });
     }

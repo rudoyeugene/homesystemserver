@@ -1,17 +1,14 @@
 package com.rudyii.hsw.objects.events;
 
-/**
- * Created by jack on 04.02.17.
- */
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@Builder
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class CameraRebootEvent extends EventBase {
     private String cameraName;
-
-    public CameraRebootEvent(String cameraName) {
-        this.cameraName = cameraName;
-        System.out.println("For camera: " + cameraName);
-    }
-
-    public String getCameraName() {
-        return cameraName;
-    }
 }

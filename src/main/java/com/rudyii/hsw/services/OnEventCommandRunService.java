@@ -1,9 +1,8 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.objects.events.ArmedEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -14,10 +13,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.List;
 
+@Slf4j
 @Service
 public class OnEventCommandRunService {
-    private static Logger LOG = LogManager.getLogger(OnEventCommandRunService.class);
-
     private List<String> onArmCommands;
     private List<String> onDisarmCommands;
     private List<String> onStartCommands;
@@ -59,7 +57,7 @@ public class OnEventCommandRunService {
                 executeCommandList(onDisarmCommands);
                 break;
             case AUTO:
-                LOG.info("Ignoring ArmedEvent: " + event.getArmedState());
+                log.info("Ignoring ArmedEvent: " + event.getArmedState());
                 break;
         }
     }
@@ -77,16 +75,16 @@ public class OnEventCommandRunService {
                 String line;
 
                 while (StringUtils.isNotBlank((line = in.readLine()))) {
-                    LOG.info(command + ": " + line);
+                    log.info(command + ": " + line);
                 }
 
                 process.waitFor();
 
                 in.close();
 
-                LOG.info(command + " execution success");
+                log.info(command + " execution success");
             } catch (Exception e) {
-                LOG.error("Failed on command: " + String.valueOf(command), e);
+                log.error("Failed on command: " + command, e);
             }
         });
     }

@@ -4,9 +4,8 @@ import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.objects.Camera;
 import com.rudyii.hsw.objects.events.CaptureEvent;
 import com.rudyii.hsw.services.EventService;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
@@ -26,14 +25,10 @@ import java.util.concurrent.TimeUnit;
 
 import static com.rudyii.hsw.configuration.OptionsService.RECORD_INTERVAL;
 
-/**
- * Created by jack on 31.01.17.
- */
+@Slf4j
 @Component
 @Scope(value = "prototype")
 public class VideoCaptor {
-    private static Logger LOG = LogManager.getLogger(VideoCaptor.class);
-
     private EventService eventService;
     private OptionsService optionsService;
 
@@ -64,7 +59,7 @@ public class VideoCaptor {
             this.image = ImageIO.read(new URL(camera.getJpegUrl()));
             getFfmpegStream();
         } catch (IOException e) {
-            LOG.error("Failed to proess output file", e);
+            log.error("Failed to proess output file", e);
         }
 
         publishCaptureEvent();
@@ -80,17 +75,17 @@ public class VideoCaptor {
     }
 
     private void getFfmpegStream() throws IOException {
-        LOG.info("Starting capture on camera: " + camera.getName() + " ...");
+        log.info("Starting capture on camera: " + camera.getName() + " ...");
         List<String> captureCommand = new ArrayList<>();
 
         if (SystemUtils.IS_OS_LINUX) {
             if (new File("/usr/bin/ffmpeg").exists() || new File("/usr/bin/avconv").exists()) {
-                LOG.info("Linux OS detected, using script bin/capture_motion.sh with params:");
+                log.info("Linux OS detected, using script bin/capture_motion.sh with params:");
                 printParametersIntoLog();
                 captureCommand.add("bin/capture_motion.sh");
 
             } else {
-                LOG.error("/usr/bin/ffmpeg or /usr/bin/avconv not found, please install, ignoring video capture");
+                log.error("/usr/bin/ffmpeg or /usr/bin/avconv not found, please install, ignoring video capture");
                 return;
             }
         } else if (SystemUtils.IS_OS_WINDOWS) {
@@ -99,11 +94,11 @@ public class VideoCaptor {
                 captureCommand.add("bin/capture_motion.bat");
 
             } else {
-                LOG.error("C:/Windows/System32/ffmpeg.exe not found, please install, ignoring video capture");
+                log.error("C:/Windows/System32/ffmpeg.exe not found, please install, ignoring video capture");
                 return;
             }
         } else {
-            LOG.error("Unsupported OS detected, ignoring video capture");
+            log.error("Unsupported OS detected, ignoring video capture");
             return;
         }
 
@@ -117,10 +112,10 @@ public class VideoCaptor {
     }
 
     private void printParametersIntoLog() throws IOException {
-        LOG.info("#1 as source: " + camera.getRtspUrl());
-        LOG.info("#2 as record interval in seconds: " + String.valueOf(optionsService.getOption(RECORD_INTERVAL)));
-        LOG.info("#3 as a capture result: " + result.getCanonicalPath());
-        LOG.info("#4 as a camera name: " + camera.getName());
+        log.info("#1 as source: " + camera.getRtspUrl());
+        log.info("#2 as record interval in seconds: " + optionsService.getOption(RECORD_INTERVAL));
+        log.info("#3 as a capture result: " + result.getCanonicalPath());
+        log.info("#4 as a camera name: " + camera.getName());
     }
 
     private void runProcess(ProcessBuilder process) {
@@ -136,7 +131,7 @@ public class VideoCaptor {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Video capture failed!", e);
+            log.error("Video capture failed!", e);
         }
     }
 }

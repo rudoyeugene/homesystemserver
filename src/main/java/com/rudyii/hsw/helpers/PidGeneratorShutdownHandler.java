@@ -1,7 +1,6 @@
 package com.rudyii.hsw.helpers;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -11,9 +10,9 @@ import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
 
+@Slf4j
 @Component
 public class PidGeneratorShutdownHandler {
-    private static Logger LOG = LogManager.getLogger(PidGeneratorShutdownHandler.class);
     private static int pid;
 
     public static int getPid() {
@@ -33,14 +32,14 @@ public class PidGeneratorShutdownHandler {
         out.close();
 
         try {
-            LOG.info("Home system application started at: " + (new Date()).toString() + " with PID: " + pid);
+            log.info("Home system application started at: {} with PID: {}", new Date(), pid);
         } catch (Exception e) {
-            LOG.error("Error in pid handling", e);
+            log.error("Error in pid handling", e);
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             new File("homesystemserver.pid").delete();
-            LOG.info("Home system application closed at: " + (new Date()).toString());
+            log.info("Home system application closed at: {}", new Date());
         }));
     }
 }

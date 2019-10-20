@@ -5,8 +5,7 @@ import com.rudyii.hsw.enums.ArmedStateEnum;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.services.ArmedStateService;
 import com.rudyii.hsw.services.EventService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -14,13 +13,9 @@ import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
 import static com.rudyii.hsw.enums.ArmedStateEnum.*;
 
-/**
- * Created by jack on 22.01.17.
- */
+@Slf4j
 @Component
 public class ArmingController {
-    private static Logger LOG = LogManager.getLogger(ArmingController.class);
-
     private EventService eventService;
     private DelayedArmingHelper armingHelper;
     private ArmedStateService armedStateService;
@@ -36,7 +31,7 @@ public class ArmingController {
         try {
             setSystemModeTo(MANUAL, ARMED);
         } catch (Exception e) {
-            LOG.error("Error fire action!", e);
+            log.error("Error fire action!", e);
         }
     }
 
@@ -44,7 +39,7 @@ public class ArmingController {
         try {
             armingHelper.armWithDelayInSeconds();
         } catch (Exception e) {
-            LOG.error("Error fire action!", e);
+            log.error("Error fire action!", e);
         }
     }
 
@@ -52,7 +47,7 @@ public class ArmingController {
         try {
             setSystemModeTo(MANUAL, DISARMED);
         } catch (Exception e) {
-            LOG.error("Error fire action!", e);
+            log.error("Error fire action!", e);
         }
     }
 
@@ -60,13 +55,13 @@ public class ArmingController {
         try {
             setSystemModeTo(AUTOMATIC, AUTO);
         } catch (Exception e) {
-            LOG.error("Error fire action!", e);
+            log.error("Error fire action!", e);
         }
     }
 
     private void setSystemModeTo(ArmedModeEnum armedMode, ArmedStateEnum armedState) {
         if (armedStateService.getArmedMode().equals(armedMode) && getCurrentArmedState().equals(armedState)){
-            LOG.info("System already is " + armedMode.toString() + " and " + armedState.toString());
+            log.info("System already is " + armedMode.toString() + " and " + armedState.toString());
         } else {
             eventService.publish(new ArmedEvent(armedMode, armedState));
         }

@@ -1,8 +1,7 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.objects.events.ServerKeyUpdatedEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -12,11 +11,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-
+@Slf4j
 @Service
 public class UuidService {
-    private static Logger LOG = LogManager.getLogger(UuidService.class);
-
     private EventService eventService;
     private Connection connection;
 
@@ -36,7 +33,7 @@ public class UuidService {
             connection.createStatement().execute("DELETE FROM SETTINGS WHERE KEY = 'SERVER_KEY'");
             this.serverKey = null;
         } catch (SQLException e) {
-            LOG.error("Failed to delete Server Key:", e);
+            log.error("Failed to delete Server Key:", e);
         }
     }
 
@@ -60,12 +57,12 @@ public class UuidService {
                 this.serverKey = rs.getString(1);
             }
         } catch (SQLException e) {
-            LOG.error("Failed to get Server Key: ", e);
+            log.error("Failed to get Server Key: ", e);
         }
     }
 
     private void generateAndInsertNewServerKey() {
-        LOG.info("Generating a new server key...");
+        log.info("Generating a new server key...");
         serverKey = UUID.randomUUID().toString();
 
         PreparedStatement statement;
@@ -75,7 +72,7 @@ public class UuidService {
             statement.setString(2, serverKey);
             statement.executeUpdate();
         } catch (SQLException e) {
-            LOG.error("Failed to generate a new server key", e);
+            log.error("Failed to generate a new server key", e);
         }
         readServerKey();
 

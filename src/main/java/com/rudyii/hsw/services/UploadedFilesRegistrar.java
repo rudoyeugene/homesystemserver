@@ -1,8 +1,7 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.objects.events.UploadEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -11,10 +10,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+@Slf4j
 @Component
 public class UploadedFilesRegistrar {
-    private static Logger LOG = LogManager.getLogger(UploadedFilesRegistrar.class);
-
     private Connection connection;
 
     @Autowired
@@ -30,7 +28,7 @@ public class UploadedFilesRegistrar {
             statement.setString(1, uploadEvent.getFileName());
             statement.executeUpdate();
         } catch (SQLException e) {
-            LOG.error("Failed to generate a new server key", e);
+            log.error("Failed to generate a new server key", e);
         }
     }
 }

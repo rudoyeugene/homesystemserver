@@ -1,10 +1,8 @@
 package com.rudyii.hsw.configuration;
 
 import com.rudyii.hsw.objects.events.OptionsChangedEvent;
-import com.rudyii.hsw.springcore.HomeSystem;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -16,9 +14,9 @@ import static com.rudyii.hsw.configuration.OptionsService.VERBOSE_OUTPUT_ENABLED
 import static org.apache.logging.log4j.Level.ERROR;
 import static org.apache.logging.log4j.Level.INFO;
 
+@Slf4j
 @Component
 public class OutputSwitcher {
-    private static Logger LOG = LogManager.getLogger(HomeSystem.class);
     private PrintStream defaultOutPrintStream = System.out;
     private PrintStream defaultErrPrintStream = System.err;
     private OptionsService optionsService;
@@ -51,13 +49,13 @@ public class OutputSwitcher {
         if (level.equals(ERROR)) {
             return new PrintStream(realPrintStream) {
                 public void print(final String string) {
-                    LOG.error(string);
+                    log.error(string);
                 }
             };
         } else {
             return new PrintStream(realPrintStream) {
                 public void print(final String string) {
-                    LOG.info(string);
+                    log.info(string);
                 }
             };
         }

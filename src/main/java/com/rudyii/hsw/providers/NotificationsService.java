@@ -9,9 +9,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 
-/**
- * Created by jack on 12.03.17.
- */
 @Service
 public class NotificationsService {
     private ActionsFactory actionsFactory;

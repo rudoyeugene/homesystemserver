@@ -6,8 +6,7 @@ import com.rudyii.hsw.objects.Client;
 import com.rudyii.hsw.providers.EmailDetailsProvider;
 import com.rudyii.hsw.services.ClientsService;
 import com.rudyii.hsw.services.IspService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.simplejavamail.email.Email;
 import org.simplejavamail.mailer.Mailer;
 import org.simplejavamail.mailer.config.TransportStrategy;
@@ -19,11 +18,10 @@ import java.util.ArrayList;
 
 import static com.rudyii.hsw.helpers.StringUtils.stringIsNotEmptyOrNull;
 
+@Slf4j
 @Component
 @Scope(value = "prototype")
 public class MailSendAction extends InternetBasedAction implements Runnable {
-    private static Logger LOG = LogManager.getLogger(MailSendAction.class);
-
     private EmailDetailsProvider emailDetailsProvider;
     private ClientsService clientsService;
     private String subject;
@@ -63,7 +61,7 @@ public class MailSendAction extends InternetBasedAction implements Runnable {
         email.setFromAddress("Home System", emailDetailsProvider.getUsername());
 
         for (Client client : clientsService.getClients()) {
-            if (!client.isHourlyReportMuted() && stringIsNotEmptyOrNull(client.getEmail())) {
+            if (!client.getHourlyReportMuted() && stringIsNotEmptyOrNull(client.getEmail())) {
                 email.addRecipient(null, client.getEmail(), RecipientType.TO);
             }
         }

@@ -1,7 +1,6 @@
 package com.rudyii.hsw.database;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -13,13 +12,9 @@ import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-/**
- * Created by jack on 04.11.16.
- */
+@Slf4j
 @Component
 public class DataSourceProvider {
-    private static Logger LOG = LogManager.getLogger(DataSourceProvider.class);
-
     @Value("${jdbc.driverClassName}")
     private String driverClassName;
 
@@ -53,7 +48,7 @@ public class DataSourceProvider {
         try {
             jdbcDataSource().getConnection().close();
         } catch (SQLException e) {
-            LOG.error("Failed to close the connection!", e);
+            log.error("Failed to close the connection!", e);
         }
     }
 

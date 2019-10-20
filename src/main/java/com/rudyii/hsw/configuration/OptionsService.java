@@ -116,6 +116,8 @@ public class OptionsService {
                 synchronizeOptions(cloudOptions, cloudOptionsWithoutCameras, localOptions);
                 synchronizeCameraOptions(cloudOptions, cloudCamerasOptionsOnly, localCamerasOptions);
 
+                localOptions.put(CAMERAS, localCamerasOptions);
+
                 if (optionsUpdated) {
                     optionsUpdated = false;
                     log.warn("Options updated, firing event");

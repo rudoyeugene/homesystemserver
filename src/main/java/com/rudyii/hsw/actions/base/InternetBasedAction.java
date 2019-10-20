@@ -1,15 +1,11 @@
 package com.rudyii.hsw.actions.base;
 
 import com.rudyii.hsw.services.IspService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
-/**
- * Created by jack on 06.06.17.
- */
+@Slf4j
 public abstract class InternetBasedAction {
-    private static Logger LOG = LogManager.getLogger(InternetBasedAction.class);
     private IspService ispService;
 
     @Autowired
@@ -21,9 +17,9 @@ public abstract class InternetBasedAction {
         while (!ispService.internetIsAvailable()) {
             try {
                 Thread.sleep(30000L);
-                LOG.info(getClass().getSimpleName() + ": Internet is unavailable, waiting another 30 seconds...");
+                log.info("Internet is unavailable, waiting another 30 seconds...");
             } catch (InterruptedException e) {
-                LOG.error(e);
+                log.error("Unknown error occurred:", e);
             }
         }
     }

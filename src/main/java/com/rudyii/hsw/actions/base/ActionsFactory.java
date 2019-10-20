@@ -15,9 +15,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
 
-/**
- * Created by jack on 06.06.17.
- */
 @Component
 public class ActionsFactory {
     private ApplicationContext context;

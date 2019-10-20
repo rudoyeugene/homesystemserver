@@ -1,11 +1,16 @@
 package com.rudyii.hsw.providers;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-/**
- * Created by jack on 06.06.17.
- */
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Component
 public class EmailDetailsProvider {
 
@@ -20,20 +25,4 @@ public class EmailDetailsProvider {
 
     @Value("#{hswProperties['mail.password']}")
     private String password;
-
-    public Integer getSmptPort() {
-        return smptPort;
-    }
-
-    public String getSmptServer() {
-        return smptServer;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
 }

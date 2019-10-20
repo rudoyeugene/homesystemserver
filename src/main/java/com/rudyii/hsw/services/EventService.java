@@ -5,9 +5,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Service;
 
-/**
- * Created by jack on 13.12.16.
- */
 @Service
 public class EventService implements ApplicationEventPublisherAware {
 

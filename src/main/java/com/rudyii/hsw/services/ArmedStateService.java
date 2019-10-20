@@ -3,8 +3,7 @@ package com.rudyii.hsw.services;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.providers.IPStateProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -16,9 +15,9 @@ import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
 import static com.rudyii.hsw.enums.ArmedStateEnum.*;
 
+@Slf4j
 @Service
 public class ArmedStateService {
-    private static Logger LOG = LogManager.getLogger(ArmedStateService.class);
     private EventService eventService;
     private long count = 1L;
     private Boolean systemArmed = false;
@@ -59,7 +58,7 @@ public class ArmedStateService {
             eventService.publish(new ArmedEvent(AUTOMATIC, DISARMED));
         }
 
-        LOG.info("System " + DISARMED);
+        log.info("System " + DISARMED);
     }
 
     private void arm(boolean publishEvent) {
@@ -68,7 +67,7 @@ public class ArmedStateService {
             eventService.publish(new ArmedEvent(AUTOMATIC, ARMED));
         }
 
-        LOG.info("System " + ARMED);
+        log.info("System " + ARMED);
     }
 
     @Async
@@ -83,7 +82,7 @@ public class ArmedStateService {
         } else if (event.getArmedMode().equals(AUTOMATIC) && event.getArmedState().equals(AUTO)) {
             this.armedMode = AUTOMATIC;
         } else {
-            LOG.info("Unsupported case: mode " + event.getArmedMode() + " with state: " + event.getArmedState());
+            log.info("Unsupported case: mode " + event.getArmedMode() + " with state: " + event.getArmedState());
         }
     }
 

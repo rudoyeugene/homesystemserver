@@ -3,8 +3,7 @@ package com.rudyii.hsw.helpers;
 import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.services.EventService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -13,13 +12,9 @@ import static com.rudyii.hsw.configuration.OptionsService.DELAYED_ARM_INTERVAL;
 import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 
-/**
- * Created by jack on 19.04.17.
- */
+@Slf4j
 @Component
 public class DelayedArmingHelper {
-    private static Logger LOG = LogManager.getLogger(DelayedArmingHelper.class);
-
     private EventService eventService;
     private OptionsService optionsService;
 
@@ -48,7 +43,7 @@ public class DelayedArmingHelper {
 
             this.idle = true;
         } else {
-            LOG.info("Delayed ARM already in progress");
+            log.info("Delayed ARM already in progress");
         }
     }
 }

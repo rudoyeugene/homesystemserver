@@ -32,10 +32,6 @@ import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
-/**
- * Created by jack on 13.04.17.
- */
-//@RequestMapping("/admin")
 @RestController
 public class AdminPortal {
     private Uptime uptime;

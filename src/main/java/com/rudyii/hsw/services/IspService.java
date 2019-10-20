@@ -3,8 +3,7 @@ package com.rudyii.hsw.services;
 import com.google.gson.Gson;
 import com.rudyii.hsw.objects.WanIp;
 import com.rudyii.hsw.objects.events.IspEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.codehaus.plexus.util.IOUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -19,9 +18,9 @@ import java.util.Collections;
 
 import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 
+@Slf4j
 @Service
 public class IspService {
-    private static Logger LOG = LogManager.getLogger(IspService.class);
     private PingService pingService;
     private EventService eventService;
 
@@ -88,7 +87,7 @@ public class IspService {
             response = IOUtil.toString(new URL(whatsMyIpJson).openStream());
             wanIp = gson.fromJson(response, WanIp.class);
         } catch (Exception e) {
-            LOG.error("Failed to fetch WAN IP information", e);
+            log.error("Failed to fetch WAN IP information", e);
         }
         return wanIp;
     }
@@ -101,7 +100,7 @@ public class IspService {
                     .findFirst().orElseThrow(RuntimeException::new)
                     .getHostAddress();
         } catch (SocketException e) {
-            LOG.error("Failed to fetch local IP address: ", e);
+            log.error("Failed to fetch local IP address: ", e);
         }
 
         return "0.0.0.0";

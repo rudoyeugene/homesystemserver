@@ -2,25 +2,22 @@ package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.helpers.ArmingController;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class ActionsService {
-    private static Logger LOG = LogManager.getLogger(ActionsService.class);
 
     private ArmingController armingController;
     private ReportingService reportingService;
     private EventService eventService;
-    private UpnpService upnpService;
 
     public ActionsService(ArmingController armingController, ReportingService reportingService,
-                          EventService eventService, UpnpService upnpService) {
+                          EventService eventService) {
         this.armingController = armingController;
         this.reportingService = reportingService;
         this.eventService = eventService;
-        this.upnpService = upnpService;
     }
 
     public void performAction(String action) {
@@ -40,14 +37,8 @@ public class ActionsService {
             case "RESEND_HOURLY":
                 reportingService.sendHourlyReport();
                 break;
-            case "OPEN_PORTS":
-                upnpService.openPorts();
-                break;
-            case "CLOSE_PORTS":
-                upnpService.closePorts();
-                break;
             default:
-                LOG.error("Unsupported action: " + action);
+                log.error("Unsupported action: " + action);
         }
     }
 

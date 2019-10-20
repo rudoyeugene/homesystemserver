@@ -1,10 +1,13 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hsw.objects.Camera;
-import com.rudyii.hsw.objects.events.*;
-import com.rudyii.hsw.services.ArmedStateService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.rudyii.hsw.objects.events.ArmedEvent;
+import com.rudyii.hsw.objects.events.EventBase;
+import com.rudyii.hsw.objects.events.MotionDetectedEvent;
+import com.rudyii.hsw.objects.events.OptionsChangedEvent;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
@@ -25,46 +28,68 @@ import static com.rudyii.hsw.configuration.OptionsService.CONTINUOUS_MONITORING;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
-/**
- * Created by jack on 02.10.16.
- */
+@Slf4j
 public class CameraMotionDetectionController {
-    public static final String CONTINUOUS = "CONTINUOUS";
-    private static Logger LOG = LogManager.getLogger(CameraMotionDetectionController.class);
-
-    private String mjpegUrl, jpegUrl, rtspUrl, rebootUrl, cameraName;
-    private long interval = 500L;
-    private long rebootTimeout = 60L;
-    private long noiseLevel = 5L;
-    private long motionArea = 20L;
-    private boolean detectorEnabled;
-    private boolean healthCheckEnabled;
-    private boolean rebootInProgress;
-    private boolean autostartMonitoring;
-    private boolean continuousMonitoring;
-    private ArmedStateService armedStateService;
     private ApplicationContext context;
     private CameraMotionDetector currentCameraMotionDetector;
     private Camera camera;
     private File lock;
+    @Getter
+    @Setter
+    private String mjpegUrl, jpegUrl, rtspUrl, rebootUrl, cameraName;
+    @Getter
+    @Setter
+    private long interval = 500L;
+    @Getter
+    @Setter
+    private long rebootTimeout = 60L;
+    @Getter
+    @Setter
+    private long noiseLevel = 5L;
+    @Getter
+    @Setter
+    private long motionArea = 20L;
+    private boolean detectorEnabled;
+    @Getter
+    @Setter
+    private boolean healthCheckEnabled;
+    private boolean rebootInProgress;
+    @Getter
+    @Setter
+    private boolean autostartMonitoring;
+    @Getter
+    @Setter
+    private boolean continuousMonitoring;
+    @Getter
+    @Setter
     private String ip;
+    @Getter
+    @Setter
     private Integer httpPort;
-    private Integer outerHttpPort;
-    private boolean useOuterHttpPort;
+    @Getter
+    @Setter
     private Integer rtspPort;
-    private Integer outerRtspPort;
-    private boolean useOuterRtspPort;
-    private boolean openPortsOnStartup;
+    @Getter
+    @Setter
     private String login;
+    @Getter
+    @Setter
     private String password;
+    @Getter
+    @Setter
     private String mjpegUrlTemplate;
+    @Getter
+    @Setter
     private String jpegUrlTemplate;
+    @Getter
+    @Setter
     private String rtspUrlTemplate;
+    @Getter
+    @Setter
     private String rebootUrlTemplate;
 
     @Autowired
-    public CameraMotionDetectionController(ArmedStateService armedStateService, ApplicationContext context) {
-        this.armedStateService = armedStateService;
+    public CameraMotionDetectionController(ApplicationContext context) {
         this.context = context;
     }
 
@@ -73,12 +98,7 @@ public class CameraMotionDetectionController {
         this.lock = new File(cameraName + ".lock");
 
         buildUrls();
-        this.camera = new Camera();
-        camera.setName(cameraName);
-        camera.setJpegUrl(jpegUrl);
-        camera.setRtspUrl(rtspUrl);
-
-        this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
+        this.camera = new Camera(cameraName, jpegUrl, rtspUrl);
 
         if (autostartMonitoring || continuousMonitoring) {
             enableMotionDetection();
@@ -93,48 +113,38 @@ public class CameraMotionDetectionController {
     }
 
     @Async
-    void enableMotionDetection() throws Exception {
+    public void enableMotionDetection() throws Exception {
         this.detectorEnabled = true;
+
+        this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
 
         currentCameraMotionDetector.onCamera(camera).start();
 
-        LOG.info("Motion detector enabled for camera:" + cameraName);
+        log.info("Motion detector enabled for camera: {}", cameraName);
     }
 
-    private void disableMotionDetection() {
+    public void disableMotionDetection() {
         if (continuousMonitoring) return;
 
         this.detectorEnabled = false;
 
-        try {
-            currentCameraMotionDetector.stop();
-        } catch (Exception e) {
-            LOG.warn("Some error occurred during disabling motion detector on camera " + cameraName, e);
+        if (currentCameraMotionDetector != null) {
+            try {
+                currentCameraMotionDetector.stop();
+            } catch (Exception e) {
+                log.warn("Some error occurred during disabling motion detector on camera {}", cameraName, e);
+            }
+            this.currentCameraMotionDetector = null;
         }
 
         lock.delete();
 
-        LOG.info("Motion detector disabled for camera: " + cameraName);
+        log.info("Motion detector disabled for camera: {}", cameraName);
     }
 
-    private void performRebootSequence() throws Exception {
+    public void performReboot() {
         this.rebootInProgress = true;
 
-        if (detectorEnabled) {
-            disableMotionDetection();
-        }
-
-        performReboot();
-
-        if (armedStateService.isArmed()) {
-            enableMotionDetection();
-        }
-
-        this.rebootInProgress = false;
-    }
-
-    private void performReboot() {
-        LOG.info("Rebooting camera " + cameraName + ", will wait for " + rebootTimeout + " milliseconds.");
         String USER_AGENT = "Mozilla/5.0";
 
         StringBuilder response = new StringBuilder();
@@ -160,27 +170,15 @@ public class CameraMotionDetectionController {
             System.out.println(response);
             in.close();
         } catch (IOException e) {
-            LOG.error("Failed to reboot camera: " + getCameraName(), e);
-            return;
+            log.error("Failed to reboot camera: {}", getCameraName(), e);
         }
-
-        waitForRebootCompletion();
-    }
-
-    private void waitForRebootCompletion() {
-        LOG.info(String.format("Camera: " + getCameraName() + " reboot in progress...\nWaiting for %s seconds...", rebootTimeout));
-        try {
-            Thread.sleep(rebootTimeout * 1000);
-        } catch (InterruptedException e) {
-            LOG.error("Error occurred: ", e);
-        }
-        LOG.info("Camera: " + getCameraName() + " reboot complete");
     }
 
     private String buildUrlFromTemplate(String template) {
         return template
                 .replace("${ip}", ip)
                 .replace("${httpPort}", httpPort.toString())
+                .replace("${rtspPort}", rtspPort.toString())
                 .replace("${login}", login)
                 .replace("${password}", password);
     }
@@ -196,13 +194,8 @@ public class CameraMotionDetectionController {
                 } else if (armedEvent.getArmedState().equals(DISARMED) && detectorEnabled) {
                     disableMotionDetection();
                 } else {
-                    LOG.warn("New ArmedEvent received but system state unchanged.");
+                    log.warn("New ArmedEvent received but system state unchanged.");
                 }
-            }
-        } else if (event instanceof CameraRebootEvent) {
-            CameraRebootEvent rebootEvent = (CameraRebootEvent) event;
-            if (rebootEvent.getCameraName().equals(cameraName) && !rebootInProgress) {
-                performRebootSequence();
             }
         } else if (event instanceof MotionDetectedEvent) {
             MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
@@ -218,7 +211,7 @@ public class CameraMotionDetectionController {
                     lock.createNewFile();
                     context.getBean(VideoCaptor.class).startCaptureFrom(camera);
                 } catch (Exception e) {
-                    LOG.error("Failed to lock " + lock.getAbsolutePath(), e);
+                    log.error("Failed to lock {}", lock.getAbsolutePath(), e);
                 }
             }
         } else if (event instanceof OptionsChangedEvent) {
@@ -229,175 +222,19 @@ public class CameraMotionDetectionController {
         }
     }
 
-    public String getMjpegUrl() {
-        return mjpegUrl;
-    }
-
-    public String getJpegUrl() {
-        return jpegUrl;
-    }
-
-    public String getRtspUrl() {
-        return rtspUrl;
-    }
-
-    public String getCameraName() {
-        return cameraName;
-    }
-
-    public void setCameraName(String cameraName) {
-        this.cameraName = cameraName;
-    }
-
-    public String getIp() {
-        return ip;
-    }
-
-    public void setIp(String ip) {
-        this.ip = ip;
-    }
-
-    public Integer getHttpInnerPort() {
-        return httpPort;
-    }
-
-    public Integer getHttpOuterPort() {
-        return outerHttpPort;
-    }
-
-    public Integer getRtspInnerPort() {
-        return rtspPort;
-    }
-
-    public Integer getRtspOuterPort() {
-        return outerRtspPort;
-    }
-
-    public boolean openPortsOnStartup() {
-        return openPortsOnStartup;
-    }
-
-    public boolean openOuterHttpPort() {
-        return useOuterHttpPort;
-    }
-
-    public boolean openOuterRtspPort() {
-        return useOuterRtspPort;
-    }
-
-    public Long getMotionArea() {
-        return motionArea;
-    }
-
-    public void setMotionArea(Long motionArea) {
-        this.motionArea = motionArea;
-    }
-
-    public Long getInterval() {
-        return interval;
-    }
-
-    public void setInterval(Long interval) {
-        this.interval = interval;
-    }
-
-    public Long getNoiseLevel() {
-        return noiseLevel;
-    }
-
-    public void setNoiseLevel(Long noiseLevel) {
-        this.noiseLevel = noiseLevel;
-    }
-
-    public Long getRebootTimeout() {
-        return rebootTimeout;
-    }
-
-    public void setRebootTimeout(Long rebootTimeout) {
-        this.rebootTimeout = rebootTimeout;
-    }
-
     public boolean isDetectorEnabled() {
         return detectorEnabled;
-    }
-
-    public boolean isHealthCheckEnabled() {
-        return healthCheckEnabled;
-    }
-
-    public void setHealthCheckEnabled(boolean healthCheckEnabled) {
-        this.healthCheckEnabled = healthCheckEnabled;
-    }
-
-    public boolean isAutostartMonitoring() {
-        return autostartMonitoring;
-    }
-
-    public void setAutostartMonitoring(boolean autostartMonitoring) {
-        this.autostartMonitoring = autostartMonitoring;
-    }
-
-    public boolean isContinuousMonitoring() {
-        return continuousMonitoring;
-    }
-
-    public void setContinuousMonitoring(boolean continuousMonitoring) {
-        this.continuousMonitoring = continuousMonitoring;
     }
 
     public boolean isRecordingInProgress() {
         return lock.exists();
     }
 
-    public void setHttpPort(int httpPort) {
-        this.httpPort = httpPort;
+    public boolean isRebootInProgress() {
+        return rebootInProgress;
     }
 
-    public void setOuterHttpPort(int outerHttpPort) {
-        this.outerHttpPort = outerHttpPort;
-    }
-
-    public void setUseOuterHttpPort(boolean useOuterHttpPort) {
-        this.useOuterHttpPort = useOuterHttpPort;
-    }
-
-    public void setRtspPort(int rtspPort) {
-        this.rtspPort = rtspPort;
-    }
-
-    public void setOuterRtspPort(int outerRtspPort) {
-        this.outerRtspPort = outerRtspPort;
-    }
-
-    public void setUseOuterRtspPort(boolean useOuterRtspPort) {
-        this.useOuterRtspPort = useOuterRtspPort;
-    }
-
-    public void setOpenPortsOnStartup(boolean openPortsOnStartup) {
-        this.openPortsOnStartup = openPortsOnStartup;
-    }
-
-    public void setLogin(String login) {
-        this.login = login;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public void setMjpegUrlTemplate(String mjpegUrlTemplate) {
-        this.mjpegUrlTemplate = mjpegUrlTemplate;
-    }
-
-    public void setJpegUrlTemplate(String jpegUrlTemplate) {
-        this.jpegUrlTemplate = jpegUrlTemplate;
-    }
-
-    public void setRtspUrlTemplate(String rtspUrlTemplate) {
-        this.rtspUrlTemplate = rtspUrlTemplate;
-    }
-
-    public void setRebootUrlTemplate(String rebootUrlTemplate) {
-        this.rebootUrlTemplate = rebootUrlTemplate;
+    public void rebootComplete() {
+        this.rebootInProgress = false;
     }
 }

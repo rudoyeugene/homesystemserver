@@ -2,8 +2,7 @@ package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.IPEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,13 +16,9 @@ import static com.rudyii.hsw.enums.IPStateEnum.*;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang.SystemUtils.IS_OS_LINUX;
 
-/**
- * Created by jack on 01.02.17.
- */
+@Slf4j
 @Service
 public class PingService {
-    private static Logger LOG = LogManager.getLogger(PingService.class);
-
     private ArmedStateService armedStateService;
     private EventService eventService;
     private Map<String, String> ipResolver;
@@ -55,10 +50,10 @@ public class PingService {
     }
 
     public IPStateEnum ping(String ip) {
-        LOG.info("Trying to ping " + ip);
+        log.info("Trying to ping " + ip);
 
         if (IS_OS_LINUX) {
-            LOG.info("Linux OS detected");
+            log.info("Linux OS detected");
             try {
                 Process pingProcess = getPingProcessBuilderFor(ip).start();
                 pingProcess.waitFor();
@@ -71,12 +66,12 @@ public class PingService {
                     return OFFLINE;
                 }
             } catch (Exception e) {
-                LOG.error("Failed to ping address: " + ip, e);
+                log.error("Failed to ping address: " + ip, e);
                 return ERROR;
             }
 
         } else {
-            LOG.info("NON Linux OS detected! Reachability will be used!");
+            log.info("NON Linux OS detected! Reachability will be used!");
             InetAddress host;
             try {
                 host = InetAddress.getByName(ip);
@@ -90,7 +85,7 @@ public class PingService {
                 }
 
             } catch (Exception e) {
-                LOG.error("Error occurred: ", e);
+                log.error("Error occurred: ", e);
                 return ERROR;
             }
         }
@@ -105,7 +100,7 @@ public class PingService {
         IPEvent ipEvent = new IPEvent(ip, state);
         eventService.publish(ipEvent);
         System.out.println(ipResolver.get(ip) == null ? ip : ipResolver.get(ip) + " is " + state);
-        LOG.info(ip + " is " + state);
+        log.info(ip + " is " + state);
     }
 
 
@@ -119,7 +114,7 @@ public class PingService {
         @Override
         public void run() {
             if (IS_OS_LINUX) {
-                LOG.info("Linux OS detected");
+                log.info("Linux OS detected");
                 try {
                     Process pingProcess = getPingProcessBuilderFor(ip).start();
                     pingProcess.waitFor();
@@ -130,11 +125,11 @@ public class PingService {
                         fireEventWithState(ip, OFFLINE);
                     }
                 } catch (Exception e) {
-                    LOG.error("Failed to ping address: " + ip, e);
+                    log.error("Failed to ping address: " + ip, e);
                 }
 
             } else {
-                LOG.info("NON Linux OS detected! Reachability will be used!");
+                log.info("NON Linux OS detected! Reachability will be used!");
                 try {
                     if (InetAddress.getByName(ip).isReachable(5000)) {
                         fireEventWithState(ip, ONLINE);
@@ -143,7 +138,7 @@ public class PingService {
                     }
 
                 } catch (Exception e) {
-                    LOG.error("Error occurred: ", e);
+                    log.error("Error occurred: ", e);
                 }
             }
         }

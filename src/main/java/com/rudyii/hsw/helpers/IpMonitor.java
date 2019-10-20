@@ -8,9 +8,6 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Map;
 
-/**
- * Created by jack on 25.09.16.
- */
 @Component
 public class IpMonitor {
 

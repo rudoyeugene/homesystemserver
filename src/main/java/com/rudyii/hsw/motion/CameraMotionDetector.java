@@ -5,8 +5,7 @@ import com.rudyii.hsw.objects.Camera;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.objects.events.MotionDetectedEvent;
 import com.rudyii.hsw.services.EventService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
@@ -20,10 +19,10 @@ import java.net.URL;
 
 import static com.rudyii.hsw.configuration.OptionsService.SHOW_MOTION_AREA;
 
+@Slf4j
 @Component
 @Scope(value = "prototype")
 public class CameraMotionDetector {
-    private static Logger LOG = LogManager.getLogger(CameraMotionDetector.class);
     private final OptionsService optionsService;
 
     private EventService eventService;
@@ -43,18 +42,18 @@ public class CameraMotionDetector {
     @Async
     public void start() throws Exception {
         this.enabled = true;
-        LOG.info("Started CameraMotionDetector for " + camera.getName());
+        log.info("Started CameraMotionDetector for " + camera.getName());
 
         try {
             this.previousImage = ImageIO.read(sourceUrl);
         } catch (Exception e) {
-            LOG.error("Failed to get previous image from camera: " + camera.getName());
+            log.error("Failed to get previous image from camera: " + camera.getName());
             stop();
         }
         try {
             this.currentImage = ImageIO.read(sourceUrl);
         } catch (Exception e) {
-            LOG.error("Failed to get current image from camera: " + camera.getName());
+            log.error("Failed to get current image from camera: " + camera.getName());
             stop();
         }
 
@@ -65,7 +64,7 @@ public class CameraMotionDetector {
     @Async
     public void stop() {
         this.enabled = false;
-        LOG.info("Stopping CameraMotionDetector for " + camera.getName());
+        log.info("Stopping CameraMotionDetector for " + camera.getName());
     }
 
     private void startDetection() throws InterruptedException {
@@ -76,7 +75,7 @@ public class CameraMotionDetector {
                 this.currentImage = ImageIO.read(sourceUrl);
                 detect();
             } catch (Exception e) {
-                LOG.error("Failed to get current image from camera: " + camera.getName());
+                log.error("Failed to get current image from camera: " + camera.getName());
                 fireRebootEvent();
             }
             Thread.sleep(interval());
@@ -90,7 +89,7 @@ public class CameraMotionDetector {
         int currentImageHeight = currentImage.getHeight(null);
 
         if ((previousImageWidth != currentImageWidth) || (previousImageHeight != currentImageHeight)) {
-            LOG.error("Images dimensions mismatch: previous image size = "
+            log.error("Images dimensions mismatch: previous image size = "
                     + previousImageWidth + "x" + previousImageHeight + " while current image size = "
                     + currentImageWidth + "x" + previousImageHeight + " on camera: " + camera.getName());
             return;
@@ -125,14 +124,14 @@ public class CameraMotionDetector {
         }
 
         if (differenceInPercentage > motionAreaSize()) {
-            LOG.info("Motion detected on " + camera.getName() + " with motion area size : " + differenceInPercentage + "%");
+            log.info("Motion detected on " + camera.getName() + " with motion area size : " + differenceInPercentage + "%");
             eventService.publish(new MotionDetectedEvent(camera.getName(), differenceInPercentage, currentImage, motionObject));
         }
     }
 
     private void fireRebootEvent() {
         if (!eventFired) {
-            LOG.error("Firing reboot event for camera: " + camera.getName());
+            log.error("Firing reboot event for camera: " + camera.getName());
             this.eventFired = true;
             eventService.publish(new CameraRebootEvent(camera.getName()));
         }

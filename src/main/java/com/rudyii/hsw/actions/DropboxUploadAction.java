@@ -10,8 +10,7 @@ import com.rudyii.hsw.actions.base.InternetBasedAction;
 import com.rudyii.hsw.objects.events.UploadEvent;
 import com.rudyii.hsw.services.EventService;
 import com.rudyii.hsw.services.IspService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
@@ -22,14 +21,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Date;
 
-/**
- * Created by jack on 06.06.17.
- */
+@Slf4j
 @Component
 @Scope(value = "prototype")
 public class DropboxUploadAction extends InternetBasedAction implements Runnable {
-    private static Logger LOG = LogManager.getLogger(DropboxUploadAction.class);
-
     private DbxClientV2 client;
     private File uploadCandidate;
     private EventService eventService;
@@ -63,14 +58,14 @@ public class DropboxUploadAction extends InternetBasedAction implements Runnable
                     .withMode(WriteMode.ADD)
                     .withClientModified(new Date(uploadCandidate.lastModified()))
                     .uploadAndFinish(in);
-            LOG.info("Upload to Dropbox was successful with file " + metadata.getName());
+            log.info("Upload to Dropbox was successful with file {}", metadata.getName());
             SharedLinkMetadata slm = client.sharing().createSharedLinkWithSettings(metadata.getPathLower(), SharedLinkSettings.newBuilder().withRequestedVisibility(RequestedVisibility.PUBLIC).build());
             String url = slm.getUrl();
 
             eventService.publish(new UploadEvent(uploadCandidate.getName(), image, url));
 
         } catch (Exception e) {
-            LOG.error("Upload to Dropbox FAILED!", e);
+            log.error("Upload to Dropbox FAILED!", e);
         }
     }
 

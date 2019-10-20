@@ -1,8 +1,7 @@
 package com.rudyii.hsw.helpers;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,12 +11,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 
-/**
- * Created by jack on 09.07.17.
- */
+@Slf4j
 @Component
 public class BoardMonitor {
-    private static Logger LOG = LogManager.getLogger(BoardMonitor.class);
     private final Map monitorCommandList;
 
     @Autowired
@@ -45,7 +41,7 @@ public class BoardMonitor {
 
                 in.close();
             } catch (Exception e) {
-                LOG.error("Failed on command:\" " + String.valueOf(key), e);
+                log.error("Failed on command: {}", key, e);
             }
         });
 

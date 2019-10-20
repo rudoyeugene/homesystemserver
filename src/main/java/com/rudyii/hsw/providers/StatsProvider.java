@@ -5,8 +5,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,9 +22,9 @@ import static com.rudyii.hsw.providers.StatsProvider.Action.CLEANUP;
 import static com.rudyii.hsw.providers.StatsProvider.Action.INCREASE;
 import static java.math.BigInteger.ZERO;
 
+@Slf4j
 @Component
 public class StatsProvider {
-    private static Logger LOG = LogManager.getLogger(StatsProvider.class);
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
     private OptionsService optionsService;
 
@@ -59,14 +58,14 @@ public class StatsProvider {
                 }
 
                 if (usageStats.get(today) == null) {
-                    LOG.info("Initialized today with ZERO");
+                    log.info("Initialized today with ZERO");
                     usageStats.put(today, ZERO.longValue());
                 }
 
                 switch (action) {
                     case CLEANUP:
                         Long historicalToday = calculateHistoricalToday();
-                        LOG.info("Cleaning obsolete usage stats");
+                        log.info("Cleaning obsolete usage stats");
                         usageStats.forEach((k, v) -> {
                             if (Long.valueOf(k) < historicalToday) {
                                 usageStats.remove(k);
@@ -98,7 +97,7 @@ public class StatsProvider {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Weekly stats Firebase data!");
+                log.error("Failed to fetch Weekly stats Firebase data!");
             }
         };
     }

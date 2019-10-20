@@ -2,8 +2,7 @@ package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.providers.StatsProvider;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -11,11 +10,9 @@ import org.springframework.stereotype.Service;
 
 import static com.rudyii.hsw.configuration.OptionsService.COLLECT_STATISTICS;
 
+@Slf4j
 @Service
 public class StatisticsService {
-
-    private static Logger LOG = LogManager.getLogger(StatisticsService.class);
-
     private StatsProvider statsProvider;
     private ArmedStateService armedStateService;
     private OptionsService optionsService;
@@ -34,7 +31,7 @@ public class StatisticsService {
             try {
                 statsProvider.increaseArmedStatistic();
             } catch (Exception e) {
-                LOG.error("StatsProvider update FAILED!", e);
+                log.error("StatsProvider update FAILED!", e);
             }
         }
     }

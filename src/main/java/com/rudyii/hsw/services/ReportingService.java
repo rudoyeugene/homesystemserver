@@ -8,8 +8,7 @@ import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.providers.NotificationsService;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,12 +22,9 @@ import java.util.ArrayList;
 
 import static com.rudyii.hsw.configuration.OptionsService.*;
 
-/**
- * Created by jack on 13.04.17.
- */
+@Slf4j
 @Service
 public class ReportingService {
-    private static Logger LOG = LogManager.getLogger(ReportingService.class);
     private Uptime uptime;
     private ArmedStateService armedStateService;
     private IpMonitor ipMonitor;
@@ -82,7 +78,7 @@ public class ReportingService {
                             .mimeType("image/jpeg").build());
                 }
             } catch (Exception e) {
-                LOG.error("Camera " + cameraMotionDetectionController.getCameraName() + " snapshot extraction failed:", e);
+                log.error("Camera " + cameraMotionDetectionController.getCameraName() + " snapshot extraction failed:", e);
                 eventService.publish(new CameraRebootEvent(cameraMotionDetectionController.getCameraName()));
             }
         }

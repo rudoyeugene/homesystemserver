@@ -3,9 +3,8 @@ package com.rudyii.hsw.services;
 import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.motion.CameraMotionDetectionController;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -16,12 +15,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by jack on 04.02.17.
- */
+@Slf4j
 @Service
 public class CameraHealthService {
-    private static Logger LOG = LogManager.getLogger(CameraHealthService.class);
     private EventService eventService;
     private OptionsService optionsService;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
@@ -39,20 +35,20 @@ public class CameraHealthService {
         for (CameraMotionDetectionController cameraMotionDetectionController : cameraMotionDetectionControllers) {
             if ((boolean) optionsService.getCameraOptions(cameraMotionDetectionController.getCameraName()).get("healthCheckEnabled")) {
                 if (cameraMotionDetectionController.isRecordingInProgress()) {
-                    LOG.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", recording in progress...");
+                    log.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", recording in progress...");
                 } else if (cameraMotionDetectionController.isDetectorEnabled()) {
-                    LOG.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", detector enabled...");
+                    log.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", detector enabled...");
                 } else {
                     try {
                         imageProbe(cameraMotionDetectionController.getJpegUrl(), cameraMotionDetectionController.getCameraName());
                         ffprobe(cameraMotionDetectionController.getRtspUrl(), cameraMotionDetectionController.getCameraName());
                     } catch (Exception e) {
-                        LOG.error("Camera " + cameraMotionDetectionController.getCameraName() + " probe failed, rebooting...");
+                        log.error("Camera " + cameraMotionDetectionController.getCameraName() + " probe failed, rebooting...");
                         rebootCamera(cameraMotionDetectionController);
                     }
                 }
             } else {
-                LOG.info("Health checking is disabled for camera: " + cameraMotionDetectionController.getCameraName());
+                log.info("Health checking is disabled for camera: " + cameraMotionDetectionController.getCameraName());
             }
         }
     }
@@ -69,7 +65,7 @@ public class CameraHealthService {
                 probeCommand.add("/usr/bin/avprobe");
 
             } else {
-                LOG.error("/usr/bin/ffprobe or /usr/bin/avprobe not found, please install, ignoring health checking");
+                log.error("/usr/bin/ffprobe or /usr/bin/avprobe not found, please install, ignoring health checking");
                 return;
             }
         } else if (SystemUtils.IS_OS_WINDOWS) {
@@ -78,11 +74,11 @@ public class CameraHealthService {
                 probeCommand.add("-i");
 
             } else {
-                LOG.error("C:/Windows/System32/ffprobe.exe not found, please install, ignoring health checking");
+                log.error("C:/Windows/System32/ffprobe.exe not found, please install, ignoring health checking");
                 return;
             }
         } else {
-            LOG.error("Unsupported OS detected, ignoring health checking");
+            log.error("Unsupported OS detected, ignoring health checking");
             return;
         }
 
@@ -93,7 +89,7 @@ public class CameraHealthService {
         ffprobeProcess.waitFor();
 
         if (ffprobeProcess.exitValue() == 0) {
-            LOG.info("Video stream probe success on camera: " + cameraName);
+            log.info("Video stream probe success on camera: " + cameraName);
         } else {
             throw new Exception("Video probe failed!");
         }
@@ -102,7 +98,7 @@ public class CameraHealthService {
 
     private void imageProbe(String jpegUrl, String cameraName) throws Exception {
         ImageIO.read(new URL(jpegUrl));
-        LOG.info("Image probe success on camera: " + cameraName);
+        log.info("Image probe success on camera: " + cameraName);
     }
 
     private void rebootCamera(CameraMotionDetectionController cameraMotionDetectionController) {

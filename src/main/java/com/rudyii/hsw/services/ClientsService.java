@@ -7,8 +7,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.objects.Client;
 import com.rudyii.hsw.objects.events.ServerKeyUpdatedEvent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -19,16 +18,15 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
+@Slf4j
 @Service
 public class ClientsService {
-    private static Logger LOG = LogManager.getLogger(ClientsService.class);
-
     private List<Client> clients;
     private DatabaseReference connectedClientsRef;
     private ValueEventListener connectedClientsValueEventListener;
 
     @Autowired
-    public ClientsService(FirebaseDatabaseProvider firebaseDatabaseProvider){
+    public ClientsService(FirebaseDatabaseProvider firebaseDatabaseProvider) {
         this.clients = Collections.synchronizedList(new ArrayList());
         connectedClientsRef = firebaseDatabaseProvider.getReference("/connectedClients");
         connectedClientsValueEventListener = getConnectedClientsValueEventListener();
@@ -36,7 +34,7 @@ public class ClientsService {
 
     @EventListener(ServerKeyUpdatedEvent.class)
     @PostConstruct
-    public void initService(){
+    public void initService() {
         connectedClientsRef.removeEventListener(connectedClientsValueEventListener);
         connectedClientsRef.addValueEventListener(connectedClientsValueEventListener);
     }
@@ -48,13 +46,21 @@ public class ClientsService {
                 HashMap<String, Object> connectedClients = (HashMap<String, Object>) dataSnapshot.getValue();
 
                 if (connectedClients == null) {
-                    LOG.warn("No connected clients found!");
+                    log.warn("No connected clients found!");
                 } else {
                     clients.clear();
 
                     connectedClients.forEach((userId, value) -> {
                         HashMap<String, Object> userProperties = (HashMap<String, Object>) value;
-                        clients.add(new Client(userId, userProperties));
+                        clients.add(new Client(
+                                Boolean.TRUE.equals(userProperties.get("hourlyReportMuted")),
+                                Boolean.TRUE.equals(userProperties.get("notificationsMuted")),
+                                userProperties.get("email").toString(),
+                                userProperties.get("device").toString(),
+                                userProperties.get("appVersion").toString(),
+                                userProperties.get("token").toString(),
+                                userProperties.get("userId").toString(),
+                                userProperties.get("notificationType").toString()));
                     });
 
                 }
@@ -62,7 +68,7 @@ public class ClientsService {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                LOG.error("Failed to fetch Connected Clients Firebase data!");
+                log.error("Failed to fetch Connected Clients Firebase data!");
             }
         };
     }
