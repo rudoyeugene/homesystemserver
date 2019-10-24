@@ -441,7 +441,7 @@ public class FirebaseService {
                 notify = false;
             }
 
-            if (notify) {
+            if (notify && tokenLookGood(client.getToken())) {
                 String token = client.getToken();
 
                 log.info("Ready to send message to the Client:" + email + " on device " + device + " with client version " + appVersion);
@@ -451,5 +451,9 @@ public class FirebaseService {
                 log.warn("Client:" + email + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
             }
         });
+    }
+
+    private boolean tokenLookGood(String token) {
+        return token != null && !"".equals(token) && "null".equalsIgnoreCase(token);
     }
 }

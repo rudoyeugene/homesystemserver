@@ -55,11 +55,11 @@ public class ClientsService {
                         clients.add(Client.builder()
                                 .hourlyReportMuted(Boolean.TRUE.equals(userProperties.get("hourlyReportMuted")))
                                 .notificationsMuted(Boolean.TRUE.equals(userProperties.get("notificationsMuted")))
-                                .email(userProperties.get("email").toString())
-                                .device(userProperties.get("device").toString())
-                                .appVersion(userProperties.get("appVersion").toString())
-                                .token(userProperties.get("token").toString())
-                                .notificationType(userProperties.get("notificationType").toString())
+                                .email(String.valueOf(userProperties.get("email")))
+                                .device(String.valueOf(userProperties.get("device")))
+                                .appVersion(String.valueOf(userProperties.get("appVersion")))
+                                .token(String.valueOf(userProperties.get("token")))
+                                .notificationType(String.valueOf(userProperties.get("notificationType")))
                                 .build()
                         );
                     });
