@@ -454,6 +454,6 @@ public class FirebaseService {
     }
 
     private boolean tokenLookGood(String token) {
-        return token != null && !"".equals(token) && "null".equalsIgnoreCase(token);
+        return token != null && !"".equals(token) && !"null".equalsIgnoreCase(token);
     }
 }
