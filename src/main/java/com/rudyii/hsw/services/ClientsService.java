@@ -52,15 +52,16 @@ public class ClientsService {
 
                     connectedClients.forEach((userId, value) -> {
                         HashMap<String, Object> userProperties = (HashMap<String, Object>) value;
-                        clients.add(new Client(
-                                Boolean.TRUE.equals(userProperties.get("hourlyReportMuted")),
-                                Boolean.TRUE.equals(userProperties.get("notificationsMuted")),
-                                userProperties.get("email").toString(),
-                                userProperties.get("device").toString(),
-                                userProperties.get("appVersion").toString(),
-                                userProperties.get("token").toString(),
-                                userProperties.get("userId").toString(),
-                                userProperties.get("notificationType").toString()));
+                        clients.add(Client.builder()
+                                .hourlyReportMuted(Boolean.TRUE.equals(userProperties.get("hourlyReportMuted")))
+                                .notificationsMuted(Boolean.TRUE.equals(userProperties.get("notificationsMuted")))
+                                .email(userProperties.get("email").toString())
+                                .device(userProperties.get("device").toString())
+                                .appVersion(userProperties.get("appVersion").toString())
+                                .token(userProperties.get("token").toString())
+                                .notificationType(userProperties.get("notificationType").toString())
+                                .build()
+                        );
                     });
 
                 }

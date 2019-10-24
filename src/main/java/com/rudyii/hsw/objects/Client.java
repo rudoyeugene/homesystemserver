@@ -14,6 +14,5 @@ public class Client {
     private String device;
     private String appVersion;
     private String token;
-    private String userId;
     private String notificationType;
 }

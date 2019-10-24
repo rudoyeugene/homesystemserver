@@ -425,7 +425,7 @@ public class FirebaseService {
     private void sendFcmMessage(JsonObject messageData, String notificationType) {
         clientsService.getClients().forEach(client -> {
             String clientNotificationType = client.getNotificationType();
-            String userId = client.getUserId();
+            String email = client.getEmail();
             String device = client.getDevice();
             String appVersion = client.getAppVersion();
 
@@ -444,11 +444,11 @@ public class FirebaseService {
             if (notify) {
                 String token = client.getToken();
 
-                log.info("Ready to send message to the Client:" + userId + " on device " + device + " with client version " + appVersion);
+                log.info("Ready to send message to the Client:" + email + " on device " + device + " with client version " + appVersion);
 
-                notificationsService.sendFcmMessage(userId, token, messageData);
+                notificationsService.sendFcmMessage(email, token, messageData);
             } else {
-                log.warn("Client:" + userId + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
+                log.warn("Client:" + email + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
             }
         });
     }
