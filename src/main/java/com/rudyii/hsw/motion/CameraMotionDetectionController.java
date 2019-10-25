@@ -188,14 +188,14 @@ public class CameraMotionDetectionController {
     public void onEvent(EventBase event) throws Exception {
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
-            if (continuousMonitoring) {
-                if (armedEvent.getArmedState().equals(ARMED) && !detectorEnabled) {
-                    enableMotionDetection();
-                } else if (armedEvent.getArmedState().equals(DISARMED) && detectorEnabled) {
-                    disableMotionDetection();
-                } else {
-                    log.warn("New ArmedEvent received but system state unchanged.");
-                }
+            if (armedEvent.getArmedState().equals(ARMED) && !detectorEnabled) {
+                enableMotionDetection();
+            } else if (armedEvent.getArmedState().equals(DISARMED)
+                    && detectorEnabled
+                    && !continuousMonitoring) {
+                disableMotionDetection();
+            } else {
+                log.warn("New ArmedEvent received but system state unchanged.");
             }
         } else if (event instanceof MotionDetectedEvent) {
             MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
