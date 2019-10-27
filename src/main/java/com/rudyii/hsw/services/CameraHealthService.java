@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -20,13 +21,16 @@ import java.util.List;
 public class CameraHealthService {
     private EventService eventService;
     private OptionsService optionsService;
+    private ThreadPoolTaskExecutor hswExecutor;
     private CameraMotionDetectionController[] cameraMotionDetectionControllers;
 
     @Autowired
     public CameraHealthService(EventService eventService, OptionsService optionsService,
+                               ThreadPoolTaskExecutor hswExecutor,
                                CameraMotionDetectionController... cameraMotionDetectionControllers) {
         this.eventService = eventService;
         this.optionsService = optionsService;
+        this.hswExecutor = hswExecutor;
         this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
     }
 
@@ -39,13 +43,15 @@ public class CameraHealthService {
                 } else if (cameraMotionDetectionController.isDetectorEnabled()) {
                     log.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", detector enabled...");
                 } else {
-                    try {
-                        imageProbe(cameraMotionDetectionController.getJpegUrl(), cameraMotionDetectionController.getCameraName());
-                        ffprobe(cameraMotionDetectionController.getRtspUrl(), cameraMotionDetectionController.getCameraName());
-                    } catch (Exception e) {
-                        log.error("Camera " + cameraMotionDetectionController.getCameraName() + " probe failed, rebooting...");
-                        rebootCamera(cameraMotionDetectionController);
-                    }
+                    hswExecutor.submit(() -> {
+                        try {
+                            imageProbe(cameraMotionDetectionController.getJpegUrl(), cameraMotionDetectionController.getCameraName());
+                            ffprobe(cameraMotionDetectionController.getRtspUrl(), cameraMotionDetectionController.getCameraName());
+                        } catch (Exception e) {
+                            log.error("Camera " + cameraMotionDetectionController.getCameraName() + " probe failed, rebooting...");
+                            rebootCamera(cameraMotionDetectionController);
+                        }
+                    });
                 }
             } else {
                 log.info("Health checking is disabled for camera: " + cameraMotionDetectionController.getCameraName());
