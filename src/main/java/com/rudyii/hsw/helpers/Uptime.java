@@ -16,7 +16,7 @@ public class Uptime {
         if (startUpTimeStamp <= 0L) {
             throw new IllegalArgumentException("Duration must be greater than zero!");
         } else {
-            Long uptime = System.currentTimeMillis() - startUpTimeStamp;
+            long uptime = System.currentTimeMillis() - startUpTimeStamp;
             long days = TimeUnit.MILLISECONDS.toDays(uptime);
             long hours = TimeUnit.MILLISECONDS.toHours(uptime) % 24L;
             long minutes = TimeUnit.MILLISECONDS.toMinutes(uptime) % 60L;

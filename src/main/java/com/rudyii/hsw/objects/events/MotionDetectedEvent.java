@@ -13,6 +13,6 @@ import java.awt.image.BufferedImage;
 @EqualsAndHashCode(callSuper = true)
 public class MotionDetectedEvent extends EventBase {
     private String cameraName;
-    private Double motionArea;
+    private Integer motionArea;
     private BufferedImage currentImage, motionObject;
 }

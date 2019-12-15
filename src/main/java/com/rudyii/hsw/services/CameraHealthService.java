@@ -1,7 +1,6 @@
 package com.rudyii.hsw.services;
 
-import com.rudyii.hsw.configuration.OptionsService;
-import com.rudyii.hsw.motion.CameraMotionDetectionController;
+import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
@@ -20,41 +19,40 @@ import java.util.List;
 @Service
 public class CameraHealthService {
     private EventService eventService;
-    private OptionsService optionsService;
     private ThreadPoolTaskExecutor hswExecutor;
-    private CameraMotionDetectionController[] cameraMotionDetectionControllers;
+    private Camera[] cameras;
 
     @Autowired
-    public CameraHealthService(EventService eventService, OptionsService optionsService,
-                               ThreadPoolTaskExecutor hswExecutor,
-                               CameraMotionDetectionController... cameraMotionDetectionControllers) {
+    public CameraHealthService(EventService eventService, ThreadPoolTaskExecutor hswExecutor,
+                               Camera... cameras) {
         this.eventService = eventService;
-        this.optionsService = optionsService;
         this.hswExecutor = hswExecutor;
-        this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
+        this.cameras = cameras;
     }
 
     @Scheduled(initialDelayString = "10000", fixedDelayString = "600000")
     public void run() {
-        for (CameraMotionDetectionController cameraMotionDetectionController : cameraMotionDetectionControllers) {
-            if ((boolean) optionsService.getCameraOptions(cameraMotionDetectionController.getCameraName()).get("healthCheckEnabled")) {
-                if (cameraMotionDetectionController.isRecordingInProgress()) {
-                    log.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", recording in progress...");
-                } else if (cameraMotionDetectionController.isDetectorEnabled()) {
-                    log.warn("ffprobe skipped on camera: " + cameraMotionDetectionController.getCameraName() + ", detector enabled...");
+        for (Camera camera : cameras) {
+            if (camera.isHealthCheckEnabled() && camera.isOnline()) {
+                if (camera.isRecordingInProgress() || camera.isDetectorEnabled()) {
+                    log.warn("Camera {} is busy, skipping Health Check", camera.getCameraName());
                 } else {
                     hswExecutor.submit(() -> {
                         try {
-                            imageProbe(cameraMotionDetectionController.getJpegUrl(), cameraMotionDetectionController.getCameraName());
-                            ffprobe(cameraMotionDetectionController.getRtspUrl(), cameraMotionDetectionController.getCameraName());
+                            imageProbe(camera.getJpegUrl(), camera.getCameraName());
+                            ffprobe(camera.getRtspUrl(), camera.getCameraName());
                         } catch (Exception e) {
-                            log.error("Camera " + cameraMotionDetectionController.getCameraName() + " probe failed, rebooting...");
-                            rebootCamera(cameraMotionDetectionController);
+                            log.error("Camera {} probe failed, rebooting...", camera.getCameraName());
+                            rebootCamera(camera);
                         }
                     });
                 }
-            } else {
-                log.info("Health checking is disabled for camera: " + cameraMotionDetectionController.getCameraName());
+            }
+
+            if (!camera.isHealthCheckEnabled()) {
+                log.info("Health Check is disabled for camera {}", camera.getCameraName());
+            } else if (!camera.isOnline()) {
+                log.info("Camera {} is OFFLINE, skipping Health Check", camera.getCameraName());
             }
         }
     }
@@ -95,7 +93,7 @@ public class CameraHealthService {
         ffprobeProcess.waitFor();
 
         if (ffprobeProcess.exitValue() == 0) {
-            log.info("Video stream probe success on camera: " + cameraName);
+            log.info("Video stream probe success on camera {}", cameraName);
         } else {
             throw new Exception("Video probe failed!");
         }
@@ -104,10 +102,10 @@ public class CameraHealthService {
 
     private void imageProbe(String jpegUrl, String cameraName) throws Exception {
         ImageIO.read(new URL(jpegUrl));
-        log.info("Image probe success on camera: " + cameraName);
+        log.info("Image probe success on camera {}", cameraName);
     }
 
-    private void rebootCamera(CameraMotionDetectionController cameraMotionDetectionController) {
-        eventService.publish(new CameraRebootEvent(cameraMotionDetectionController.getCameraName()));
+    private void rebootCamera(Camera camera) {
+        eventService.publish(new CameraRebootEvent(camera.getCameraName()));
     }
 }

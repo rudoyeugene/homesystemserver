@@ -1,10 +1,11 @@
 package com.rudyii.hsw.motion;
 
-import com.rudyii.hsw.objects.Camera;
+import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.objects.events.EventBase;
 import com.rudyii.hsw.objects.events.MotionDetectedEvent;
 import com.rudyii.hsw.objects.events.OptionsChangedEvent;
+import com.rudyii.hsw.services.PingService;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,10 +31,10 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
 @Slf4j
-public class CameraMotionDetectionController {
+public class Camera {
     private ApplicationContext context;
+    private PingService pingService;
     private CameraMotionDetector currentCameraMotionDetector;
-    private Camera camera;
     private File lock;
     @Getter
     @Setter
@@ -89,8 +91,9 @@ public class CameraMotionDetectionController {
     private String rebootUrlTemplate;
 
     @Autowired
-    public CameraMotionDetectionController(ApplicationContext context) {
+    public Camera(ApplicationContext context, PingService pingService) {
         this.context = context;
+        this.pingService = pingService;
     }
 
     @PostConstruct
@@ -98,7 +101,6 @@ public class CameraMotionDetectionController {
         this.lock = new File(cameraName + ".lock");
 
         buildUrls();
-        this.camera = new Camera(cameraName, jpegUrl, rtspUrl);
 
         if (autostartMonitoring || continuousMonitoring) {
             enableMotionDetection();
@@ -118,12 +120,12 @@ public class CameraMotionDetectionController {
 
         this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
 
-        currentCameraMotionDetector.onCamera(camera).start();
+        currentCameraMotionDetector.on(this).start();
 
         log.info("Motion detector enabled for camera: {}", cameraName);
     }
 
-    public void disableMotionDetection() {
+    public void disableMotionDetection() throws IOException {
         if (continuousMonitoring) return;
 
         this.detectorEnabled = false;
@@ -137,7 +139,7 @@ public class CameraMotionDetectionController {
             this.currentCameraMotionDetector = null;
         }
 
-        lock.delete();
+        Files.delete(lock.toPath());
 
         log.info("Motion detector disabled for camera: {}", cameraName);
     }
@@ -209,7 +211,7 @@ public class CameraMotionDetectionController {
                 System.out.println("New motion detected at: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()) + " on camera: " + cameraName);
                 try {
                     lock.createNewFile();
-                    context.getBean(VideoCaptor.class).startCaptureFrom(camera);
+                    context.getBean(VideoCaptor.class).startCaptureFrom(this);
                 } catch (Exception e) {
                     log.error("Failed to lock {}", lock.getAbsolutePath(), e);
                 }
@@ -220,6 +222,10 @@ public class CameraMotionDetectionController {
                 enableMotionDetection();
             }
         }
+    }
+
+    public boolean isOnline() {
+        return pingService.ping(getIp()).equals(IPStateEnum.ONLINE);
     }
 
     public boolean isDetectorEnabled() {

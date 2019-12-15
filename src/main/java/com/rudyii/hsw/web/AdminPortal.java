@@ -4,7 +4,7 @@ import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
 import com.rudyii.hsw.helpers.Uptime;
-import com.rudyii.hsw.motion.CameraMotionDetectionController;
+import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.services.ActionsService;
 import com.rudyii.hsw.services.ArmedStateService;
 import com.rudyii.hsw.services.UuidService;
@@ -39,7 +39,7 @@ public class AdminPortal {
     private BoardMonitor boardMonitor;
     private UuidService uuidService;
     private OptionsService optionsService;
-    private CameraMotionDetectionController[] cameraMotionDetectionControllers;
+    private Camera[] cameras;
     private IpMonitor ipMonitor;
     private ActionsService actionsService;
 
@@ -54,7 +54,7 @@ public class AdminPortal {
                        BoardMonitor boardMonitor, UuidService uuidService,
                        IpMonitor ipMonitor, ActionsService actionsService,
                        OptionsService optionsService,
-                       CameraMotionDetectionController... cameraMotionDetectionControllers) {
+                       Camera... cameras) {
         this.uptime = uptime;
         this.armedStateService = armedStateService;
         this.boardMonitor = boardMonitor;
@@ -62,7 +62,7 @@ public class AdminPortal {
         this.ipMonitor = ipMonitor;
         this.actionsService = actionsService;
         this.optionsService = optionsService;
-        this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
+        this.cameras = cameras;
     }
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
@@ -96,15 +96,15 @@ public class AdminPortal {
 
         ArrayList<ArrayList> cameraList = new ArrayList<>();
 
-        for (CameraMotionDetectionController cameraMotionDetectionController : cameraMotionDetectionControllers) {
+        for (Camera camera : cameras) {
             ArrayList<String> cameraAttributes = new ArrayList<>();
 
-            cameraAttributes.add(cameraMotionDetectionController.getCameraName());
+            cameraAttributes.add(camera.getCameraName());
 
-            if (cameraMotionDetectionController.getMjpegUrl() != null) {
-                cameraAttributes.add(cameraMotionDetectionController.getMjpegUrl());
-            } else if (cameraMotionDetectionController.getJpegUrl() != null) {
-                cameraAttributes.add(cameraMotionDetectionController.getJpegUrl());
+            if (camera.getMjpegUrl() != null) {
+                cameraAttributes.add(camera.getMjpegUrl());
+            } else if (camera.getJpegUrl() != null) {
+                cameraAttributes.add(camera.getJpegUrl());
             } else {
                 cameraAttributes.add("http://www.solidbackgrounds.com/images/640x480/640x480-black-solid-color-background.jpg");
             }

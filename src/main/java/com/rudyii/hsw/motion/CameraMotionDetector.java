@@ -1,9 +1,9 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hsw.configuration.OptionsService;
-import com.rudyii.hsw.objects.Camera;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.objects.events.MotionDetectedEvent;
+import com.rudyii.hsw.services.ArmedStateService;
 import com.rudyii.hsw.services.EventService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,58 +24,58 @@ import static com.rudyii.hsw.configuration.OptionsService.SHOW_MOTION_AREA;
 @Scope(value = "prototype")
 public class CameraMotionDetector {
     private final OptionsService optionsService;
+    private ArmedStateService armedStateService;
 
     private EventService eventService;
     private BufferedImage previousImage, currentImage, motionObject;
     private URL sourceUrl;
-    private Camera camera;
+    private String cameraName;
     private boolean enabled = false;
     private boolean eventFired = false;
 
     @Lazy
     @Autowired
-    public CameraMotionDetector(EventService eventService, OptionsService optionsService) {
+    public CameraMotionDetector(EventService eventService, OptionsService optionsService,
+                                ArmedStateService armedStateService) {
         this.eventService = eventService;
         this.optionsService = optionsService;
+        this.armedStateService = armedStateService;
     }
 
     @Async
     public void start() throws Exception {
         this.enabled = true;
-        log.info("Started CameraMotionDetector for " + camera.getName());
+        log.info("Started CameraMotionDetector on Camera {}", cameraName);
 
         try {
             this.previousImage = ImageIO.read(sourceUrl);
         } catch (Exception e) {
-            log.error("Failed to get previous image from camera: " + camera.getName());
-            stop();
+            log.error("Failed to get previous image from Camera: {}", cameraName);
         }
         try {
             this.currentImage = ImageIO.read(sourceUrl);
         } catch (Exception e) {
-            log.error("Failed to get current image from camera: " + camera.getName());
-            stop();
+            log.error("Failed to get current image from camera: {}", cameraName);
         }
 
         startDetection();
     }
 
-
     @Async
     public void stop() {
         this.enabled = false;
-        log.info("Stopping CameraMotionDetector for " + camera.getName());
+        log.info("Stopping CameraMotionDetector on {}", cameraName);
     }
 
     private void startDetection() throws InterruptedException {
-        while (this.enabled) {
+        while (this.enabled && armedStateService.isArmed()) {
             this.previousImage = currentImage;
             try {
                 this.motionObject = new BufferedImage(previousImage.getWidth(), previousImage.getHeight(), previousImage.getType());
                 this.currentImage = ImageIO.read(sourceUrl);
                 detect();
             } catch (Exception e) {
-                log.error("Failed to get current image from camera: " + camera.getName());
+                log.error("Failed to get current image from camera: {}", cameraName);
                 fireRebootEvent();
             }
             Thread.sleep(interval());
@@ -89,51 +89,46 @@ public class CameraMotionDetector {
         int currentImageHeight = currentImage.getHeight(null);
 
         if ((previousImageWidth != currentImageWidth) || (previousImageHeight != currentImageHeight)) {
-            log.error("Images dimensions mismatch: previous image size = "
-                    + previousImageWidth + "x" + previousImageHeight + " while current image size = "
-                    + currentImageWidth + "x" + previousImageHeight + " on camera: " + camera.getName());
+            log.error("Images dimensions mismatch: previous image size = {}x{} while current image is {}x{} on Camera {}",
+                    previousImageWidth, previousImageHeight, currentImageWidth, previousImageHeight, cameraName);
             return;
         }
 
-        long diff = 0;
+        int diff = 0;
         for (int y = 0; y < previousImageHeight; y++) {
             for (int x = 0; x < previousImageWidth; x++) {
                 int rgb1 = previousImage.getRGB(x, y);
                 int rgb2 = currentImage.getRGB(x, y);
 
-                int r1 = (rgb1 >> 16) & 0xff;
-                int g1 = (rgb1 >> 8) & 0xff;
-                int b1 = (rgb1) & 0xff;
+                int p1 = (((rgb1 >> 16) & 0xff) + ((rgb1 >> 8) & 0xff) + ((rgb1) & 0xff)) / 3;
 
-                int r2 = (rgb2 >> 16) & 0xff;
-                int g2 = (rgb2 >> 8) & 0xff;
-                int b2 = (rgb2) & 0xff;
+                int p2 = (((rgb2 >> 16) & 0xff) + ((rgb2 >> 8) & 0xff) + ((rgb2) & 0xff)) / 3;
 
-                if ((Math.abs(r1 - r2) > noiseLevel()) && (Math.abs(g1 - g2) > noiseLevel()) && (Math.abs(b1 - b2) > noiseLevel())) {
+                if (Math.abs(p1 - p2) > noiseLevel()) {
                     motionObject.setRGB(x, y, rgb2);
                     diff++;
                 }
             }
         }
 
-        double imageSize = previousImageWidth * previousImageHeight;
-        double differenceInPercentage = (100 * diff) / imageSize;
+        int imageSize = previousImageWidth * previousImageHeight;
+        int differenceInPercentage = (100 * diff) / imageSize;
 
         if (showMotionArea()) {
-            System.out.println(camera.getName() + " noise level: " + noiseLevel() + " and motion area size: " + differenceInPercentage + "%");
+            System.out.println(cameraName + " noise level: " + noiseLevel() + " and motion area size: " + differenceInPercentage + "%");
         }
 
         if (differenceInPercentage > motionAreaSize()) {
-            log.info("Motion detected on " + camera.getName() + " with motion area size : " + differenceInPercentage + "%");
-            eventService.publish(new MotionDetectedEvent(camera.getName(), differenceInPercentage, currentImage, motionObject));
+            log.info("Motion detected on Camera {} with motion area size : {}%", cameraName, differenceInPercentage);
+            eventService.publish(new MotionDetectedEvent(cameraName, differenceInPercentage, currentImage, motionObject));
         }
     }
 
     private void fireRebootEvent() {
         if (!eventFired) {
-            log.error("Firing reboot event for camera: " + camera.getName());
+            log.error("Firing reboot event for Camera {}", cameraName);
             this.eventFired = true;
-            eventService.publish(new CameraRebootEvent(camera.getName()));
+            eventService.publish(new CameraRebootEvent(cameraName));
         }
     }
 
@@ -142,20 +137,20 @@ public class CameraMotionDetector {
     }
 
     private long motionAreaSize() {
-        return ((long) optionsService.getCameraOptions(camera.getName()).get("motionArea"));
+        return ((long) optionsService.getCameraOptions(cameraName).get("motionArea"));
     }
 
     private long interval() {
-        return (long) optionsService.getCameraOptions(camera.getName()).get("interval");
+        return (long) optionsService.getCameraOptions(cameraName).get("interval");
     }
 
     private long noiseLevel() {
-        return (long) optionsService.getCameraOptions(camera.getName()).get("noiseLevel");
+        return (long) optionsService.getCameraOptions(cameraName).get("noiseLevel");
     }
 
 
-    public CameraMotionDetector onCamera(Camera camera) throws MalformedURLException {
-        this.camera = camera;
+    public CameraMotionDetector on(Camera camera) throws MalformedURLException {
+        this.cameraName = camera.getCameraName();
         this.sourceUrl = new URL(camera.getJpegUrl());
 
         return this;

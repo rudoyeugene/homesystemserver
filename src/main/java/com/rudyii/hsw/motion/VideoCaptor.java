@@ -1,7 +1,6 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hsw.configuration.OptionsService;
-import com.rudyii.hsw.objects.Camera;
 import com.rudyii.hsw.objects.events.CaptureEvent;
 import com.rudyii.hsw.services.EventService;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,8 @@ public class VideoCaptor {
     private String archiveLocation;
 
     private String timeStamp;
-    private Camera camera;
+    private String cameraName;
+    private String rtspUrl;
     private File result;
     private BufferedImage image;
 
@@ -48,12 +48,13 @@ public class VideoCaptor {
 
     @Async
     void startCaptureFrom(Camera camera) {
-        this.camera = camera;
         generateTimestamps();
 
-        this.result = new File(archiveLocation + "/" + camera.getName() + "_" + timeStamp + ".mp4");
+        this.cameraName = camera.getCameraName();
+        this.rtspUrl = camera.getRtspUrl();
+        this.result = new File(archiveLocation + "/" + cameraName + "_" + timeStamp + ".mp4");
 
-        System.out.println("A new motion detected: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
+        System.out.println("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 
         try {
             this.image = ImageIO.read(new URL(camera.getJpegUrl()));
@@ -75,7 +76,7 @@ public class VideoCaptor {
     }
 
     private void getFfmpegStream() throws IOException {
-        log.info("Starting capture on camera: " + camera.getName() + " ...");
+        log.info("Starting capture on camera {}...", cameraName);
         List<String> captureCommand = new ArrayList<>();
 
         if (SystemUtils.IS_OS_LINUX) {
@@ -102,20 +103,20 @@ public class VideoCaptor {
             return;
         }
 
-        captureCommand.add(camera.getRtspUrl());
+        captureCommand.add(rtspUrl);
         captureCommand.add(String.valueOf(optionsService.getOption(RECORD_INTERVAL)));
         captureCommand.add(result.getCanonicalPath());
-        captureCommand.add(camera.getName());
+        captureCommand.add(cameraName);
 
         ProcessBuilder captureProcess = new ProcessBuilder(captureCommand);
         runProcess(captureProcess);
     }
 
     private void printParametersIntoLog() throws IOException {
-        log.info("#1 as source: " + camera.getRtspUrl());
-        log.info("#2 as record interval in seconds: " + optionsService.getOption(RECORD_INTERVAL));
-        log.info("#3 as a capture result: " + result.getCanonicalPath());
-        log.info("#4 as a camera name: " + camera.getName());
+        log.info("#1 as source: {}", rtspUrl);
+        log.info("#2 as record interval in seconds: {}", optionsService.getOption(RECORD_INTERVAL));
+        log.info("#3 as a capture result: {}", result.getCanonicalPath());
+        log.info("#4 as a camera name: {}", cameraName);
     }
 
     private void runProcess(ProcessBuilder process) {

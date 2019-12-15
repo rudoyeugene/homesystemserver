@@ -4,7 +4,7 @@ import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
 import com.rudyii.hsw.helpers.Uptime;
-import com.rudyii.hsw.motion.CameraMotionDetectionController;
+import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.providers.NotificationsService;
@@ -33,7 +33,7 @@ public class ReportingService {
     private BoardMonitor boardMonitor;
     private OptionsService optionsService;
     private UuidService uuidService;
-    private CameraMotionDetectionController[] cameraMotionDetectionControllers;
+    private Camera[] cameras;
     private EventService eventService;
 
     @Autowired
@@ -41,7 +41,7 @@ public class ReportingService {
                             NotificationsService notificationsService, IpMonitor ipMonitor,
                             Uptime uptime, BoardMonitor boardMonitor, EventService eventService,
                             OptionsService optionsService, UuidService uuidService,
-                            CameraMotionDetectionController... cameraMotionDetectionControllers) {
+                            Camera... cameras) {
         this.armedStateService = armedStateService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
@@ -51,7 +51,7 @@ public class ReportingService {
         this.eventService = eventService;
         this.optionsService = optionsService;
         this.uuidService = uuidService;
-        this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
+        this.cameras = cameras;
     }
 
     @Scheduled(cron = "0 0 * * * *")
@@ -64,22 +64,22 @@ public class ReportingService {
     public void sendHourlyReport() {
         ArrayList<Attachment> attachments = new ArrayList<>();
 
-        for (CameraMotionDetectionController cameraMotionDetectionController : cameraMotionDetectionControllers) {
+        for (Camera camera : cameras) {
             try {
-                if (cameraMotionDetectionController.getJpegUrl() != null) {
+                if (camera.getJpegUrl() != null) {
                     ByteArrayOutputStream currentImageBOS = new ByteArrayOutputStream();
-                    BufferedImage currentImage = ImageIO.read(new URL(cameraMotionDetectionController.getJpegUrl()));
+                    BufferedImage currentImage = ImageIO.read(new URL(camera.getJpegUrl()));
                     ImageIO.write(currentImage, "jpeg", currentImageBOS);
                     byte[] currentImageByteArray = currentImageBOS.toByteArray();
 
                     attachments.add(Attachment.builder()
-                            .name(cameraMotionDetectionController.getCameraName())
+                            .name(camera.getCameraName())
                             .data(currentImageByteArray)
                             .mimeType("image/jpeg").build());
                 }
             } catch (Exception e) {
-                log.error("Camera " + cameraMotionDetectionController.getCameraName() + " snapshot extraction failed:", e);
-                eventService.publish(new CameraRebootEvent(cameraMotionDetectionController.getCameraName()));
+                log.error("Camera " + camera.getCameraName() + " snapshot extraction failed:", e);
+                eventService.publish(new CameraRebootEvent(camera.getCameraName()));
             }
         }
 
@@ -88,7 +88,7 @@ public class ReportingService {
         body.add("Home system uptime: <b>" + uptime.getUptime() + "</b>");
         body.add("Current external IP: <b>" + ispService.getCurrentOrLastWanIpAddress() + "</b>");
         body.add("Current internal IP: <b>" + ispService.getLocalIpAddress() + "</b>");
-        body.add("Total monitored cameras: <b>" + cameraMotionDetectionControllers.length + "</b>");
+        body.add("Total monitored cameras: <b>" + cameras.length + "</b>");
 
         if ((boolean) optionsService.getOption(MONITORING_ENABLED)) {
             body.add("Monitored targets states:");

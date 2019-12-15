@@ -5,7 +5,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
-import com.rudyii.hsw.motion.CameraMotionDetectionController;
+import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.events.OptionsChangedEvent;
 import com.rudyii.hsw.objects.events.ServerKeyUpdatedEvent;
 import com.rudyii.hsw.services.EventService;
@@ -47,14 +47,14 @@ public class OptionsService {
     private ArrayList<ValueEventListener> valueEventListeners = new ArrayList<>();
     private EventService eventService;
     private FirebaseDatabaseProvider databaseProvider;
-    private CameraMotionDetectionController[] cameraMotionDetectionControllers;
+    private Camera[] cameras;
 
     @Autowired
     public OptionsService(EventService eventService, FirebaseDatabaseProvider databaseProvider,
-                          CameraMotionDetectionController... cameraMotionDetectionControllers) {
+                          Camera... cameras) {
         this.eventService = eventService;
         this.databaseProvider = databaseProvider;
-        this.cameraMotionDetectionControllers = cameraMotionDetectionControllers;
+        this.cameras = cameras;
     }
 
     @PostConstruct
@@ -177,21 +177,21 @@ public class OptionsService {
     }
 
     private void fillOptionsFromCameras() {
-        for (CameraMotionDetectionController cameraMotionDetectionController : cameraMotionDetectionControllers) {
+        for (Camera camera : cameras) {
             ConcurrentHashMap<String, Object> cameraOptions = new ConcurrentHashMap<>();
 
-            String cameraName = cameraMotionDetectionController.getCameraName();
-            Long interval = cameraMotionDetectionController.getInterval();
-            Long rebootTimeout = cameraMotionDetectionController.getRebootTimeout();
-            Long motionArea = cameraMotionDetectionController.getMotionArea();
-            Long noiseLevel = cameraMotionDetectionController.getNoiseLevel();
+            String cameraName = camera.getCameraName();
+            Long interval = camera.getInterval();
+            Long rebootTimeout = camera.getRebootTimeout();
+            Long motionArea = camera.getMotionArea();
+            Long noiseLevel = camera.getNoiseLevel();
 
             cameraOptions.put(INTERVAL, interval);
             cameraOptions.put(REBOOT_TIMEOUT, rebootTimeout);
             cameraOptions.put(MOTION_AREA, motionArea);
             cameraOptions.put(NOISE_LEVEL, noiseLevel);
-            cameraOptions.put(HEALTH_CHECK_ENABLED, cameraMotionDetectionController.isHealthCheckEnabled());
-            cameraOptions.put(CONTINUOUS_MONITORING, cameraMotionDetectionController.isContinuousMonitoring());
+            cameraOptions.put(HEALTH_CHECK_ENABLED, camera.isHealthCheckEnabled());
+            cameraOptions.put(CONTINUOUS_MONITORING, camera.isContinuousMonitoring());
 
             localCamerasOptions.put(cameraName, cameraOptions);
         }
