@@ -98,35 +98,39 @@ public class Camera {
 
     @PostConstruct
     public void init() throws Exception {
-        this.lock = new File(cameraName + ".lock");
+        this.lock = new File(getCameraName() + ".lock");
 
         buildUrls();
 
-        if (autostartMonitoring || continuousMonitoring) {
+        if (isAutostartMonitoring() || isContinuousMonitoring()) {
             enableMotionDetection();
         }
     }
 
     private void buildUrls() {
-        jpegUrl = buildUrlFromTemplate(jpegUrlTemplate);
-        mjpegUrl = buildUrlFromTemplate(mjpegUrlTemplate);
-        rtspUrl = buildUrlFromTemplate(rtspUrlTemplate);
-        rebootUrl = buildUrlFromTemplate(rebootUrlTemplate);
+        this.jpegUrl = buildUrlFromTemplate(jpegUrlTemplate);
+        this.mjpegUrl = buildUrlFromTemplate(mjpegUrlTemplate);
+        this.rtspUrl = buildUrlFromTemplate(rtspUrlTemplate);
+        this.rebootUrl = buildUrlFromTemplate(rebootUrlTemplate);
     }
 
     @Async
     public void enableMotionDetection() throws Exception {
-        this.detectorEnabled = true;
+        if (isOnline()) {
+            this.detectorEnabled = true;
 
-        this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
+            this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
 
-        currentCameraMotionDetector.on(this).start();
+            currentCameraMotionDetector.on(this).start();
 
-        log.info("Motion detector enabled for camera: {}", cameraName);
+            log.info("Motion detector enabled for camera: {}", getCameraName());
+        } else {
+            log.error("Failed to start motion detection on camera {} due to OFFLINE", getCameraName());
+        }
     }
 
     public void disableMotionDetection() throws IOException {
-        if (continuousMonitoring) return;
+        if (isContinuousMonitoring()) return;
 
         this.detectorEnabled = false;
 
@@ -134,14 +138,14 @@ public class Camera {
             try {
                 currentCameraMotionDetector.stop();
             } catch (Exception e) {
-                log.warn("Some error occurred during disabling motion detector on camera {}", cameraName, e);
+                log.warn("Some error occurred during disabling motion detector on camera {}", getCameraName(), e);
             }
             this.currentCameraMotionDetector = null;
         }
 
         Files.delete(lock.toPath());
 
-        log.info("Motion detector disabled for camera: {}", cameraName);
+        log.info("Motion detector disabled for camera: {}", getCameraName());
     }
 
     public void performReboot() {
@@ -151,7 +155,7 @@ public class Camera {
 
         StringBuilder response = new StringBuilder();
         try {
-            URL url = new URL(rebootUrl);
+            URL url = new URL(getRebootUrl());
             HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
             urlConnection.setRequestMethod("GET");
 
@@ -178,11 +182,11 @@ public class Camera {
 
     private String buildUrlFromTemplate(String template) {
         return template
-                .replace("${ip}", ip)
-                .replace("${httpPort}", httpPort.toString())
-                .replace("${rtspPort}", rtspPort.toString())
-                .replace("${login}", login)
-                .replace("${password}", password);
+                .replace("${ip}", getIp())
+                .replace("${httpPort}", getHttpPort().toString())
+                .replace("${rtspPort}", getRtspPort().toString())
+                .replace("${login}", getLogin())
+                .replace("${password}", getPassword());
     }
 
     @Async
@@ -190,25 +194,25 @@ public class Camera {
     public void onEvent(EventBase event) throws Exception {
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
-            if (armedEvent.getArmedState().equals(ARMED) && !detectorEnabled) {
+            if (armedEvent.getArmedState().equals(ARMED) && !isDetectorEnabled()) {
                 enableMotionDetection();
             } else if (armedEvent.getArmedState().equals(DISARMED)
-                    && detectorEnabled
-                    && !continuousMonitoring) {
+                    && isDetectorEnabled()
+                    && !isContinuousMonitoring()) {
                 disableMotionDetection();
             } else {
                 log.warn("New ArmedEvent received but system state unchanged.");
             }
         } else if (event instanceof MotionDetectedEvent) {
             MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
-            if (!motionDetectedEvent.getCameraName().equals(cameraName)) {
+            if (!motionDetectedEvent.getCameraName().equals(getCameraName())) {
                 return;
             }
 
             if (lock.exists()) {
-                System.out.println("New motion detected on camera: " + cameraName + " but previous capture is in progress, waiting...");
+                System.out.println("New motion detected on camera: " + getCameraName() + " but previous capture is in progress, waiting...");
             } else {
-                System.out.println("New motion detected at: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()) + " on camera: " + cameraName);
+                System.out.println("New motion detected at: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()) + " on camera: " + getCameraName());
                 try {
                     lock.createNewFile();
                     context.getBean(VideoCaptor.class).startCaptureFrom(this);
@@ -217,7 +221,7 @@ public class Camera {
                 }
             }
         } else if (event instanceof OptionsChangedEvent) {
-            ConcurrentHashMap<String, Object> cameraOptions = ((OptionsChangedEvent) event).getCameraOptions(cameraName);
+            ConcurrentHashMap<String, Object> cameraOptions = ((OptionsChangedEvent) event).getCameraOptions(getCameraName());
             if (!detectorEnabled && (Boolean) cameraOptions.get(CONTINUOUS_MONITORING)) {
                 enableMotionDetection();
             }
