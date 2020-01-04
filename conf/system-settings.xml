@@ -5,93 +5,51 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-4.1.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
+    <!--Camera settings section below, VSTARCAMs recommended-->
+    <bean id="livingRoom" class="com.rudyii.hsw.motion.Camera">
+        <property name="ip" value="192.168.1.14"/>
+        <property name="httpPort" value="8080"/>
+        <property name="rtspPort" value="554"/>
+        <property name="login" value="admin"/>
+        <property name="password" value="admin"/>
+        <property name="mjpegUrlTemplate" value="http://${ip}:${httpPort}/videostream.cgi?user=${login}&amp;pwd=${password}"/>
+        <property name="jpegUrlTemplate" value="http://${ip}:${httpPort}/snapshot.cgi?res=0&amp;user=${login}&amp;pwd=${password}"/>
+        <property name="rtspUrlTemplate" value="rtsp://${login}:${password}@${ip}:${rtspPort}/udp/av0_0"/>
+        <property name="rebootUrlTemplate" value="http://${ip}:${httpPort}/reboot.cgi?user=${login}&amp;pwd=${password}"/>
+        <property name="rebootTimeout" value="90000"/>
+        <property name="cameraName" value="Living Room"/>
+        <property name="motionArea" value="15"/>
+        <property name="noiseLevel" value="7"/>
+        <property name="interval" value="500"/>
+        <property name="healthCheckEnabled" value="true"/>
+        <property name="autostartMonitoring" value="false"/>
+        <property name="continuousMonitoring" value="false"/>
+    </bean>
+
     <!--System settings-->
     <util:properties id="hswProperties">
         <prop key="mail.smtp.host">smtp.gmail.com</prop>
         <prop key="mail.smtp.port">587</prop>
-        <prop key="mail.username">my.home.system@gmail.com</prop>
-        <prop key="mail.password">myPassword</prop>
-        <prop key="mail.recipients">master1@gmail.com,master2@gmail.com</prop>
+        <prop key="mail.username">admin@gmail.com</prop>
+        <prop key="mail.password">password</prop>
+        <prop key="mail.recipients">admin@gmail.com</prop>
         <prop key="mail.admin">admin@gmail.com</prop>
 
-        <prop key="dropbox.token">{visit https://www.dropbox.com/developers/apps/create to create and generate your own}</prop>
+        <prop key="dropbox.token">token</prop>
 
-        <prop key="video.archive.location">/home/pi/videoarchive</prop>
-
-        <prop key="server.alias">dummy_server</prop>
-        <prop key="server.port">8080</prop>
-        <prop key="pool.size">50</prop>
+        <prop key="video.archive.location">/storage/VideoArchive</prop>
+        <prop key="server.alias">Apartments</prop>
+        <prop key="server.port">8081</prop>
+        <prop key="pool.size">100</prop>
         <prop key="queue.capacity">50</prop>
-        <prop key="client.apk.path">
-            /mnt/storage/apps/homesystem/apk/app-release.apk
-        </prop>
-
+        <prop key="client.apk.path">/storage/apps/homesystem/apk/app-release.apk</prop>
     </util:properties>
 
-    <!--Camera settings section below, VSTARCAM C7824WIP recommended-->
-    <bean id="Corridor" class="com.rudyii.hsw.motion.CameraMotionDetectionController">
-        <property name="ip" value="192.168.1.9"/>
-        <property name="httpPort" value="8080"/>
-        <property name="outerHttpPort" value="8081"/>
-        <property name="useOuterHttpPort" value="false"/>
-        <property name="rtspPort" value="554"/>
-        <property name="outerRtspPort" value="8554"/>
-        <property name="useOuterRtspPort" value="true"/>
-        <property name="openPortsOnStartup" value="false"/>
-        <property name="login" value="admin"/>
-        <property name="password" value="admin"/>
-        <property name="mjpegUrlTemplate" value="http://${ip}:${httpPort}/videostream.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="jpegUrlTemplate" value="http://${ip}:${httpPort}/snapshot.cgi?res=0&amp;user=${login}&amp;pwd=${password}"/>
-        <property name="rtspUrlTemplate" value="rtsp://${login}:${password}@${ip}:${rtspPort}/udp/av0_0"/>
-        <property name="rebootUrlTemplate" value="http://${ip}:${httpPort}/reboot.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="rebootTimeout" value="90000"/>
-        <property name="cameraName" value="Corridor"/>
-        <property name="motionArea" value="15"/>
-        <property name="noiseLevel" value="8"/>
-        <property name="interval" value="500"/>
-        <property name="healthCheckEnabled" value="true"/>
-        <!--AUTO - by master devices presence, CONTINUOUS - 24/7-->
-        <property name="monitoringMode" value="AUTO"/>
-    </bean>
-
-    <bean id="Room" class="com.rudyii.hsw.motion.CameraMotionDetectionController">
-        <property name="ip" value="192.168.1.10"/>
-        <property name="httpPort" value="8080"/>
-        <property name="outerHttpPort" value="8082"/>
-        <property name="useOuterHttpPort" value="false"/>
-        <property name="rtspPort" value="554"/>
-        <property name="outerRtspPort" value="8555"/>
-        <property name="useOuterRtspPort" value="true"/>
-        <property name="openPortsOnStartup" value="false"/>
-        <property name="login" value="admin"/>
-        <property name="password" value="admin"/>
-        <property name="mjpegUrlTemplate" value="http://${ip}:${httpPort}/videostream.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="jpegUrlTemplate" value="http://${ip}:${httpPort}/snapshot.cgi?res=0&amp;user=${login}&amp;pwd=${password}"/>
-        <property name="rtspUrlTemplate" value="rtsp://${login}:${password}@${ip}:${rtspPort}/udp/av0_0"/>
-        <property name="rebootUrlTemplate" value="http://${ip}:${httpPort}/reboot.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="rebootTimeout" value="90000"/>
-        <property name="cameraName" value="Room"/>
-        <property name="motionArea" value="15"/>
-        <property name="noiseLevel" value="6"/>
-        <property name="interval" value="500"/>
-        <property name="healthCheckEnabled" value="true"/>
-        <!--AUTO - by master devices presence, CONTINUOUS - 24/7-->
-        <property name="monitoringMode" value="AUTO"/>
-    </bean>
-
-
     <!--Commands that will be executed and sent every hourly report-->
-    <util:map id="monitorCommandsList" key-type="java.lang.String" value-type="java.lang.String">
-        <!--All the lines from the output will be added into the mail-->
-        <!--In format: key + value; try to make the command result singlelined-->
-        <entry key="Free RAM: " value="free -h| grep Mem | awk '{print $4}'"/>
-        <entry key="Board uptime: " value="uptime -p"/>
-        <entry key="CPU temperature C: " value="cat /sys/devices/virtual/thermal/thermal_zone0/temp"/>
-        <entry key="Storage free space: " value="/mnt/storage/apps/scripts/free_storage.sh"/>
-        <entry key="RT-AC68u " value="/mnt/storage/apps/scripts/router_cpu_temp.sh"/>
-        <entry key="RT-AC68u uptime: " value="/mnt/storage/apps/scripts/router_uptime.sh"/>
-        <entry key="date: " value="cmd /c date /t"/>
-    </util:map>
+    <util:list id="monitorCommandsList" value-type="java.lang.String">
+        <value>/storage/apps/scripts/server_stats.sh</value>
+        <value>/storage/apps/scripts/router_stats.sh</value>
+    </util:list>
 
     <util:list id="onArmCommands" value-type="java.lang.String">
         <value>/usr/bin/logger -t HOME_SYSTEM "ARMED"</value>
@@ -111,46 +69,23 @@
 
     <util:list id="onIspChangeCommands" value-type="java.lang.String">
         <value>/usr/bin/logger -t HOME_SYSTEM "ISP CHANGED"</value>
+        <value>transmission-remote -n TransmissionAdmin:PimpMyTransmission\! -t all -S</value>
     </util:list>
 
     <!--IP List of master devices-->
     <util:list id="masterIpList" value-type="java.lang.String">
+        <value>192.168.1.4</value>
         <value>192.168.1.5</value>
         <value>192.168.1.6</value>
-        <value>192.168.1.7</value>
-        <value>192.168.1.8</value>
-    </util:list>
-
-    <!--IP List of devices to be monitored-->
-    <util:list id="monitoringIpList" value-type="java.lang.String">
-        <value>192.168.1.2</value>
-        <value>192.168.1.5</value>
-        <value>192.168.1.6</value>
-        <value>192.168.1.7</value>
-        <value>192.168.1.8</value>
-        <value>192.168.1.9</value>
-        <value>192.168.1.10</value>
-        <value>192.168.1.11</value>
         <value>192.168.1.12</value>
-        <value>192.168.1.13</value>
-        <value>192.168.1.14</value>
-        <value>192.168.1.15</value>
     </util:list>
 
     <!--IP resolver-->
     <util:map id="ipResolver" key-type="java.lang.String" value-type="java.lang.String">
-        <entry key="192.168.1.2" value="JackPC"/>
-        <entry key="192.168.1.5" value="KseniyaPC"/>
-        <entry key="192.168.1.6" value="Jack"/>
-        <entry key="192.168.1.7" value="Kseniya"/>
-        <entry key="192.168.1.8" value="KseniyaJr"/>
-        <entry key="192.168.1.9" value="C7824WIP-Corridor"/>
-        <entry key="192.168.1.10" value="C7824WIP-Room"/>
-        <entry key="192.168.1.11" value="55PFS7509"/>
-        <entry key="192.168.1.12" value="32LB652V"/>
-        <entry key="192.168.1.13" value="Banana Pi M2U"/>
-        <entry key="192.168.1.14" value="Jeka"/>
-        <entry key="192.168.1.15" value="Meizu MX6"/>
+        <entry key="192.168.1.1" value="ASUS RT-AC68u"/>
+        <entry key="192.168.1.2" value="Master"/>
+        <entry key="192.168.1.3" value="Wife"/>
+        <entry key="192.168.1.4" value="Kid"/>
+        <entry key="192.168.1.5" value="TV"/>
     </util:map>
-
 </beans>
