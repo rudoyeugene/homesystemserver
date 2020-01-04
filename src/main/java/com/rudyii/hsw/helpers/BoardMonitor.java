@@ -10,43 +10,43 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
 public class BoardMonitor {
+    private final List<String> monitorCommandsList;
     private ThreadPoolTaskExecutor hswExecutor;
-    private final Map monitorCommandList;
 
     @Autowired
-    public BoardMonitor(ThreadPoolTaskExecutor hswExecutor, Map monitorCommandsList) {
+    public BoardMonitor(ThreadPoolTaskExecutor hswExecutor, List monitorCommandsList) {
         this.hswExecutor = hswExecutor;
-        this.monitorCommandList = monitorCommandsList;
+        this.monitorCommandsList = monitorCommandsList;
     }
 
     public ArrayList<String> getMonitoringResults() {
-        if (monitorCommandList == null) {
+        if (monitorCommandsList == null) {
             return (ArrayList<String>) Collections.<String>emptyList();
         }
 
-        AtomicInteger totalCommands = new AtomicInteger(monitorCommandList.size());
+        AtomicInteger totalCommands = new AtomicInteger(monitorCommandsList.size());
         ArrayList<String> body = new ArrayList<>();
 
-        monitorCommandList.forEach((key, value) -> hswExecutor.submit(() -> {
+        monitorCommandsList.forEach(command -> hswExecutor.submit(() -> {
             try {
-                Process process = Runtime.getRuntime().exec(String.valueOf(value));
+                Process process = Runtime.getRuntime().exec(command);
 
                 BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while (StringUtils.isNotBlank((line = in.readLine()))) {
-                    body.add(key + line);
+                    body.add(line);
                 }
                 process.waitFor();
 
                 in.close();
             } catch (Exception e) {
-                log.error("Failed on command: {}", key, e);
+                log.error("Failed on command: {}", command, e);
             } finally {
                 totalCommands.getAndDecrement();
             }
