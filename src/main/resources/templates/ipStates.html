@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Ip States</title>
     <div th:include="decoration"/>
 </head>
-<br></br>
+<br>
 <body>
+<!--/*@thymesVar id="ipStates" type="java.util.ArrayList"*/-->
 <div th:each="ipState : ${ipStates}">
     <table cellspacing="5" cellpadding="10" frame="box">
         <tbody>
@@ -14,14 +15,14 @@
         </tr>
         </tbody>
     </table>
-    <br></br>
+    <br>
 </div>
 <div>
     <table cellspacing="5" cellpadding="10">
         <tbody>
         <tr>
-            <td style="text-align: left"><a href="/admin/" class="button btnInfo">BACK</a></td>
-            <td style="text-align: right"><a href="/admin/ipStates" class="button btnInfo">REFRESH</a></td>
+            <td style="text-align: left"><a class="button btnInfo" href="/">BACK</a></td>
+            <td style="text-align: right"><a class="button btnInfo" href="/ipStates">REFRESH</a></td>
         </tr>
         </tbody>
     </table>

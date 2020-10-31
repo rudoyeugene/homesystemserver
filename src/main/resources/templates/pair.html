@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Pair device</title>
     <div th:include="decoration"></div>
 </head>
 <body>
-<div><img src="#" th:src="${pair}"/></div>
+<div><!--/*@thymesVar id="pair" type="java.lang.String"*/-->
+    <img src="#" th:src="${pair}"/></div>
 <br></br>
 <div>
-    <a href="/admin/" class="button btnOkCancel">BACK</a>
-    <a href="/admin/resetSecret" onclick="return confirm('This will reset the secret and unpair all clients.\nAre you sure?')" class="button btnOkCancel">RESET KEY</a>
+    <a class="button btnOkCancel" href="/">BACK</a>
 </div>
 </body>
 </html>

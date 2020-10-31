@@ -6,7 +6,6 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.ArmedModeEnum;
 import com.rudyii.hsw.enums.ArmedStateEnum;
@@ -15,25 +14,20 @@ import com.rudyii.hsw.objects.WanIp;
 import com.rudyii.hsw.objects.events.*;
 import com.rudyii.hsw.providers.NotificationsService;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
-import sun.misc.BASE64Encoder;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.rudyii.hsw.configuration.OptionsService.RECORD_INTERVAL;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 import static com.rudyii.hsw.helpers.PidGeneratorShutdownHandler.getPid;
@@ -43,7 +37,8 @@ import static com.rudyii.hsw.helpers.SimplePropertiesKeeper.isHomeSystemInitComp
 @Service
 public class FirebaseService {
     public static final String REASON = "reason";
-    public static final String IMAGE = "image";
+    public static final String IMAGE_URL = "imageUrl";
+    public static final String VIDEO_URL = "videoUrl";
     public static final String SERVER_NAME = "serverName";
     public static final String SERVER_STARTUP_OR_SHUTDOWN = "serverStartupOrShutdown";
     public static final String ACTION = "action";
@@ -51,15 +46,14 @@ public class FirebaseService {
     public static final String SYSTEM_STATE_CHANGED = "systemStateChanged";
     public static final String ARMED_MODE = "armedMode";
     public static final String ARMED_STATE = "armedState";
-    public static final String PORTS_OPEN = "portsOpen";
     public static final String MOTION_DETECTED = "motionDetected";
     public static final String MOTION_ID = "motionId";
+    public static final String EVENT_ID = "eventId";
     public static final String TIME_STAMP = "timeStamp";
     public static final String CAMERA_NAME = "cameraName";
     public static final String MOTION_AREA = "motionArea";
     public static final String VIDEO_RECORDED = "videoRecorded";
     public static final String FILE_NAME = "fileName";
-    public static final String URL = "url";
     public static final String ISP_CHANGED = "ispChanged";
     public static final String ISP = "isp";
     public static final String IP = "ip";
@@ -69,54 +63,49 @@ public class FirebaseService {
     public static final String WAN_IP = "wanIp";
     public static final String PID = "pid";
     public static final String STARTING = "starting";
-    public static final String RECORD_ID = "recordId";
     public static final String ALL = "all";
-
+    private final String serverAlias;
+    private final Random random = new Random();
+    private final FirebaseDatabaseProvider firebaseDatabaseProvider;
+    private final ArmedStateService armedStateService;
+    private final Uptime uptime;
+    private final ReportingService reportingService;
+    private final EventService eventService;
+    private final IspService ispService;
+    private final NotificationsService notificationsService;
+    private final ThreadPoolTaskExecutor hswExecutor;
+    private final ClientsService clientsService;
+    private final ArrayList<DatabaseReference> databaseReferences;
+    private final ArrayList<ValueEventListener> valueEventListeners;
+    private final ConcurrentHashMap<String, Object> statuses;
+    private final ConcurrentHashMap<String, Object> requests;
+    private final String serverKey;
     @Value("${application.version}")
     private String appVersion;
-
-    private String serverAlias;
-    private Random random = new Random();
-    private FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private ArmedStateService armedStateService;
-    private Uptime uptime;
-    private ReportingService reportingService;
-    private EventService eventService;
-    private IspService ispService;
-    private OptionsService optionsService;
-    private NotificationsService notificationsService;
-    private ThreadPoolTaskExecutor hswExecutor;
-    private ClientsService clientsService;
-    private ArrayList<DatabaseReference> databaseReferences;
-    private ArrayList<ValueEventListener> valueEventListeners;
-
-    private ConcurrentHashMap<String, Object> statuses, motions, requests;
     private boolean alreadyFired;
 
     public FirebaseService(FirebaseDatabaseProvider firebaseDatabaseProvider, UuidService uuidService,
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, EventService eventService,
-                           IspService ispService, OptionsService optionsService,
-                           NotificationsService notificationsService, ThreadPoolTaskExecutor hswExecutor,
-                           ClientsService clientsService) {
+                           IspService ispService, NotificationsService notificationsService,
+                           ThreadPoolTaskExecutor hswExecutor, ClientsService clientsService) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
         this.uptime = uptime;
         this.reportingService = reportingService;
         this.eventService = eventService;
         this.ispService = ispService;
-        this.optionsService = optionsService;
         this.notificationsService = notificationsService;
         this.hswExecutor = hswExecutor;
         this.clientsService = clientsService;
 
         this.statuses = new ConcurrentHashMap<>();
-        this.motions = new ConcurrentHashMap<>();
         this.requests = new ConcurrentHashMap<>();
         this.databaseReferences = new ArrayList();
         this.valueEventListeners = new ArrayList();
 
         this.serverAlias = uuidService.getServerAlias();
+        this.serverKey = uuidService.getServerKey();
     }
 
     @EventListener(ServerKeyUpdatedEvent.class)
@@ -152,14 +141,12 @@ public class FirebaseService {
 
         unregisterListeners();
         registerListeners();
+        notifyServerStarted();
     }
 
     @PreDestroy
     private void destroy() {
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty(SERVER_NAME, serverAlias);
-        jsonObject.addProperty(REASON, SERVER_STARTUP_OR_SHUTDOWN);
-        jsonObject.addProperty(ACTION, STOPPING);
+        JsonObject jsonObject = getStartStopJsonObject(STOPPING);
 
         sendFcmMessage(jsonObject, ALL);
 
@@ -168,9 +155,8 @@ public class FirebaseService {
         unregisterListeners();
     }
 
-    @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionDetectedEvent.class, UploadEvent.class})
+    @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionToNotifyEvent.class, UploadEvent.class})
     public void onEvent(EventBase event) {
-        final boolean[] logRecordPushed = {false};
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(SERVER_NAME, serverAlias);
 
@@ -185,73 +171,27 @@ public class FirebaseService {
 
             sendFcmMessage(jsonObject, ALL);
 
-        } else if (event instanceof MotionDetectedEvent) {
-            MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
-
-            Long lastMotionTimestamp = (Long) motions.get(motionDetectedEvent.getCameraName());
-            Long currentMotionTimestamp = motionDetectedEvent.getEventTimeMillis();
-
-            if (lastMotionTimestamp == null) {
-                motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
-            } else if ((currentMotionTimestamp - lastMotionTimestamp) < (long) optionsService.getOption(RECORD_INTERVAL) * 1000) {
-                System.out.println("Motion event for camera " + (motionDetectedEvent.getCameraName() + " was ignored"));
-                return;
-            } else {
-                motions.put(motionDetectedEvent.getCameraName(), currentMotionTimestamp);
-            }
+        } else if (event instanceof MotionToNotifyEvent) {
+            MotionToNotifyEvent motionToNotifyEvent = (MotionToNotifyEvent) event;
 
             jsonObject.addProperty(REASON, MOTION_DETECTED);
-            jsonObject.addProperty(MOTION_ID, currentMotionTimestamp);
-            jsonObject.addProperty(TIME_STAMP, currentMotionTimestamp);
-            jsonObject.addProperty(CAMERA_NAME, motionDetectedEvent.getCameraName());
-            jsonObject.addProperty(MOTION_AREA, motionDetectedEvent.getMotionArea().intValue());
+            jsonObject.addProperty(IMAGE_URL, motionToNotifyEvent.getSnapshotUrl().toString());
+            jsonObject.addProperty(EVENT_ID, motionToNotifyEvent.getEventId());
+            jsonObject.addProperty(TIME_STAMP, motionToNotifyEvent.getEventId());
+            jsonObject.addProperty(CAMERA_NAME, motionToNotifyEvent.getCameraName());
+            jsonObject.addProperty(MOTION_AREA, motionToNotifyEvent.getMotionArea());
 
-            if (motionDetectedEvent.getCurrentImage() != null) {
-                tryToFillJsonObjectWithImage(jsonObject, motionDetectedEvent.getCurrentImage());
-            }
-
-            firebaseDatabaseProvider.pushData("/log/" + currentMotionTimestamp, new Gson().fromJson(jsonObject, HashMap.class)).addListener(new Runnable() {
-                private JsonObject thisJsonObject;
-
-                @Override
-                public void run() {
-                    this.thisJsonObject = jsonObject;
-                    thisJsonObject.remove(CAMERA_NAME);
-                    thisJsonObject.remove(MOTION_AREA);
-                    thisJsonObject.remove(TIME_STAMP);
-                    thisJsonObject.remove(IMAGE);
-
-                    sendFcmMessage(thisJsonObject, MOTION_DETECTED);
-                    logRecordPushed[0] = true;
-                }
-            }, hswExecutor);
+            sendFcmMessage(jsonObject, MOTION_DETECTED);
 
         } else if (event instanceof UploadEvent) {
             UploadEvent uploadEvent = (UploadEvent) event;
 
-            jsonObject.addProperty(RECORD_ID, event.getEventTimeMillis());
             jsonObject.addProperty(REASON, VIDEO_RECORDED);
+            jsonObject.addProperty(VIDEO_URL, uploadEvent.getVideoUrl().toString());
+            jsonObject.addProperty(EVENT_ID, uploadEvent.getEventId());
             jsonObject.addProperty(FILE_NAME, uploadEvent.getFileName());
-            jsonObject.addProperty(URL, uploadEvent.getUrl());
 
-            if (uploadEvent.getImage() != null) {
-                tryToFillJsonObjectWithImage(jsonObject, uploadEvent.getImage());
-            }
-
-            firebaseDatabaseProvider.pushData("/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class)).addListener(new Runnable() {
-                private JsonObject thisJsonObject;
-
-                @Override
-                public void run() {
-                    this.thisJsonObject = jsonObject;
-                    thisJsonObject.remove(IMAGE);
-
-                    sendFcmMessage(thisJsonObject, VIDEO_RECORDED);
-
-                    logRecordPushed[0] = true;
-                }
-            }, hswExecutor);
-
+            sendFcmMessage(jsonObject, VIDEO_RECORDED);
 
         } else if (event instanceof IspEvent) {
             refreshWanInfo();
@@ -271,34 +211,19 @@ public class FirebaseService {
             sendFcmMessage(jsonObject, ALL);
         }
 
-        if (logRecordPushed[0]) {
-            logRecordPushed[0] = false;
-        } else {
-            firebaseDatabaseProvider.pushData("/log/" + event.getEventTimeMillis(), new Gson().fromJson(jsonObject, HashMap.class));
-        }
+        firebaseDatabaseProvider.pushData("/log/" + event.getEventId(), new Gson().fromJson(jsonObject, HashMap.class));
     }
 
     private void updateStatuses(ArmedStateEnum armedState, ArmedModeEnum armedMode) {
         statuses.put(ARMED_STATE, armedState);
         statuses.put(ARMED_MODE, armedMode);
 
-        if (armedState.equals(ARMED)) {
-            statuses.put(PORTS_OPEN, true);
-        } else {
-            statuses.put(PORTS_OPEN, false);
-        }
         statuses.put(TIME_STAMP, System.currentTimeMillis());
 
         firebaseDatabaseProvider.pushData("/statuses", statuses);
     }
 
     private void registerListeners() {
-        DatabaseReference openPortsRef = firebaseDatabaseProvider.getReference("/requests/portsOpen");
-        databaseReferences.add(openPortsRef);
-        ValueEventListener openPortsRefValueEventListener = getOpenPortsValueEventListener();
-        valueEventListeners.add(openPortsRefValueEventListener);
-        openPortsRef.addValueEventListener(openPortsRefValueEventListener);
-
         DatabaseReference armRef = firebaseDatabaseProvider.getReference("/requests/state");
         databaseReferences.add(armRef);
         ValueEventListener armRefValueEventListener = getArmedEventValueEventListener();
@@ -318,21 +243,6 @@ public class FirebaseService {
                 reference.removeEventListener(eventListener);
             }
         }
-    }
-
-    private ValueEventListener getOpenPortsValueEventListener() {
-        return new ValueEventListener() {
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (isHomeSystemInitComplete()) {
-                    statuses.put(TIME_STAMP, System.currentTimeMillis());
-                    firebaseDatabaseProvider.pushData("/statuses", statuses);
-                }
-            }
-
-            public void onCancelled(DatabaseError databaseError) {
-                log.error("Failed to fetch Ports State Firebase data!");
-            }
-        };
     }
 
     private ValueEventListener getResendHourlyValueEventListener() {
@@ -376,7 +286,6 @@ public class FirebaseService {
         uptimeRef.setValueAsync(uptime.getUptimeLong());
 
         refreshWanInfo();
-        notifyServerStarted();
     }
 
     private void refreshWanInfo() {
@@ -390,15 +299,8 @@ public class FirebaseService {
     }
 
     private void notifyServerStarted() {
-        if (alreadyFired) {
-            return;
-        }
-
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty(REASON, SERVER_STARTUP_OR_SHUTDOWN);
-        jsonObject.addProperty(ACTION, STARTING);
+        JsonObject jsonObject = getStartStopJsonObject(STARTING);
         jsonObject.addProperty(PID, getPid());
-        jsonObject.addProperty(SERVER_NAME, serverAlias);
 
         sendFcmMessage(jsonObject, ALL);
 
@@ -407,19 +309,13 @@ public class FirebaseService {
         alreadyFired = true;
     }
 
-    private void tryToFillJsonObjectWithImage(JsonObject jsonObject, BufferedImage image) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        try {
-            ImageIO.write(image, "JPG", bos);
-            byte[] imageBytes = bos.toByteArray();
-
-            BASE64Encoder encoder = new BASE64Encoder();
-            jsonObject.addProperty(IMAGE, encoder.encode(imageBytes));
-
-            bos.close();
-        } catch (IOException e) {
-            log.error("Error occurred: ", e);
-        }
+    @NotNull
+    private JsonObject getStartStopJsonObject(String starting) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty(SERVER_NAME, serverAlias);
+        jsonObject.addProperty(REASON, SERVER_STARTUP_OR_SHUTDOWN);
+        jsonObject.addProperty(ACTION, starting);
+        return jsonObject;
     }
 
     private void sendFcmMessage(JsonObject messageData, String notificationType) {
@@ -441,7 +337,7 @@ public class FirebaseService {
                 notify = false;
             }
 
-            if (notify && tokenLookGood(client.getToken())) {
+            if (notify && tokenLooksGood(client.getToken())) {
                 String token = client.getToken();
 
                 log.info("Ready to send message to the Client:" + email + " on device " + device + " with client version " + appVersion);
@@ -453,7 +349,7 @@ public class FirebaseService {
         });
     }
 
-    private boolean tokenLookGood(String token) {
+    private boolean tokenLooksGood(String token) {
         return token != null && !"".equals(token) && !"null".equalsIgnoreCase(token);
     }
 }

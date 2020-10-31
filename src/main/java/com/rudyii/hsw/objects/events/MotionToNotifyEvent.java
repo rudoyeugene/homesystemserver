@@ -6,14 +6,16 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.net.URL;
 
 @Data
 @Builder
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class CaptureEvent extends EventBase {
+public class MotionToNotifyEvent extends EventBase {
     private long eventId;
-    private File uploadCandidate;
-    private BufferedImage image;
+    private URL snapshotUrl;
+    private String cameraName;
+    private Integer motionArea;
+    private BufferedImage currentImage, motionObject;
 }

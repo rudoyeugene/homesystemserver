@@ -21,7 +21,7 @@ public class PidGeneratorShutdownHandler {
 
     private int getProcessPid() {
         String procId = ManagementFactory.getRuntimeMXBean().getName();
-        return Integer.valueOf(procId.split("@")[0]);
+        return Integer.parseInt(procId.split("@")[0]);
     }
 
     @PostConstruct

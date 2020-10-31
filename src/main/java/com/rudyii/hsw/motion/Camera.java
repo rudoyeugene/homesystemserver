@@ -1,10 +1,10 @@
 package com.rudyii.hsw.motion;
 
+import com.google.common.net.MediaType;
 import com.rudyii.hsw.enums.IPStateEnum;
-import com.rudyii.hsw.objects.events.ArmedEvent;
-import com.rudyii.hsw.objects.events.EventBase;
-import com.rudyii.hsw.objects.events.MotionDetectedEvent;
-import com.rudyii.hsw.objects.events.OptionsChangedEvent;
+import com.rudyii.hsw.objects.events.*;
+import com.rudyii.hsw.providers.StorageProvider;
+import com.rudyii.hsw.services.EventService;
 import com.rudyii.hsw.services.PingService;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,14 +15,11 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 
 import javax.annotation.PostConstruct;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import javax.imageio.ImageIO;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,8 +29,10 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
 @Slf4j
 public class Camera {
-    private ApplicationContext context;
-    private PingService pingService;
+    private final ApplicationContext context;
+    private final PingService pingService;
+    private final StorageProvider storageProvider;
+    private final EventService eventService;
     private CameraMotionDetector currentCameraMotionDetector;
     private File lock;
     @Getter
@@ -91,9 +90,12 @@ public class Camera {
     private String rebootUrlTemplate;
 
     @Autowired
-    public Camera(ApplicationContext context, PingService pingService) {
+    public Camera(ApplicationContext context, PingService pingService,
+                  StorageProvider storageProvider, EventService eventService) {
         this.context = context;
         this.pingService = pingService;
+        this.storageProvider = storageProvider;
+        this.eventService = eventService;
     }
 
     @PostConstruct
@@ -210,10 +212,19 @@ public class Camera {
             }
 
             if (lock.exists()) {
-                System.out.println("New motion detected on camera: " + getCameraName() + " but previous capture is in progress, waiting...");
+                log.info("New motion detected on camera: {} but previous capture is in progress, ignoring...", getCameraName());
             } else {
-                System.out.println("New motion detected at: " + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()) + " on camera: " + getCameraName());
+                log.info("New motion detected at: {} on Camera {}", new Date(), getCameraName());
                 try {
+                    eventService.publish(MotionToNotifyEvent.builder()
+                            .cameraName(getCameraName())
+                            .currentImage(motionDetectedEvent.getCurrentImage())
+                            .motionObject(motionDetectedEvent.getMotionObject())
+                            .motionArea(motionDetectedEvent.getMotionArea())
+                            .eventId(motionDetectedEvent.getEventId())
+                            .snapshotUrl(uploadMotionImageFrom(motionDetectedEvent))
+                            .build());
+
                     lock.createNewFile();
                     context.getBean(VideoCaptor.class).startCaptureFrom(this);
                 } catch (Exception e) {
@@ -225,6 +236,17 @@ public class Camera {
             if (!detectorEnabled && (Boolean) cameraOptions.get(CONTINUOUS_MONITORING)) {
                 enableMotionDetection();
             }
+        }
+    }
+
+    private URL uploadMotionImageFrom(MotionDetectedEvent motionDetectedEvent) {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            ImageIO.write(motionDetectedEvent.getCurrentImage(), "JPG", bos);
+            byte[] imageBytes = bos.toByteArray();
+            return storageProvider.putData(motionDetectedEvent.getEventId() + ".jpg", MediaType.JPEG, imageBytes);
+        } catch (Exception e) {
+            log.error("Failed to upload Image", e);
+            return null;
         }
     }
 

@@ -1,9 +1,10 @@
 conf
 database
-**/server-global.json
-**/application.properties
 .idea
 logs
-*.iml
-pid
 target
+**/server-global.json
+**/application.properties
+**/system-settings.xml
+**/*.pid
+**/*.iml

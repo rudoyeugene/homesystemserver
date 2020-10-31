@@ -84,12 +84,6 @@ public class AdminPortal {
         return modelAndView;
     }
 
-    @RequestMapping(value = "/resetSecret", method = RequestMethod.GET)
-    public ModelAndView resetSecret() {
-        uuidService.resetServerKey();
-        return new ModelAndView("redirect:/admin/pair");
-    }
-
     @RequestMapping(value = "/cameras", method = RequestMethod.GET)
     public ModelAndView buildCamerasPage() {
         ModelAndView modelAndView = new ModelAndView("cameras");
@@ -137,11 +131,6 @@ public class AdminPortal {
     @RequestMapping(value = "/fireAction", method = RequestMethod.POST)
     public void fireAction(@RequestParam(value = "action") String action) {
         actionsService.performAction(action);
-    }
-
-    @RequestMapping(value = "/rebootCamera", method = RequestMethod.POST)
-    public void rebootCamera(@RequestParam(value = "cameraName") String cameraName) {
-        actionsService.rebootCamera(cameraName);
     }
 
     @RequestMapping(value = "/currentState", method = RequestMethod.GET)

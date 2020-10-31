@@ -6,7 +6,7 @@ Preferable environment: Linux, Windows is also supported but network features ar
 
 ### Server purposes
 
-* Take care about your IP cameras: monitor motions, upload to Dropbox and notify the Clients ASAP, reboot if Camera has stuck
+* Take care about your IP cameras: monitor motions, upload to Cloud and notify the Clients ASAP, reboot if Camera has stuck
 * Watch for your ISP failures and notify once Internet is back
 * Run custom scripts on events ag. armed, disarmed, ISP changed, server started, server stopped
 * Watch for your network devices, change state (arm/disarm) based on presence of the well known devices aka Master-devices
@@ -25,7 +25,6 @@ Preferable environment: Linux, Windows is also supported but network features ar
 * Standalone x86/ARM PC
 * 1GB of RAM
 * Email account
-* Dropbox account
 * Some drive space to keep the videos and app (~60GB can keep tons of fragments)
 * Internet
 * Web Cams (Vstarcam tested)

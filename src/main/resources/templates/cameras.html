@@ -1,52 +1,31 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.w3.org/1999/xhtml" lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Camera control</title>
     <div th:include="decoration"/>
-    <script th:inline="javascript">
-        /*<![CDATA[*/
-
-        //REST Buttons
-        function rebootCamera(message, cameraName) {
-            confirm(message);
-            var xhttp = new XMLHttpRequest();
-            xhttp.open("POST", "/admin/rebootCamera?cameraName=" + cameraName, true);
-            xhttp.setRequestHeader("Content-type", "application/json");
-            xhttp.send();
-            var response = JSON.parse(xhttp.responseText);
-        }
-
-        /*]]>*/
-    </script>
-
 </head>
-<br></br>
+<br>
 <body>
+<!--/*@thymesVar id="cameraList" type="java.util.ArrayList"*/-->
 <div th:each="camera : ${cameraList}">
     <table cellspacing="5" cellpadding="10" frame="box">
         <tbody>
         <tr>
             <td><span class="blackShadowedText" th:text="${camera[0]}"/></td>
-            <td style="text-align: right">
-                <button type="submit"
-                        th:onclick="|rebootCamera('Are sure you want reboot the camera?', '${camera[0]}')|"
-                        class="button btnInfo">REBOOT
-                </button>
-            </td>
         </tr>
         <tr>
             <td colspan="2"><img src="#" th:src="${camera[1]}"/></td>
         </tr>
         </tbody>
     </table>
-    <br></br>
+    <br>
 </div>
 <div>
     <table cellspacing="5" cellpadding="10">
         <tbody>
         <tr>
-            <td style="text-align: left"><a href="/admin/" class="button btnInfo">BACK</a></td>
-            <td style="text-align: right"><a href="/admin/cameras" class="button btnInfo">REFRESH</a></td>
+            <td style="text-align: left"><a class="button btnInfo" href="/">BACK</a></td>
+            <td style="text-align: right"><a class="button btnInfo" href="/cameras">REFRESH</a></td>
         </tr>
         </tbody>
     </table>

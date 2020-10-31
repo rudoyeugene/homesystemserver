@@ -1,9 +1,9 @@
 package com.rudyii.hsw.services;
 
-import com.dropbox.core.v2.DbxClientV2;
 import com.rudyii.hsw.configuration.OptionsService;
+import com.rudyii.hsw.database.FirebaseDatabaseProvider;
+import com.rudyii.hsw.providers.StorageProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,92 +14,75 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.rudyii.hsw.configuration.OptionsService.KEEP_DAYS;
 
 @Slf4j
 @Service
 public class HouseKeepingService {
-    private DbxClientV2 client;
-    private IspService ispService;
-    private Connection connection;
-    private OptionsService optionsService;
+    private final StorageProvider storageProvider;
+    private final IspService ispService;
+    private final Connection connection;
+    private final OptionsService optionsService;
+    private final FirebaseDatabaseProvider firebaseDatabaseProvider;
 
     @Value("#{hswProperties['video.archive.location']}")
     private String archiveLocation;
 
     @Autowired
-    public HouseKeepingService(DbxClientV2 client, IspService ispService,
-                               Connection connection, OptionsService optionsService) {
-        this.client = client;
+    public HouseKeepingService(StorageProvider storageProvider, IspService ispService,
+                               Connection connection, OptionsService optionsService,
+                               FirebaseDatabaseProvider firebaseDatabaseProvider) {
+        this.storageProvider = storageProvider;
         this.ispService = ispService;
         this.connection = connection;
         this.optionsService = optionsService;
+        this.firebaseDatabaseProvider = firebaseDatabaseProvider;
     }
 
     @Scheduled(cron = "0 0 * * * *")
-    public void houseKeep() throws ParseException {
+    public void houseKeep() {
         if (ispService.internetIsAvailable()) {
-            Date olderThan = DateUtils.addDays(new Date(), -((Long) optionsService.getOption(KEEP_DAYS)).intValue());
+            AtomicInteger eventsDeleted = new AtomicInteger();
+            AtomicInteger localFilesDeleted = new AtomicInteger();
+            AtomicInteger remoteFilesDeleted = new AtomicInteger();
+            long timeAgo = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(((Long) optionsService.getOption(KEEP_DAYS)));
             File localStorage = new File(archiveLocation);
-
-            ArrayList<String> filesToDelete = new ArrayList<>();
+            String selectQuery = "SELECT FILE_ID, CREATED from RECORD_FILES where CREATED < " + timeAgo;
 
             ResultSet resultSet;
             try {
-                String filename;
-                Date fileUploadDate;
-                resultSet = connection.createStatement().executeQuery("SELECT * from DROPBOX_FILES");
+                String fileName;
+                resultSet = connection.prepareStatement(selectQuery).executeQuery();
                 while (resultSet.next()) {
-                    filename = resultSet.getString(1);
-                    fileUploadDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(resultSet.getString(2));
-
-                    if (fileUploadDate.before(olderThan)) {
-                        filesToDelete.add(filename);
+                    String rowToDeleteQuery;
+                    fileName = resultSet.getString(1);
+                    try {
+                        File removeCandidate = new File(localStorage.getCanonicalPath() + "/" + fileName);
+                        if (removeCandidate.delete()) {
+                            localFilesDeleted.incrementAndGet();
+                        } else {
+                            log.info("Local file {} not found", removeCandidate);
+                        }
+                    } catch (IOException e) {
+                        log.error("Failed to delete file", e);
                     }
+                    if (fileName.endsWith(".event")) {
+                        firebaseDatabaseProvider.getReference("/log/" + fileName.replaceAll(".event", "")).removeValueAsync();
+                        eventsDeleted.incrementAndGet();
+                    } else {
+                        storageProvider.deleteData(fileName);
+                        remoteFilesDeleted.incrementAndGet();
+                    }
+                    rowToDeleteQuery = "DELETE from RECORD_FILES WHERE FILE_ID = " + "'" + fileName + "'";
+                    connection.createStatement().execute(rowToDeleteQuery);
                 }
+                resultSet.close();
             } catch (SQLException e) {
-                log.error("Failed to get Dropbox files list", e);
+                log.error("Failed to get files list", e);
             }
-            final int[] deletedLocalFilesCount = {0};
-            final int[] deletedRemoteFilesCount = {0};
-
-            filesToDelete.forEach(fileName -> {
-                try {
-                    File removeCandidate = new File(localStorage.getCanonicalPath() + "/" + fileName);
-                    removeCandidate.delete();
-                    log.info("Local file removed as outdated: " + removeCandidate.getCanonicalPath());
-                    deletedLocalFilesCount[0]++;
-                } catch (IOException e) {
-                    log.error("Failed to remove local file: " + fileName + " due to error:\n", e);
-                }
-            });
-
-            filesToDelete.forEach(fileName -> {
-                try {
-
-                    client.files().delete("/" + fileName);
-                    log.info("Remote file removed as outdated: " + fileName);
-                    deletedRemoteFilesCount[0]++;
-                } catch (Exception e) {
-                    log.error("Failed to remove remote file: " + fileName + " due to error:\n", e);
-                }
-
-            });
-
-            log.info("Totally deleted:\nLocal files: " + deletedLocalFilesCount[0] + "\nRemote files: " + deletedRemoteFilesCount[0]);
-
-            filesToDelete.forEach(fileName -> {
-                try {
-                    connection.createStatement().executeUpdate(String.format("DELETE FROM DROPBOX_FILES WHERE FILE_NAME = %s", "'" + fileName + "'"));
-                } catch (SQLException e) {
-                    log.error("Failed to remove remote data: " + fileName + " from database due to error:\n", e);
-                }
-            });
         }
     }
 }

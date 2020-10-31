@@ -67,7 +67,7 @@ public class StatsProvider {
                         Long historicalToday = calculateHistoricalToday();
                         log.info("Cleaning obsolete usage stats");
                         usageStats.forEach((k, v) -> {
-                            if (Long.valueOf(k) < historicalToday) {
+                            if (Long.parseLong(k) < historicalToday) {
                                 usageStats.remove(k);
                             }
                         });

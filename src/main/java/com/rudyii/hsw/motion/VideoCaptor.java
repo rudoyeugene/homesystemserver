@@ -34,11 +34,11 @@ public class VideoCaptor {
     @Value("#{hswProperties['video.archive.location']}")
     private String archiveLocation;
 
-    private String timeStamp;
     private String cameraName;
     private String rtspUrl;
     private File result;
     private BufferedImage image;
+    private long eventTimeMillis;
 
     @Autowired
     public VideoCaptor(EventService eventService, OptionsService optionsService) {
@@ -48,11 +48,11 @@ public class VideoCaptor {
 
     @Async
     void startCaptureFrom(Camera camera) {
-        generateTimestamps();
+        this.eventTimeMillis = System.currentTimeMillis();
 
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
-        this.result = new File(archiveLocation + "/" + cameraName + "_" + timeStamp + ".mp4");
+        this.result = new File(archiveLocation + "/" + eventTimeMillis + ".mp4");
 
         System.out.println("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 
@@ -60,19 +60,14 @@ public class VideoCaptor {
             this.image = ImageIO.read(new URL(camera.getJpegUrl()));
             getFfmpegStream();
         } catch (IOException e) {
-            log.error("Failed to proess output file", e);
+            log.error("Failed to process output file", e);
         }
 
         publishCaptureEvent();
     }
 
     private void publishCaptureEvent() {
-        //TODO addbufferedImage to publish with motion record
-        eventService.publish(new CaptureEvent(result, image));
-    }
-
-    private void generateTimestamps() {
-        timeStamp = new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date());
+        eventService.publish(CaptureEvent.builder().uploadCandidate(result).image(image).eventId(eventTimeMillis).build());
     }
 
     private void getFfmpegStream() throws IOException {

@@ -1,9 +1,9 @@
 package com.rudyii.hsw.actions.base;
 
 import com.google.gson.JsonObject;
-import com.rudyii.hsw.actions.DropboxUploadAction;
 import com.rudyii.hsw.actions.FcmMessageSendAction;
 import com.rudyii.hsw.actions.MailSendAction;
+import com.rudyii.hsw.actions.UploadAction;
 import com.rudyii.hsw.objects.Attachment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -37,7 +37,7 @@ public class ActionsFactory {
     }
 
     @Async
-    public void orderDropboxUploadAction(File uploadCandidate, BufferedImage image) {
-        hswExecutor.execute(context.getBean(DropboxUploadAction.class).withUploadCandidate(uploadCandidate).andImage(image));
+    public void orderUploadAction(File uploadCandidate, BufferedImage image) {
+        hswExecutor.execute(context.getBean(UploadAction.class).withUploadCandidate(uploadCandidate).andImage(image));
     }
 }

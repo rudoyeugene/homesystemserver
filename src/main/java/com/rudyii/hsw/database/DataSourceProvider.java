@@ -1,6 +1,7 @@
 package com.rudyii.hsw.database;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
@@ -21,6 +22,9 @@ public class DataSourceProvider {
     @Value("${jdbc.url}")
     private String databaseUrl;
 
+    @Autowired
+    private DataSource dataSource;
+
     @Bean
     public DataSource jdbcDataSource() {
         SingleConnectionDataSource ds = new SingleConnectionDataSource();
@@ -33,28 +37,22 @@ public class DataSourceProvider {
     public Connection getConnection() throws SQLException {
         new File("database").mkdirs();
 
-        Connection connection = jdbcDataSource().getConnection();
+        Connection connection = dataSource.getConnection();
 
-        connection.createStatement().execute("CREATE TABLE IF NOT EXISTS DROPBOX_FILES (FILE_NAME STRING UNIQUE, UPLOAD_DATE_TIME DATETIME DEFAULT CURRENT_TIMESTAMP)");
-        connection.createStatement().execute("CREATE UNIQUE INDEX IF NOT EXISTS DROPBOX_FILES_INDEX ON DROPBOX_FILES (FILE_NAME)");
-
+        //create tables
+        connection.createStatement().execute("CREATE TABLE IF NOT EXISTS RECORD_FILES (FILE_ID STRING UNIQUE, CREATED INTEGER)");
         connection.createStatement().execute("CREATE TABLE IF NOT EXISTS SETTINGS (KEY STRING NOT NULL UNIQUE, VALUE)");
-        connection.createStatement().execute("CREATE UNIQUE INDEX IF NOT EXISTS SETTINGS_INDEX ON SETTINGS (KEY)");
+
+        //cleanup deprecated tables
+        connection.createStatement().execute("DROP TABLE IF EXISTS DROPBOX_FILES");
 
         return connection;
     }
 
-    private synchronized void closeConnection() {
-        try {
-            jdbcDataSource().getConnection().close();
-        } catch (SQLException e) {
-            log.error("Failed to close the connection!", e);
-        }
-    }
-
     @PreDestroy
     public synchronized void optimizeDB() throws Exception {
-        getConnection().createStatement().execute("VACUUM");
-        closeConnection();
+        try (Connection connection = dataSource.getConnection()) {
+            connection.createStatement().execute("VACUUM");
+        }
     }
 }

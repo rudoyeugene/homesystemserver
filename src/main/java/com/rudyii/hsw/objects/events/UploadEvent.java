@@ -6,13 +6,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.awt.image.BufferedImage;
+import java.net.URL;
 
 @Data
 @Builder
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class UploadEvent extends EventBase {
+    private URL videoUrl;
     private String fileName;
     private BufferedImage image;
-    private String url;
 }

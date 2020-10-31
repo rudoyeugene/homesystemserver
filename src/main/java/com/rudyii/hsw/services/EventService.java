@@ -1,6 +1,7 @@
 package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.objects.events.EventBase;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.stereotype.Service;
@@ -10,8 +11,7 @@ public class EventService implements ApplicationEventPublisherAware {
 
     private ApplicationEventPublisher publisher;
 
-    public void setApplicationEventPublisher
-            (ApplicationEventPublisher publisher) {
+    public void setApplicationEventPublisher(@NotNull ApplicationEventPublisher publisher) {
         this.publisher = publisher;
     }
 
