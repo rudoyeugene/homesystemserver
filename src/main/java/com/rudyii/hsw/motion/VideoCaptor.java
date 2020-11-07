@@ -67,7 +67,11 @@ public class VideoCaptor {
     }
 
     private void publishCaptureEvent() {
-        eventService.publish(CaptureEvent.builder().uploadCandidate(result).image(image).eventId(eventTimeMillis).build());
+        eventService.publish(CaptureEvent.builder()
+                .cameraName(cameraName)
+                .uploadCandidate(result)
+                .image(image)
+                .eventId(eventTimeMillis).build());
     }
 
     private void getFfmpegStream() throws IOException {

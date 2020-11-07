@@ -13,6 +13,7 @@ import java.net.URL;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class UploadEvent extends EventBase {
+    private String cameraName;
     private URL videoUrl;
     private String fileName;
     private BufferedImage image;

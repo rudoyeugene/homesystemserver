@@ -37,7 +37,10 @@ public class ActionsFactory {
     }
 
     @Async
-    public void orderUploadAction(File uploadCandidate, BufferedImage image) {
-        hswExecutor.execute(context.getBean(UploadAction.class).withUploadCandidate(uploadCandidate).andImage(image));
+    public void orderUploadAction(String cameraName, File uploadCandidate, BufferedImage image) {
+        hswExecutor.execute(context.getBean(UploadAction.class)
+                .withUploadCandidate(uploadCandidate)
+                .withCameraName(cameraName)
+                .andImage(image));
     }
 }

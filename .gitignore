@@ -3,6 +3,7 @@ database
 .idea
 logs
 target
+data
 **/server-global.json
 **/application.properties
 **/system-settings.xml

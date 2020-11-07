@@ -26,6 +26,7 @@ public class UploadAction extends InternetBasedAction implements Runnable {
     private final EventService eventService;
     private File uploadCandidate;
     private BufferedImage image;
+    private String cameraName;
 
     @Autowired
     public UploadAction(StorageProvider storageProvider, IspService ispService, EventService eventService) {
@@ -50,6 +51,7 @@ public class UploadAction extends InternetBasedAction implements Runnable {
         try {
             InputStream in = new BufferedInputStream(new FileInputStream(uploadCandidate));
             eventService.publish(UploadEvent.builder()
+                    .cameraName(cameraName)
                     .fileName(uploadCandidate.getName())
                     .videoUrl(storageProvider.putData(uploadCandidate.getName(), MediaType.MP4_VIDEO, in))
                     .image(image)
@@ -61,6 +63,12 @@ public class UploadAction extends InternetBasedAction implements Runnable {
 
     public UploadAction andImage(BufferedImage image) {
         this.image = image;
+
+        return this;
+    }
+
+    public UploadAction withCameraName(String cameraName) {
+        this.cameraName = cameraName;
 
         return this;
     }

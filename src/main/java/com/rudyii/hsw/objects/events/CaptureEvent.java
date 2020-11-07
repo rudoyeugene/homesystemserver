@@ -13,6 +13,7 @@ import java.io.File;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class CaptureEvent extends EventBase {
+    private String cameraName;
     private long eventId;
     private File uploadCandidate;
     private BufferedImage image;

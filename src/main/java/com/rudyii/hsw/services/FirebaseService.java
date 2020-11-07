@@ -40,9 +40,9 @@ public class FirebaseService {
     public static final String IMAGE_URL = "imageUrl";
     public static final String VIDEO_URL = "videoUrl";
     public static final String SERVER_NAME = "serverName";
-    public static final String SERVER_STARTUP_OR_SHUTDOWN = "serverStartupOrShutdown";
+    public static final String SERVER_STATE_CHANGED = "serverStateChanged";
     public static final String ACTION = "action";
-    public static final String STOPPING = "stopping";
+    public static final String STOPPED = "stopped";
     public static final String SYSTEM_STATE_CHANGED = "systemStateChanged";
     public static final String ARMED_MODE = "armedMode";
     public static final String ARMED_STATE = "armedState";
@@ -62,7 +62,7 @@ public class FirebaseService {
     public static final String RESEND_HOURLY = "resendHourly";
     public static final String WAN_IP = "wanIp";
     public static final String PID = "pid";
-    public static final String STARTING = "starting";
+    public static final String STARTED = "started";
     public static final String ALL = "all";
     private final String serverAlias;
     private final Random random = new Random();
@@ -146,7 +146,7 @@ public class FirebaseService {
 
     @PreDestroy
     private void destroy() {
-        JsonObject jsonObject = getStartStopJsonObject(STOPPING);
+        JsonObject jsonObject = getStartStopJsonObject(STOPPED);
 
         sendFcmMessage(jsonObject, ALL);
 
@@ -159,6 +159,7 @@ public class FirebaseService {
     public void onEvent(EventBase event) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(SERVER_NAME, serverAlias);
+        jsonObject.addProperty(EVENT_ID, event.getEventId());
 
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
@@ -176,7 +177,6 @@ public class FirebaseService {
 
             jsonObject.addProperty(REASON, MOTION_DETECTED);
             jsonObject.addProperty(IMAGE_URL, motionToNotifyEvent.getSnapshotUrl().toString());
-            jsonObject.addProperty(EVENT_ID, motionToNotifyEvent.getEventId());
             jsonObject.addProperty(TIME_STAMP, motionToNotifyEvent.getEventId());
             jsonObject.addProperty(CAMERA_NAME, motionToNotifyEvent.getCameraName());
             jsonObject.addProperty(MOTION_AREA, motionToNotifyEvent.getMotionArea());
@@ -188,8 +188,8 @@ public class FirebaseService {
 
             jsonObject.addProperty(REASON, VIDEO_RECORDED);
             jsonObject.addProperty(VIDEO_URL, uploadEvent.getVideoUrl().toString());
-            jsonObject.addProperty(EVENT_ID, uploadEvent.getEventId());
             jsonObject.addProperty(FILE_NAME, uploadEvent.getFileName());
+            jsonObject.addProperty(CAMERA_NAME, uploadEvent.getCameraName());
 
             sendFcmMessage(jsonObject, VIDEO_RECORDED);
 
@@ -299,7 +299,7 @@ public class FirebaseService {
     }
 
     private void notifyServerStarted() {
-        JsonObject jsonObject = getStartStopJsonObject(STARTING);
+        JsonObject jsonObject = getStartStopJsonObject(STARTED);
         jsonObject.addProperty(PID, getPid());
 
         sendFcmMessage(jsonObject, ALL);
@@ -313,7 +313,7 @@ public class FirebaseService {
     private JsonObject getStartStopJsonObject(String starting) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(SERVER_NAME, serverAlias);
-        jsonObject.addProperty(REASON, SERVER_STARTUP_OR_SHUTDOWN);
+        jsonObject.addProperty(REASON, SERVER_STATE_CHANGED);
         jsonObject.addProperty(ACTION, starting);
         return jsonObject;
     }

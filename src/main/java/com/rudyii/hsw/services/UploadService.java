@@ -23,7 +23,7 @@ public class UploadService {
     public void onEvent(CaptureEvent event) {
         if (event.getUploadCandidate() != null && event.getUploadCandidate().exists()) {
             log.info("Invoking upload process for file: {}", event.getUploadCandidate().getAbsolutePath());
-            actionsFactory.orderUploadAction(event.getUploadCandidate(), event.getImage());
+            actionsFactory.orderUploadAction(event.getCameraName(), event.getUploadCandidate(), event.getImage());
 
         } else {
             log.warn("File: {} does not exist. Uploading skipped", event.getUploadCandidate());
