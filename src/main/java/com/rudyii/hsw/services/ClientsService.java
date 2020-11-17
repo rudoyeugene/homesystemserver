@@ -21,9 +21,9 @@ import java.util.List;
 @Slf4j
 @Service
 public class ClientsService {
-    private List<Client> clients;
-    private DatabaseReference connectedClientsRef;
-    private ValueEventListener connectedClientsValueEventListener;
+    private final List<Client> clients;
+    private final DatabaseReference connectedClientsRef;
+    private final ValueEventListener connectedClientsValueEventListener;
 
     @Autowired
     public ClientsService(FirebaseDatabaseProvider firebaseDatabaseProvider) {

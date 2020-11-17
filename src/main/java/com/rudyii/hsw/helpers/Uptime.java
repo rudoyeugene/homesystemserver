@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class Uptime {
-    private Long startUpTimeStamp = System.currentTimeMillis();
+    private final Long startUpTimeStamp = System.currentTimeMillis();
 
     public Long getUptimeLong() {
         return System.currentTimeMillis() - startUpTimeStamp;

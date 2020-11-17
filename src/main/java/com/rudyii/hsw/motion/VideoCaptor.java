@@ -28,8 +28,8 @@ import static com.rudyii.hsw.configuration.OptionsService.RECORD_INTERVAL;
 @Component
 @Scope(value = "prototype")
 public class VideoCaptor {
-    private EventService eventService;
-    private OptionsService optionsService;
+    private final EventService eventService;
+    private final OptionsService optionsService;
 
     @Value("#{hswProperties['video.archive.location']}")
     private String archiveLocation;

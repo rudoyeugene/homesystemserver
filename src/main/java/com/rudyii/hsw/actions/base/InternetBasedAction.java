@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @Slf4j
 public abstract class InternetBasedAction {
-    private IspService ispService;
+    private final IspService ispService;
 
     @Autowired
     public InternetBasedAction(IspService ispService) {

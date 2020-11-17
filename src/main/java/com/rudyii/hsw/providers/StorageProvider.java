@@ -4,7 +4,6 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
-import com.rudyii.hsw.services.ClientsService;
 import com.rudyii.hsw.services.UuidService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +17,11 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Service
 public class StorageProvider {
-    private final Storage defaultStorage;
-    private final ClientsService clientsService;
     private final Bucket bucket;
 
     @Autowired
-    public StorageProvider(UuidService uuidService, ClientsService clientsService) throws IOException {
-        this.clientsService = clientsService;
-        this.defaultStorage = StorageOptions.newBuilder()
+    public StorageProvider(UuidService uuidService) throws IOException {
+        Storage defaultStorage = StorageOptions.newBuilder()
                 .setCredentials(GoogleCredentials.fromStream(this.getClass().getResourceAsStream("/server-global.json")))
                 .setProjectId("complete-home-system")
                 .build().getService();

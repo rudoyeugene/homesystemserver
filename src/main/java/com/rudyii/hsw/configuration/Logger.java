@@ -16,13 +16,13 @@ import static org.apache.logging.log4j.Level.INFO;
 
 @Slf4j
 @Component
-public class OutputSwitcher {
-    private PrintStream defaultOutPrintStream = System.out;
-    private PrintStream defaultErrPrintStream = System.err;
-    private OptionsService optionsService;
+public class Logger {
+    private final PrintStream defaultOutPrintStream = System.out;
+    private final PrintStream defaultErrPrintStream = System.err;
+    private final OptionsService optionsService;
 
     @Autowired
-    public OutputSwitcher(OptionsService optionsService) {
+    public Logger(OptionsService optionsService) {
         this.optionsService = optionsService;
     }
 

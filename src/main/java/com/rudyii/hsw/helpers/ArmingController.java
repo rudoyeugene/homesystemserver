@@ -16,9 +16,9 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.*;
 @Slf4j
 @Component
 public class ArmingController {
-    private EventService eventService;
-    private DelayedArmingHelper armingHelper;
-    private ArmedStateService armedStateService;
+    private final EventService eventService;
+    private final DelayedArmingHelper armingHelper;
+    private final ArmedStateService armedStateService;
 
     @Autowired
     public ArmingController(EventService eventService, DelayedArmingHelper armingHelper, ArmedStateService armedStateService) {
@@ -60,7 +60,7 @@ public class ArmingController {
     }
 
     private void setSystemModeTo(ArmedModeEnum armedMode, ArmedStateEnum armedState) {
-        if (armedStateService.getArmedMode().equals(armedMode) && getCurrentArmedState().equals(armedState)){
+        if (armedStateService.getArmedMode().equals(armedMode) && getCurrentArmedState().equals(armedState)) {
             log.info("System already is " + armedMode.toString() + " and " + armedState.toString());
         } else {
             eventService.publish(new ArmedEvent(armedMode, armedState));
@@ -68,7 +68,7 @@ public class ArmingController {
     }
 
     private ArmedStateEnum getCurrentArmedState() {
-        if (armedStateService.isSystemInAutoMode()){
+        if (armedStateService.isSystemInAutoMode()) {
             return AUTO;
         } else {
             return armedStateService.isArmed() ? ARMED : DISARMED;

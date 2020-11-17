@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class UploadService {
-    private ActionsFactory actionsFactory;
+    private final ActionsFactory actionsFactory;
 
     @Autowired
     public UploadService(ActionsFactory actionsFactory) {

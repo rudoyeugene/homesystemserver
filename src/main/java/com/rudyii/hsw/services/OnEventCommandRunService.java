@@ -16,11 +16,11 @@ import java.util.List;
 @Slf4j
 @Service
 public class OnEventCommandRunService {
-    private List<String> onArmCommands;
-    private List<String> onDisarmCommands;
-    private List<String> onStartCommands;
-    private List<String> onStopCommands;
-    private List<String> onIspChangeCommands;
+    private final List<String> onArmCommands;
+    private final List<String> onDisarmCommands;
+    private final List<String> onStartCommands;
+    private final List<String> onStopCommands;
+    private final List<String> onIspChangeCommands;
 
     @Autowired
     public OnEventCommandRunService(List onArmCommands, List onDisarmCommands, List onStartCommands, List onStopCommands, List onIspChangeCommands) {

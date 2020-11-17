@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class EmailDetailsProvider {
 
     @Value("#{hswProperties['mail.smtp.port']}")
-    private Integer smptPort;
+    private Integer smtpPort;
 
     @Value("#{hswProperties['mail.smtp.host']}")
     private String smptServer;

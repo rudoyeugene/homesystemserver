@@ -18,13 +18,13 @@ import java.util.List;
 @Slf4j
 @Service
 public class CameraHealthService {
-    private EventService eventService;
-    private ThreadPoolTaskExecutor hswExecutor;
-    private Camera[] cameras;
+    private final EventService eventService;
+    private final ThreadPoolTaskExecutor hswExecutor;
+    private final List<Camera> cameras;
 
     @Autowired
     public CameraHealthService(EventService eventService, ThreadPoolTaskExecutor hswExecutor,
-                               Camera... cameras) {
+                               List<Camera> cameras) {
         this.eventService = eventService;
         this.hswExecutor = hswExecutor;
         this.cameras = cameras;
@@ -32,7 +32,7 @@ public class CameraHealthService {
 
     @Scheduled(initialDelayString = "10000", fixedDelayString = "600000")
     public void run() {
-        for (Camera camera : cameras) {
+        cameras.forEach(camera -> {
             if (camera.isHealthCheckEnabled() && camera.isOnline()) {
                 if (camera.isRecordingInProgress() || camera.isDetectorEnabled()) {
                     log.warn("Camera {} is busy, skipping Health Check", camera.getCameraName());
@@ -54,7 +54,7 @@ public class CameraHealthService {
             } else if (!camera.isOnline()) {
                 log.info("Camera {} is OFFLINE, skipping Health Check", camera.getCameraName());
             }
-        }
+        });
     }
 
     private void ffprobe(String rtspUrl, String cameraName) throws Exception {

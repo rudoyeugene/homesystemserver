@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.rudyii.hsw.configuration.OptionsService.CONTINUOUS_MONITORING;
+import static com.rudyii.hsw.configuration.OptionsService.USE_MOTION_OBJECT;
 import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
@@ -35,6 +36,7 @@ public class Camera {
     private final EventService eventService;
     private CameraMotionDetector currentCameraMotionDetector;
     private File lock;
+    private boolean rebootInProgress, detectorEnabled, useMotionObject;
     @Getter
     @Setter
     private String mjpegUrl, jpegUrl, rtspUrl, rebootUrl, cameraName;
@@ -50,11 +52,9 @@ public class Camera {
     @Getter
     @Setter
     private long motionArea = 20L;
-    private boolean detectorEnabled;
     @Getter
     @Setter
     private boolean healthCheckEnabled;
-    private boolean rebootInProgress;
     @Getter
     @Setter
     private boolean autostartMonitoring;
@@ -236,12 +236,19 @@ public class Camera {
             if (!detectorEnabled && (Boolean) cameraOptions.get(CONTINUOUS_MONITORING)) {
                 enableMotionDetection();
             }
+            if (cameraOptions.contains(USE_MOTION_OBJECT)) {
+                this.useMotionObject = Boolean.parseBoolean(cameraOptions.get(USE_MOTION_OBJECT).toString());
+            }
         }
     }
 
     private URL uploadMotionImageFrom(MotionDetectedEvent motionDetectedEvent) {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            ImageIO.write(motionDetectedEvent.getCurrentImage(), "JPG", bos);
+            if (useMotionObject) {
+                ImageIO.write(motionDetectedEvent.getMotionObject(), "JPG", bos);
+            } else {
+                ImageIO.write(motionDetectedEvent.getCurrentImage(), "JPG", bos);
+            }
             byte[] imageBytes = bos.toByteArray();
             return storageProvider.putData(motionDetectedEvent.getEventId() + ".jpg", MediaType.JPEG, imageBytes);
         } catch (Exception e) {

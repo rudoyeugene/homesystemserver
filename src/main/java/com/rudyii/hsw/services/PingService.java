@@ -19,16 +19,13 @@ import static org.apache.commons.lang.SystemUtils.IS_OS_LINUX;
 @Slf4j
 @Service
 public class PingService {
-    private ArmedStateService armedStateService;
-    private EventService eventService;
-    private Map<String, String> ipResolver;
-    private ThreadPoolTaskExecutor hswExecutor;
+    private final EventService eventService;
+    private final Map<String, String> ipResolver;
+    private final ThreadPoolTaskExecutor hswExecutor;
 
     @Autowired
-    public PingService(ArmedStateService armedStateService,
-                       EventService eventService, Map ipResolver,
+    public PingService(EventService eventService, Map ipResolver,
                        ThreadPoolTaskExecutor hswExecutor) {
-        this.armedStateService = armedStateService;
         this.eventService = eventService;
         this.ipResolver = ipResolver;
         this.hswExecutor = hswExecutor;
@@ -36,17 +33,7 @@ public class PingService {
 
     @Scheduled(initialDelay = 5000L, fixedRate = 60000L)
     public void updateIpStates() {
-        if (armedStateService.isSystemInAutoMode()) {
-            firePing();
-        }
-    }
-
-    public void forceUpdateIpStates() {
-        firePing();
-    }
-
-    private void firePing() {
-        ipResolver.forEach((ip, name) -> hswExecutor.execute(new PingRunnable(ip)));
+        ipResolver.forEach((ip, name) -> hswExecutor.submit(new PingRunnable(ip)));
     }
 
     public IPStateEnum ping(String ip) {
@@ -105,7 +92,7 @@ public class PingService {
 
 
     private class PingRunnable implements Runnable {
-        private String ip;
+        private final String ip;
 
         PingRunnable(String ip) {
             this.ip = ip;

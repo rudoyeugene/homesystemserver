@@ -8,5 +8,5 @@ import lombok.Data;
 @Builder
 @AllArgsConstructor
 public class WanIp {
-    private String as, city, country, countryCode, isp,lat, lon, org, query, region, regionName, status, timeZone, zip;
+    private String as, city, country, countryCode, isp, lat, lon, org, query, region, regionName, status, timeZone, zip;
 }

@@ -14,6 +14,5 @@ public class HomeSystemContainer implements WebServerFactoryCustomizer<Configura
     @Override
     public void customize(ConfigurableServletWebServerFactory factory) {
         factory.setPort(Integer.parseInt(serverPort));
-//        factory.setContextPath("");
     }
 }

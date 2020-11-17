@@ -3,7 +3,6 @@ package com.rudyii.hsw.helpers;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
@@ -17,11 +16,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class BoardMonitor {
     private final List<String> monitorCommandsList;
-    private ThreadPoolTaskExecutor hswExecutor;
 
     @Autowired
-    public BoardMonitor(ThreadPoolTaskExecutor hswExecutor, List monitorCommandsList) {
-        this.hswExecutor = hswExecutor;
+    public BoardMonitor(List monitorCommandsList) {
         this.monitorCommandsList = monitorCommandsList;
     }
 
@@ -33,7 +30,7 @@ public class BoardMonitor {
         AtomicInteger totalCommands = new AtomicInteger(monitorCommandsList.size());
         ArrayList<String> body = new ArrayList<>();
 
-        monitorCommandsList.forEach(command -> hswExecutor.submit(() -> {
+        monitorCommandsList.forEach(command -> {
             try {
                 Process process = Runtime.getRuntime().exec(command);
 
@@ -50,11 +47,7 @@ public class BoardMonitor {
             } finally {
                 totalCommands.getAndDecrement();
             }
-        }));
-
-        while (totalCommands.get() != 0) {
-            //STUB
-        }
+        });
 
         return body;
     }

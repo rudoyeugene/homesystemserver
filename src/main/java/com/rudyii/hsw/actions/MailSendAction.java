@@ -22,8 +22,8 @@ import static com.rudyii.hsw.helpers.StringUtils.stringIsNotEmptyOrNull;
 @Component
 @Scope(value = "prototype")
 public class MailSendAction extends InternetBasedAction implements Runnable {
-    private EmailDetailsProvider emailDetailsProvider;
-    private ClientsService clientsService;
+    private final EmailDetailsProvider emailDetailsProvider;
+    private final ClientsService clientsService;
     private String subject;
     private ArrayList<String> body;
     private ArrayList<Attachment> attachments;
@@ -53,7 +53,7 @@ public class MailSendAction extends InternetBasedAction implements Runnable {
     }
 
     private Mailer buildMailer() {
-        return new Mailer(emailDetailsProvider.getSmptServer(), emailDetailsProvider.getSmptPort(), emailDetailsProvider.getUsername(), emailDetailsProvider.getPassword(), TransportStrategy.SMTP_TLS);
+        return new Mailer(emailDetailsProvider.getSmptServer(), emailDetailsProvider.getSmtpPort(), emailDetailsProvider.getUsername(), emailDetailsProvider.getPassword(), TransportStrategy.SMTP_TLS);
     }
 
     public Email buildEmail() {

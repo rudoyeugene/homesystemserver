@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.rudyii.hsw.configuration.OptionsService.DELAYED_ARM_INTERVAL;
 import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
@@ -34,14 +35,14 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
 @RestController
 public class AdminPortal {
-    private Uptime uptime;
-    private ArmedStateService armedStateService;
-    private BoardMonitor boardMonitor;
-    private UuidService uuidService;
-    private OptionsService optionsService;
-    private Camera[] cameras;
-    private IpMonitor ipMonitor;
-    private ActionsService actionsService;
+    private final Uptime uptime;
+    private final ArmedStateService armedStateService;
+    private final BoardMonitor boardMonitor;
+    private final UuidService uuidService;
+    private final OptionsService optionsService;
+    private final List<Camera> cameras;
+    private final IpMonitor ipMonitor;
+    private final ActionsService actionsService;
 
     @Value("${application.version}")
     private String appVersion;
@@ -54,7 +55,7 @@ public class AdminPortal {
                        BoardMonitor boardMonitor, UuidService uuidService,
                        IpMonitor ipMonitor, ActionsService actionsService,
                        OptionsService optionsService,
-                       Camera... cameras) {
+                       List<Camera> cameras) {
         this.uptime = uptime;
         this.armedStateService = armedStateService;
         this.boardMonitor = boardMonitor;
@@ -90,7 +91,7 @@ public class AdminPortal {
 
         ArrayList<ArrayList> cameraList = new ArrayList<>();
 
-        for (Camera camera : cameras) {
+        cameras.forEach(camera -> {
             ArrayList<String> cameraAttributes = new ArrayList<>();
 
             cameraAttributes.add(camera.getCameraName());
@@ -104,7 +105,7 @@ public class AdminPortal {
             }
 
             cameraList.add(cameraAttributes);
-        }
+        });
 
         modelAndView.addObject("cameraList", cameraList);
         return modelAndView;

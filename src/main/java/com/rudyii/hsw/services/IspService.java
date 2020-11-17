@@ -21,11 +21,9 @@ import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 @Slf4j
 @Service
 public class IspService {
-    private PingService pingService;
-    private EventService eventService;
-
+    private final PingService pingService;
+    private final EventService eventService;
     private WanIp previousWanIp;
-
     private WanIp currentWanIp;
 
     @Autowired

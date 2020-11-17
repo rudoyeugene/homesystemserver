@@ -17,8 +17,8 @@ import java.util.ArrayList;
 
 @Component
 public class ActionsFactory {
-    private ApplicationContext context;
-    private ThreadPoolTaskExecutor hswExecutor;
+    private final ApplicationContext context;
+    private final ThreadPoolTaskExecutor hswExecutor;
 
     @Autowired
     public ActionsFactory(ApplicationContext context, ThreadPoolTaskExecutor hswExecutor) {
@@ -28,17 +28,17 @@ public class ActionsFactory {
 
     @Async
     public void orderMailSenderAction(String subject, ArrayList<String> body, ArrayList<Attachment> attachments) {
-        hswExecutor.execute(context.getBean(MailSendAction.class).withData(subject, body, attachments));
+        hswExecutor.submit(context.getBean(MailSendAction.class).withData(subject, body, attachments));
     }
 
     @Async
     public void orderMessageSendAction(String name, String recipientToken, JsonObject messageData) {
-        hswExecutor.execute(context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, messageData));
+        hswExecutor.submit(context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, messageData));
     }
 
     @Async
     public void orderUploadAction(String cameraName, File uploadCandidate, BufferedImage image) {
-        hswExecutor.execute(context.getBean(UploadAction.class)
+        hswExecutor.submit(context.getBean(UploadAction.class)
                 .withUploadCandidate(uploadCandidate)
                 .withCameraName(cameraName)
                 .andImage(image));

@@ -25,8 +25,8 @@ import static java.math.BigInteger.ZERO;
 @Slf4j
 @Component
 public class StatsProvider {
-    private FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private OptionsService optionsService;
+    private final FirebaseDatabaseProvider firebaseDatabaseProvider;
+    private final OptionsService optionsService;
 
     @Autowired
     public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider, OptionsService optionsService) {

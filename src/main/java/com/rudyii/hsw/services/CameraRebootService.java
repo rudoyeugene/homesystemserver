@@ -10,18 +10,17 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-
-import static java.util.Arrays.asList;
+import java.util.List;
 
 @Slf4j
 @Service
 public class CameraRebootService {
-    private Camera[] cameras;
-    private ArmedStateService armedStateService;
-    private ThreadPoolTaskExecutor hswExecutor;
+    private final List<Camera> cameras;
+    private final ArmedStateService armedStateService;
+    private final ThreadPoolTaskExecutor hswExecutor;
 
     @Autowired
-    public CameraRebootService(Camera[] cameras, ArmedStateService armedStateService,
+    public CameraRebootService(List<Camera> cameras, ArmedStateService armedStateService,
                                ThreadPoolTaskExecutor hswExecutor) {
         this.cameras = cameras;
         this.armedStateService = armedStateService;
@@ -31,29 +30,29 @@ public class CameraRebootService {
     @Async
     @EventListener(CameraRebootEvent.class)
     public void performRebootBy(CameraRebootEvent event) {
-        asList(cameras).forEach(cameraMotionDetectionController -> {
-            if (cameraMotionDetectionController.getCameraName().equals(event.getCameraName())
-                    && !cameraMotionDetectionController.isRebootInProgress()) {
-                log.info("Got reboot event for Camera {}, initializing reboot sequence", cameraMotionDetectionController.getCameraName());
-                hswExecutor.execute(() -> {
+        cameras.forEach(camera -> {
+            if (camera.getCameraName().equals(event.getCameraName())
+                    && !camera.isRebootInProgress()) {
+                log.info("Got reboot event for Camera {}, initializing reboot sequence", camera.getCameraName());
+                hswExecutor.submit(() -> {
                     try {
-                        cameraMotionDetectionController.disableMotionDetection();
+                        camera.disableMotionDetection();
                     } catch (IOException e) {
-                        log.error("Failed to disable Motion detector on Camera {}", cameraMotionDetectionController.getCameraName(), e);
+                        log.error("Failed to disable Motion detector on Camera {}", camera.getCameraName(), e);
                     }
-                    log.info("Motion detection disabled on Camera {}", cameraMotionDetectionController.getCameraName());
+                    log.info("Motion detection disabled on Camera {}", camera.getCameraName());
 
-                    cameraMotionDetectionController.performReboot();
-                    log.info("Rebooting Camera {}, will wait for {} milliseconds.", cameraMotionDetectionController.getCameraName(), cameraMotionDetectionController.getRebootTimeout());
+                    camera.performReboot();
+                    log.info("Rebooting Camera {}, will wait for {} milliseconds.", camera.getCameraName(), camera.getRebootTimeout());
 
                     try {
-                        Thread.sleep(cameraMotionDetectionController.getRebootTimeout());
-                        cameraMotionDetectionController.rebootComplete();
-                        log.info("Reboot complete on Camera {}", cameraMotionDetectionController.getCameraName());
+                        Thread.sleep(camera.getRebootTimeout());
+                        camera.rebootComplete();
+                        log.info("Reboot complete on Camera {}", camera.getCameraName());
 
                         if (armedStateService.isArmed()) {
-                            log.info("Enabling motion detection on Camera {}", cameraMotionDetectionController.getCameraName());
-                            cameraMotionDetectionController.enableMotionDetection();
+                            log.info("Enabling motion detection on Camera {}", camera.getCameraName());
+                            camera.enableMotionDetection();
                         }
                     } catch (Exception e) {
                         log.error("Oops, something goes wrong during reboot sequence: ", e);

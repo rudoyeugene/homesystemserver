@@ -14,8 +14,8 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class UuidService {
-    private EventService eventService;
-    private Connection connection;
+    private final EventService eventService;
+    private final Connection connection;
 
     private String serverKey;
 

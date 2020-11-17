@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 @Service
 public class NotificationsService {
-    private ActionsFactory actionsFactory;
+    private final ActionsFactory actionsFactory;
 
     @Lazy
     @Autowired

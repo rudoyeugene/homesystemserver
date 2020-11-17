@@ -13,9 +13,9 @@ import static com.rudyii.hsw.configuration.OptionsService.COLLECT_STATISTICS;
 @Slf4j
 @Service
 public class StatisticsService {
-    private StatsProvider statsProvider;
-    private ArmedStateService armedStateService;
-    private OptionsService optionsService;
+    private final StatsProvider statsProvider;
+    private final ArmedStateService armedStateService;
+    private final OptionsService optionsService;
 
     @Autowired
     public StatisticsService(StatsProvider statsProvider, ArmedStateService armedStateService, OptionsService optionsService) {

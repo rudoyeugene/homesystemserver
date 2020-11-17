@@ -15,8 +15,8 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
 @Slf4j
 @Component
 public class DelayedArmingHelper {
-    private EventService eventService;
-    private OptionsService optionsService;
+    private final EventService eventService;
+    private final OptionsService optionsService;
 
     private boolean idle;
 

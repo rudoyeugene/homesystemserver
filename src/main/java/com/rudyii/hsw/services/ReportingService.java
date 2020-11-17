@@ -19,29 +19,30 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 import static com.rudyii.hsw.configuration.OptionsService.*;
 
 @Slf4j
 @Service
 public class ReportingService {
-    private Uptime uptime;
-    private ArmedStateService armedStateService;
-    private IpMonitor ipMonitor;
-    private IspService ispService;
-    private NotificationsService notificationsService;
-    private BoardMonitor boardMonitor;
-    private OptionsService optionsService;
-    private UuidService uuidService;
-    private Camera[] cameras;
-    private EventService eventService;
+    private final Uptime uptime;
+    private final ArmedStateService armedStateService;
+    private final IpMonitor ipMonitor;
+    private final IspService ispService;
+    private final NotificationsService notificationsService;
+    private final BoardMonitor boardMonitor;
+    private final OptionsService optionsService;
+    private final UuidService uuidService;
+    private final List<Camera> cameras;
+    private final EventService eventService;
 
     @Autowired
     public ReportingService(ArmedStateService armedStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
                             Uptime uptime, BoardMonitor boardMonitor, EventService eventService,
                             OptionsService optionsService, UuidService uuidService,
-                            Camera... cameras) {
+                            List<Camera> cameras) {
         this.armedStateService = armedStateService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
@@ -64,7 +65,7 @@ public class ReportingService {
     public void sendHourlyReport() {
         ArrayList<Attachment> attachments = new ArrayList<>();
 
-        for (Camera camera : cameras) {
+        cameras.forEach(camera -> {
             try {
                 if (camera.getJpegUrl() != null) {
                     ByteArrayOutputStream currentImageBOS = new ByteArrayOutputStream();
@@ -81,14 +82,14 @@ public class ReportingService {
                 log.error("Camera " + camera.getCameraName() + " snapshot extraction failed:", e);
                 eventService.publish(new CameraRebootEvent(camera.getCameraName()));
             }
-        }
+        });
 
         ArrayList<String> body = new ArrayList<>();
 
         body.add("Home system uptime: <b>" + uptime.getUptime() + "</b>");
         body.add("Current external IP: <b>" + ispService.getCurrentOrLastWanIpAddress() + "</b>");
         body.add("Current internal IP: <b>" + ispService.getLocalIpAddress() + "</b>");
-        body.add("Total monitored cameras: <b>" + cameras.length + "</b>");
+        body.add("Total monitored cameras: <b>" + cameras.size() + "</b>");
 
         if ((boolean) optionsService.getOption(MONITORING_ENABLED)) {
             body.add("Monitored targets states:");

@@ -14,8 +14,8 @@ import java.util.Map;
 
 @Component
 public class FirebaseDatabaseProvider {
-    private UuidService uuidService;
-    private FirebaseDatabase firebaseDatabase;
+    private final UuidService uuidService;
+    private final FirebaseDatabase firebaseDatabase;
 
     public FirebaseDatabaseProvider(UuidService uuidService) throws IOException {
         this.uuidService = uuidService;

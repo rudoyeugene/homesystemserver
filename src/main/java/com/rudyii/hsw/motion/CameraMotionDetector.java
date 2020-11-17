@@ -24,9 +24,9 @@ import static com.rudyii.hsw.configuration.OptionsService.SHOW_MOTION_AREA;
 @Scope(value = "prototype")
 public class CameraMotionDetector {
     private final OptionsService optionsService;
-    private ArmedStateService armedStateService;
+    private final ArmedStateService armedStateService;
 
-    private EventService eventService;
+    private final EventService eventService;
     private BufferedImage previousImage, currentImage, motionObject;
     private URL sourceUrl;
     private String cameraName;

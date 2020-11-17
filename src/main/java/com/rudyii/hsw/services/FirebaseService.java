@@ -18,7 +18,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -73,13 +72,11 @@ public class FirebaseService {
     private final EventService eventService;
     private final IspService ispService;
     private final NotificationsService notificationsService;
-    private final ThreadPoolTaskExecutor hswExecutor;
     private final ClientsService clientsService;
     private final ArrayList<DatabaseReference> databaseReferences;
     private final ArrayList<ValueEventListener> valueEventListeners;
     private final ConcurrentHashMap<String, Object> statuses;
     private final ConcurrentHashMap<String, Object> requests;
-    private final String serverKey;
     @Value("${application.version}")
     private String appVersion;
     private boolean alreadyFired;
@@ -88,7 +85,7 @@ public class FirebaseService {
                            ArmedStateService armedStateService, Uptime uptime,
                            ReportingService reportingService, EventService eventService,
                            IspService ispService, NotificationsService notificationsService,
-                           ThreadPoolTaskExecutor hswExecutor, ClientsService clientsService) {
+                           ClientsService clientsService) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
         this.uptime = uptime;
@@ -96,7 +93,6 @@ public class FirebaseService {
         this.eventService = eventService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
-        this.hswExecutor = hswExecutor;
         this.clientsService = clientsService;
 
         this.statuses = new ConcurrentHashMap<>();
@@ -105,7 +101,6 @@ public class FirebaseService {
         this.valueEventListeners = new ArrayList();
 
         this.serverAlias = uuidService.getServerAlias();
-        this.serverKey = uuidService.getServerKey();
     }
 
     @EventListener(ServerKeyUpdatedEvent.class)

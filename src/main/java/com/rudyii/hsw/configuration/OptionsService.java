@@ -18,6 +18,7 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -40,18 +41,19 @@ public class OptionsService {
     public static final String REBOOT_TIMEOUT = "rebootTimeout";
     public static final String INTERVAL = "interval";
     public static final String CAMERAS = "cameras";
+    public static final String USE_MOTION_OBJECT = "useMotionObject";
 
-    private ConcurrentHashMap<String, Object> localOptions = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<String, Object> localCamerasOptions = new ConcurrentHashMap<>();
-    private ArrayList<DatabaseReference> databaseReferences = new ArrayList<>();
-    private ArrayList<ValueEventListener> valueEventListeners = new ArrayList<>();
-    private EventService eventService;
-    private FirebaseDatabaseProvider databaseProvider;
-    private Camera[] cameras;
+    private final ConcurrentHashMap<String, Object> localOptions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> localCamerasOptions = new ConcurrentHashMap<>();
+    private final ArrayList<DatabaseReference> databaseReferences = new ArrayList<>();
+    private final ArrayList<ValueEventListener> valueEventListeners = new ArrayList<>();
+    private final EventService eventService;
+    private final FirebaseDatabaseProvider databaseProvider;
+    private final List<Camera> cameras;
 
     @Autowired
     public OptionsService(EventService eventService, FirebaseDatabaseProvider databaseProvider,
-                          Camera... cameras) {
+                          List<Camera> cameras) {
         this.eventService = eventService;
         this.databaseProvider = databaseProvider;
         this.cameras = cameras;
@@ -177,7 +179,7 @@ public class OptionsService {
     }
 
     private void fillOptionsFromCameras() {
-        for (Camera camera : cameras) {
+        cameras.forEach(camera -> {
             ConcurrentHashMap<String, Object> cameraOptions = new ConcurrentHashMap<>();
 
             String cameraName = camera.getCameraName();
@@ -192,9 +194,10 @@ public class OptionsService {
             cameraOptions.put(NOISE_LEVEL, noiseLevel);
             cameraOptions.put(HEALTH_CHECK_ENABLED, camera.isHealthCheckEnabled());
             cameraOptions.put(CONTINUOUS_MONITORING, camera.isContinuousMonitoring());
+            cameraOptions.put(USE_MOTION_OBJECT, false);
 
             localCamerasOptions.put(cameraName, cameraOptions);
-        }
+        });
     }
 
     private void syncCameras() {

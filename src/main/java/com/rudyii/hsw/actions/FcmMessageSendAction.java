@@ -18,9 +18,9 @@ import static com.rudyii.hsw.helpers.FCMSender.TYPE_TO;
 @Component
 @Scope(value = "prototype")
 public class FcmMessageSendAction extends InternetBasedAction implements Runnable {
+    private final FCMSender fcmSender;
     private String recipientToken, name;
     private JsonObject messageData;
-    private FCMSender fcmSender;
 
     @Autowired
     public FcmMessageSendAction(FCMSender fcmSender, IspService ispService) {

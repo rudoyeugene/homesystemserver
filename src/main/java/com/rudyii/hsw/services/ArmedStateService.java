@@ -18,11 +18,11 @@ import static com.rudyii.hsw.enums.ArmedStateEnum.*;
 @Slf4j
 @Service
 public class ArmedStateService {
-    private EventService eventService;
+    private final EventService eventService;
+    private final IPStateProvider ipStateProvider;
     private long count = 1L;
     private Boolean systemArmed = false;
     private ArmedModeEnum armedMode = AUTOMATIC;
-    private IPStateProvider ipStateProvider;
 
     @Autowired
     public ArmedStateService(EventService eventService, IPStateProvider ipStateProvider) {
