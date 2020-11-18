@@ -236,9 +236,7 @@ public class Camera {
             if (!detectorEnabled && (Boolean) cameraOptions.get(CONTINUOUS_MONITORING)) {
                 enableMotionDetection();
             }
-            if (cameraOptions.contains(USE_MOTION_OBJECT)) {
-                this.useMotionObject = Boolean.parseBoolean(cameraOptions.get(USE_MOTION_OBJECT).toString());
-            }
+            this.useMotionObject = (Boolean) cameraOptions.get(USE_MOTION_OBJECT);
         }
     }
 
