@@ -16,6 +16,7 @@ import org.springframework.scheduling.annotation.Async;
 
 import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -216,13 +217,20 @@ public class Camera {
             } else {
                 log.info("New motion detected at: {} on Camera {}", new Date(), getCameraName());
                 try {
+                    BufferedImage bufferedImage;
+                    if (useMotionObject) {
+                        bufferedImage = motionDetectedEvent.getMotionObject();
+                    } else {
+                        bufferedImage = motionDetectedEvent.getCurrentImage();
+                    }
+
                     eventService.publish(MotionToNotifyEvent.builder()
                             .cameraName(getCameraName())
                             .currentImage(motionDetectedEvent.getCurrentImage())
                             .motionObject(motionDetectedEvent.getMotionObject())
                             .motionArea(motionDetectedEvent.getMotionArea())
                             .eventId(motionDetectedEvent.getEventId())
-                            .snapshotUrl(uploadMotionImageFrom(motionDetectedEvent))
+                            .snapshotUrl(uploadMotionImageFrom(motionDetectedEvent.getEventId(), bufferedImage))
                             .build());
 
                     lock.createNewFile();
@@ -240,15 +248,11 @@ public class Camera {
         }
     }
 
-    private URL uploadMotionImageFrom(MotionDetectedEvent motionDetectedEvent) {
+    private URL uploadMotionImageFrom(long eventId, BufferedImage bufferedImage) {
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            if (useMotionObject) {
-                ImageIO.write(motionDetectedEvent.getMotionObject(), "JPG", bos);
-            } else {
-                ImageIO.write(motionDetectedEvent.getCurrentImage(), "JPG", bos);
-            }
+            ImageIO.write(bufferedImage, "JPG", bos);
             byte[] imageBytes = bos.toByteArray();
-            return storageProvider.putData(motionDetectedEvent.getEventId() + ".jpg", MediaType.JPEG, imageBytes);
+            return storageProvider.putData(eventId + ".jpg", MediaType.JPEG, imageBytes);
         } catch (Exception e) {
             log.error("Failed to upload Image", e);
             return null;
