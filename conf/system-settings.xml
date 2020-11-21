@@ -97,8 +97,8 @@
 
     <!--Commands that will be executed and sent every hourly report-->
     <util:list id="monitorCommandsList" value-type="java.lang.String">
-        <value>/storage/apps/scripts/server_stats.sh</value>
-        <value>/storage/apps/scripts/router_stats.sh</value>
+        <value>date</value>
+        <value>systeminfo</value>
     </util:list>
 
     <util:list id="onArmCommands" value-type="java.lang.String">

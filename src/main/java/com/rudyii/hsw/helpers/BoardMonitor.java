@@ -1,16 +1,16 @@
 package com.rudyii.hsw.helpers;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -27,25 +27,20 @@ public class BoardMonitor {
             return (ArrayList<String>) Collections.<String>emptyList();
         }
 
-        AtomicInteger totalCommands = new AtomicInteger(monitorCommandsList.size());
         ArrayList<String> body = new ArrayList<>();
 
         monitorCommandsList.forEach(command -> {
-            try {
-                Process process = Runtime.getRuntime().exec(command);
 
-                BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line;
-                while (StringUtils.isNotBlank((line = in.readLine()))) {
-                    body.add(line);
-                }
-                process.waitFor();
+            try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                CommandLine commandline = CommandLine.parse(command);
+                DefaultExecutor exec = new DefaultExecutor();
+                PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+                exec.setStreamHandler(streamHandler);
+                exec.execute(commandline);
 
-                in.close();
+                body.addAll(List.of(outputStream.toString().split(System.getProperty("line.separator"))));
             } catch (Exception e) {
                 log.error("Failed on command: {}", command, e);
-            } finally {
-                totalCommands.getAndDecrement();
             }
         });
 
