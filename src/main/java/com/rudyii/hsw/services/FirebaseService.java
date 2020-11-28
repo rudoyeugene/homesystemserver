@@ -64,7 +64,8 @@ public class FirebaseService {
     public static final String PID = "pid";
     public static final String STARTED = "started";
     public static final String ALL = "all";
-    public static final String SIMPLE_WATCHER_NOTIFICATION_TEXT = "simpleWatcherNotificationText";
+    public static final String SIMPLE_WATCHER_NOTIFICATION_TEXT_ORIGINAL = "simpleWatcherNotificationTextOriginal";
+    public static final String SIMPLE_WATCHER_NOTIFICATION_TEXT_ENCODED = "simpleWatcherNotificationTextEncoded";
     public static final String SIMPLE_NOTIFICATION = "simpleNotification";
     private final String serverAlias;
     private final Random random = new Random();
@@ -211,7 +212,8 @@ public class FirebaseService {
             SimpleWatcherEvent simpleWatcherEvent = (SimpleWatcherEvent) event;
 
             jsonObject.addProperty(REASON, SIMPLE_NOTIFICATION);
-            jsonObject.addProperty(SIMPLE_WATCHER_NOTIFICATION_TEXT, Base64.getEncoder().encodeToString(simpleWatcherEvent.getNotificationText().getBytes(StandardCharsets.UTF_8)));
+            jsonObject.addProperty(SIMPLE_WATCHER_NOTIFICATION_TEXT_ORIGINAL, simpleWatcherEvent.getNotificationText());
+            jsonObject.addProperty(SIMPLE_WATCHER_NOTIFICATION_TEXT_ENCODED, Base64.getEncoder().encodeToString(simpleWatcherEvent.getNotificationText().getBytes(StandardCharsets.UTF_8)));
 
             sendFcmMessage(jsonObject, ALL);
         }
