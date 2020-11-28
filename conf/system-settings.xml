@@ -76,6 +76,22 @@
         <property name="continuousMonitoring" value="false"/>
     </bean>
 
+    <!--Simple Watchers, each objects below will be used as a standalone watchers for particular environment state-->
+    <!--period in seconds-->
+    <bean id="powerWatcher" class="com.rudyii.hsw.actions.watchers.SimpleWatcher">
+        <property name="checkingCommand" value="/storage/apps/scripts/power_outage.sh"/>
+        <property name="notificationTextFailure" value="Електросеть ОТКЛЮЧЕНА"/>
+        <property name="notificationTextSuccess" value="Електросеть ПОДКЛЮЧЕНА"/>
+        <property name="period" value="10"/>
+    </bean>
+    <bean id="internetWatcher" class="com.rudyii.hsw.actions.watchers.SimpleWatcher">
+        <property name="checkingCommand" value="/storage/apps/scripts/internet_outage.sh"/>
+        <property name="notificationTextFailure" value="Интернет ИЗДОХ"/>
+        <property name="notificationTextSuccess" value="Интернет ОЖИЛ"/>
+        <property name="period" value="10"/>
+    </bean>
+    <!--Simple Watchers end-->
+
     <!--System settings-->
     <util:properties id="hswProperties">
         <prop key="mail.smtp.host">smtp.gmail.com</prop>

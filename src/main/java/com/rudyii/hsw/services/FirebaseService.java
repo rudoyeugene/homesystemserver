@@ -22,7 +22,9 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +48,6 @@ public class FirebaseService {
     public static final String ARMED_MODE = "armedMode";
     public static final String ARMED_STATE = "armedState";
     public static final String MOTION_DETECTED = "motionDetected";
-    public static final String MOTION_ID = "motionId";
     public static final String EVENT_ID = "eventId";
     public static final String TIME_STAMP = "timeStamp";
     public static final String CAMERA_NAME = "cameraName";
@@ -63,6 +64,8 @@ public class FirebaseService {
     public static final String PID = "pid";
     public static final String STARTED = "started";
     public static final String ALL = "all";
+    public static final String SIMPLE_WATCHER_NOTIFICATION_TEXT = "simpleWatcherNotificationText";
+    public static final String SIMPLE_NOTIFICATION = "simpleNotification";
     private final String serverAlias;
     private final Random random = new Random();
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
@@ -150,8 +153,8 @@ public class FirebaseService {
         unregisterListeners();
     }
 
-    @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionToNotifyEvent.class, UploadEvent.class})
-    public void onEvent(EventBase event) {
+    @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionToNotifyEvent.class, UploadEvent.class, SimpleWatcherEvent.class})
+    public void onEvent(EventBase event) throws Exception {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(SERVER_NAME, serverAlias);
         jsonObject.addProperty(EVENT_ID, event.getEventId());
@@ -202,6 +205,13 @@ public class FirebaseService {
 
             jsonObject.addProperty(REASON, CAMERA_REBOOT);
             jsonObject.addProperty(CAMERA_NAME, cameraRebootEvent.getCameraName());
+
+            sendFcmMessage(jsonObject, ALL);
+        } else if (event instanceof SimpleWatcherEvent) {
+            SimpleWatcherEvent simpleWatcherEvent = (SimpleWatcherEvent) event;
+
+            jsonObject.addProperty(REASON, SIMPLE_NOTIFICATION);
+            jsonObject.addProperty(SIMPLE_WATCHER_NOTIFICATION_TEXT, Base64.getEncoder().encodeToString(simpleWatcherEvent.getNotificationText().getBytes(StandardCharsets.UTF_8)));
 
             sendFcmMessage(jsonObject, ALL);
         }
