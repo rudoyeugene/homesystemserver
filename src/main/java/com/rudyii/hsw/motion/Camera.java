@@ -4,6 +4,7 @@ import com.google.common.net.MediaType;
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.*;
 import com.rudyii.hsw.providers.StorageProvider;
+import com.rudyii.hsw.services.ArmedStateService;
 import com.rudyii.hsw.services.EventService;
 import com.rudyii.hsw.services.PingService;
 import lombok.Getter;
@@ -35,6 +36,7 @@ public class Camera {
     private final PingService pingService;
     private final StorageProvider storageProvider;
     private final EventService eventService;
+    private ArmedStateService armedStateService;
     private CameraMotionDetector currentCameraMotionDetector;
     private File lock;
     private boolean rebootInProgress, detectorEnabled, useMotionObject;
@@ -92,11 +94,13 @@ public class Camera {
 
     @Autowired
     public Camera(ApplicationContext context, PingService pingService,
-                  StorageProvider storageProvider, EventService eventService) {
+                  StorageProvider storageProvider, EventService eventService,
+                  ArmedStateService armedStateService) {
         this.context = context;
         this.pingService = pingService;
         this.storageProvider = storageProvider;
         this.eventService = eventService;
+        this.armedStateService = armedStateService;
     }
 
     @PostConstruct
@@ -241,10 +245,14 @@ public class Camera {
             }
         } else if (event instanceof OptionsChangedEvent) {
             ConcurrentHashMap<String, Object> cameraOptions = ((OptionsChangedEvent) event).getCameraOptions(getCameraName());
-            if (!detectorEnabled && (Boolean) cameraOptions.get(CONTINUOUS_MONITORING)) {
-                enableMotionDetection();
-            }
             this.useMotionObject = (Boolean) cameraOptions.get(USE_MOTION_OBJECT);
+
+            this.continuousMonitoring = (Boolean) cameraOptions.get(CONTINUOUS_MONITORING);
+            if (!detectorEnabled && continuousMonitoring) {
+                enableMotionDetection();
+            } else if (detectorEnabled && !continuousMonitoring && !armedStateService.isArmed()) {
+                disableMotionDetection();
+            }
         }
     }
 
