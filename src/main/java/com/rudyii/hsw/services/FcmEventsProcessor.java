@@ -36,7 +36,7 @@ import static com.rudyii.hsw.helpers.SimplePropertiesKeeper.isHomeSystemInitComp
 
 @Slf4j
 @Service
-public class FirebaseService {
+public class FcmEventsProcessor {
     public static final String REASON = "reason";
     public static final String IMAGE_URL = "imageUrl";
     public static final String VIDEO_URL = "videoUrl";
@@ -85,11 +85,11 @@ public class FirebaseService {
     private String appVersion;
     private boolean alreadyFired;
 
-    public FirebaseService(FirebaseDatabaseProvider firebaseDatabaseProvider, UuidService uuidService,
-                           ArmedStateService armedStateService, Uptime uptime,
-                           ReportingService reportingService, EventService eventService,
-                           IspService ispService, NotificationsService notificationsService,
-                           ClientsService clientsService) {
+    public FcmEventsProcessor(FirebaseDatabaseProvider firebaseDatabaseProvider, UuidService uuidService,
+                              ArmedStateService armedStateService, Uptime uptime,
+                              ReportingService reportingService, EventService eventService,
+                              IspService ispService, NotificationsService notificationsService,
+                              ClientsService clientsService) {
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.armedStateService = armedStateService;
         this.uptime = uptime;
@@ -155,7 +155,7 @@ public class FirebaseService {
     }
 
     @EventListener({ArmedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionToNotifyEvent.class, UploadEvent.class, SimpleWatcherEvent.class})
-    public void onEvent(EventBase event) throws Exception {
+    public void onEvent(EventBase event) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(SERVER_NAME, serverAlias);
         jsonObject.addProperty(EVENT_ID, event.getEventId());
@@ -321,6 +321,7 @@ public class FirebaseService {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(SERVER_NAME, serverAlias);
         jsonObject.addProperty(REASON, SERVER_STATE_CHANGED);
+        jsonObject.addProperty(EVENT_ID, System.currentTimeMillis());
         jsonObject.addProperty(ACTION, starting);
         return jsonObject;
     }
