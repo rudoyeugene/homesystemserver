@@ -123,7 +123,17 @@ public class OptionsService {
                 if (optionsUpdated) {
                     optionsUpdated = false;
                     log.warn("Options updated, firing event");
-                    eventService.publish(new OptionsChangedEvent(localOptions));
+                    OptionsChangedEvent optionsChangedEvent = new OptionsChangedEvent(localOptions);
+
+                    // stupid workaround: due to unknown reason OptionsChangedEvent been not delivered
+                    cameras.forEach(camera -> {
+                        try {
+                            camera.onEvent(optionsChangedEvent);
+                        } catch (Exception e) {
+                            log.error("Failed to process optionsChangedEvent on camera {}, event data: {}", camera.getCameraName(), optionsChangedEvent, e);
+                        }
+                    });
+                    eventService.publish(optionsChangedEvent);
                 }
 
                 if (newOptionsAdded) {

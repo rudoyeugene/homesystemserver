@@ -36,7 +36,7 @@ public class Camera {
     private final PingService pingService;
     private final StorageProvider storageProvider;
     private final EventService eventService;
-    private ArmedStateService armedStateService;
+    private final ArmedStateService armedStateService;
     private CameraMotionDetector currentCameraMotionDetector;
     private File lock;
     private boolean rebootInProgress, detectorEnabled, useMotionObject;
@@ -197,7 +197,7 @@ public class Camera {
     }
 
     @Async
-    @EventListener(EventBase.class)
+    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, OptionsChangedEvent.class})
     public void onEvent(EventBase event) throws Exception {
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;

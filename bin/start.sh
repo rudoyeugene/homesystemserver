@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/bash
+source $HOME/.bashrc
 
 SCRIPT_DIR=$(dirname $0)
-COMMAND_LINE_DEBUG="java -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=5005,suspend=n -jar *.war"
+COMMAND_LINE_DEBUG="java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar *.war"
 COMMAND_LINE_NORMAL="java -jar *.war"
 cd ${SCRIPT_DIR}/../
 

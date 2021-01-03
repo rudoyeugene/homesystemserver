@@ -83,6 +83,8 @@ public class HouseKeepingService {
             } catch (SQLException e) {
                 log.error("Failed to get files list", e);
             }
+
+            log.info("Totally deleted: local files: {}, remote files: {}, events: {}", localFilesDeleted.get(), remoteFilesDeleted.get(), eventsDeleted.get());
         }
     }
 }
