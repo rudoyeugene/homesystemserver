@@ -50,6 +50,7 @@ public class OptionsService {
     private final EventService eventService;
     private final FirebaseDatabaseProvider databaseProvider;
     private final List<Camera> cameras;
+    private boolean initComplete;
 
     @Autowired
     public OptionsService(EventService eventService, FirebaseDatabaseProvider databaseProvider,
@@ -88,12 +89,13 @@ public class OptionsService {
     private void registerListeners() {
         DatabaseReference optionsRef = databaseProvider.getReference("/options");
         databaseReferences.add(optionsRef);
-        ValueEventListener optionsValueEventListener = getOptionsValueEventListener();
+        ValueEventListener optionsValueEventListener = getOptionsValueEventListener(initComplete);
         valueEventListeners.add(optionsValueEventListener);
         optionsRef.addValueEventListener(optionsValueEventListener);
     }
 
-    private ValueEventListener getOptionsValueEventListener() {
+    private ValueEventListener getOptionsValueEventListener(boolean initComplete) {
+        this.initComplete = initComplete;
         return new ValueEventListener() {
             private boolean optionsUpdated, newOptionsAdded;
 
@@ -125,14 +127,17 @@ public class OptionsService {
                     log.warn("Options updated, firing event");
                     OptionsChangedEvent optionsChangedEvent = new OptionsChangedEvent(localOptions);
 
-                    // stupid workaround: due to unknown reason OptionsChangedEvent been not delivered
-                    cameras.forEach(camera -> {
-                        try {
-                            camera.onEvent(optionsChangedEvent);
-                        } catch (Exception e) {
-                            log.error("Failed to process optionsChangedEvent on camera {}, event data: {}", camera.getCameraName(), optionsChangedEvent, e);
-                        }
-                    });
+                    if (!OptionsService.this.initComplete) {
+                        OptionsService.this.initComplete = true;
+                        cameras.forEach(camera -> {
+                            try {
+                                camera.onEvent(optionsChangedEvent);
+                            } catch (Exception e) {
+                                log.error("Failed to process optionsChangedEvent on camera {}, event data: {}", camera.getCameraName(), optionsChangedEvent, e);
+                            }
+                        });
+                    }
+
                     eventService.publish(optionsChangedEvent);
                 }
 
