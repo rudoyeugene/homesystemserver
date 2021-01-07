@@ -22,7 +22,7 @@ import java.io.IOException;
 public class SimpleWatcher {
     private String checkingCommand, notificationTextFailure, notificationTextSuccess;
     private long period;
-    private int lastExitCode = 0;
+    private boolean lastRun = true;
     private EventService eventService;
     private ThreadPoolTaskScheduler hswScheduler;
 
@@ -35,6 +35,7 @@ public class SimpleWatcher {
     @PostConstruct
     public void scheduleWatching() {
         hswScheduler.scheduleAtFixedRate(this::check, period * 1000);
+        log.info("Scheduled SimpleWatcher task with action {} with fire rate every {} seconds", checkingCommand, period);
     }
 
     private void check() {
@@ -42,26 +43,26 @@ public class SimpleWatcher {
         DefaultExecutor exec = new DefaultExecutor();
         try {
             int exitCode = exec.execute(commandline);
-            reactOn(exitCode);
+            reactOn(exitCode == 0);
         } catch (IOException e) {
             if (e instanceof ExecuteException) {
-                reactOn(((ExecuteException) e).getExitValue());
+                reactOn(((ExecuteException) e).getExitValue() == 0);
             } else {
                 log.error("Unexpected error for {}", checkingCommand, e);
             }
         }
     }
 
-    private void reactOn(int exitCode) {
-        if (lastExitCode != exitCode) {
-            log.warn("Results of {} been changed from {} to {}", checkingCommand, lastExitCode, exitCode);
-            lastExitCode = exitCode;
-            notifyAboutChanges();
+    private void reactOn(boolean thisRun) {
+        if (lastRun != thisRun) {
+            log.warn("Results of {} been changed from {} to {}", checkingCommand, lastRun, thisRun);
+            this.lastRun = thisRun;
+            notifyAboutChangesOf(thisRun);
         }
     }
 
-    private void notifyAboutChanges() {
-        if (lastExitCode == 0) {
+    private void notifyAboutChangesOf(boolean thisRun) {
+        if (thisRun) {
             eventService.publish(SimpleWatcherEvent.builder().notificationText(notificationTextSuccess).build());
         } else {
             eventService.publish(SimpleWatcherEvent.builder().notificationText(notificationTextFailure).build());
