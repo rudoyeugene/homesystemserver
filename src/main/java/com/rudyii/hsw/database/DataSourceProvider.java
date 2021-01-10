@@ -2,9 +2,7 @@ package com.rudyii.hsw.database;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PreDestroy;
@@ -16,21 +14,11 @@ import java.sql.SQLException;
 @Slf4j
 @Component
 public class DataSourceProvider {
-    @Value("${jdbc.driverClassName}")
-    private String driverClassName;
-
-    @Value("${jdbc.url}")
-    private String databaseUrl;
+    private final DataSource dataSource;
 
     @Autowired
-    private DataSource dataSource;
-
-    @Bean
-    public DataSource jdbcDataSource() {
-        SingleConnectionDataSource ds = new SingleConnectionDataSource();
-        ds.setDriverClassName(driverClassName);
-        ds.setUrl(databaseUrl);
-        return ds;
+    public DataSourceProvider(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Bean
