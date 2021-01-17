@@ -1,5 +1,6 @@
 package com.rudyii.hsw.providers;
 
+import com.google.api.gax.paging.Page;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.*;
 import com.google.common.collect.ImmutableList;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -53,17 +56,16 @@ public class StorageProvider {
         return blob.signUrl(30, TimeUnit.DAYS);
     }
 
-    public void deleteData(String objectName) {
-        Blob blob = bucket.get(objectName + ".mp4");
-        deleteBlob(blob);
-        blob = bucket.get(objectName + ".jpg");
-        deleteBlob(blob);
-    }
+    public List<Blob> getAllBlobs() {
+        List<Blob> blobs = new ArrayList<>();
+        Page<Blob> blobsPage = bucket.list();
+        blobsPage.getValues().forEach(blobs::add);
 
-    private void deleteBlob(Blob blob) {
-        if (blob != null) {
-            blob.delete();
-            log.info("Deleted {}", blob.getBlobId());
+        while (blobsPage.hasNextPage()) {
+            blobsPage = blobsPage.getNextPage();
+            blobsPage.getValues().forEach(blobs::add);
         }
+
+        return blobs;
     }
 }
