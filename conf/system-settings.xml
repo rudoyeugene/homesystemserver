@@ -6,12 +6,13 @@
     http://www.springframework.org/schema/beans/spring-beans-4.1.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
     <!--Camera settings section below, VSTARCAMs recommended-->
+    <!--  any amount you need  -->
     <bean id="entrance" class="com.rudyii.hsw.motion.Camera">
-        <property name="ip" value="192.168.1.7"/>
+        <property name="ip" value="192.168.1.2"/>
         <property name="httpPort" value="8080"/>
         <property name="rtspPort" value="554"/>
         <property name="login" value="admin"/>
-        <property name="password" value="gotohellmate"/>
+        <property name="password" value="admin"/>
         <property name="mjpegUrlTemplate"
                   value="http://${ip}:${httpPort}/videostream.cgi?user=${login}&amp;pwd=${password}"/>
         <property name="jpegUrlTemplate"
@@ -29,65 +30,13 @@
         <property name="continuousMonitoring" value="false"/>
     </bean>
 
-    <bean id="bedRoom" class="com.rudyii.hsw.motion.Camera">
-        <property name="ip" value="192.168.1.8"/>
-        <property name="httpPort" value="8080"/>
-        <property name="rtspPort" value="554"/>
-        <property name="login" value="admin"/>
-        <property name="password" value="gotohellmate"/>
-        <property name="mjpegUrlTemplate"
-                  value="http://${ip}:${httpPort}/videostream.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="jpegUrlTemplate"
-                  value="http://${ip}:${httpPort}/snapshot.cgi?res=0&amp;user=${login}&amp;pwd=${password}"/>
-        <property name="rtspUrlTemplate" value="rtsp://${login}:${password}@${ip}:${rtspPort}/udp/av0_0"/>
-        <property name="rebootUrlTemplate"
-                  value="http://${ip}:${httpPort}/reboot.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="rebootTimeout" value="90000"/>
-        <property name="cameraName" value="Bed Room"/>
-        <property name="motionArea" value="15"/>
-        <property name="noiseLevel" value="7"/>
-        <property name="interval" value="500"/>
-        <property name="healthCheckEnabled" value="true"/>
-        <property name="autostartMonitoring" value="false"/>
-        <property name="continuousMonitoring" value="false"/>
-    </bean>
-
-    <bean id="livingRoom" class="com.rudyii.hsw.motion.Camera">
-        <property name="ip" value="192.168.1.6"/>
-
-        <property name="httpPort" value="8080"/>
-        <property name="rtspPort" value="554"/>
-        <property name="login" value="admin"/>
-        <property name="password" value="gotohellmate"/>
-        <property name="mjpegUrlTemplate"
-                  value="http://${ip}:${httpPort}/videostream.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="jpegUrlTemplate"
-                  value="http://${ip}:${httpPort}/snapshot.cgi?res=0&amp;user=${login}&amp;pwd=${password}"/>
-        <property name="rtspUrlTemplate" value="rtsp://${login}:${password}@${ip}:${rtspPort}/udp/av0_0"/>
-        <property name="rebootUrlTemplate"
-                  value="http://${ip}:${httpPort}/reboot.cgi?user=${login}&amp;pwd=${password}"/>
-        <property name="rebootTimeout" value="90000"/>
-        <property name="cameraName" value="Living Room"/>
-        <property name="motionArea" value="15"/>
-        <property name="noiseLevel" value="7"/>
-        <property name="interval" value="500"/>
-        <property name="healthCheckEnabled" value="true"/>
-        <property name="autostartMonitoring" value="false"/>
-        <property name="continuousMonitoring" value="false"/>
-    </bean>
-
     <!--Simple Watchers, each objects below will be used as a standalone watchers for particular environment state-->
     <!--period in seconds-->
+    <!--  any amount you need  -->
     <bean id="powerWatcher" class="com.rudyii.hsw.actions.watchers.SimpleWatcher">
         <property name="checkingCommand" value="/storage/apps/scripts/power_outage.sh"/>
-        <property name="notificationTextFailure" value="Електросеть ОТКЛЮЧЕНА"/>
-        <property name="notificationTextSuccess" value="Електросеть ПОДКЛЮЧЕНА"/>
-        <property name="period" value="10"/>
-    </bean>
-    <bean id="internetWatcher" class="com.rudyii.hsw.actions.watchers.SimpleWatcher">
-        <property name="checkingCommand" value="/storage/apps/scripts/internet_outage.sh"/>
-        <property name="notificationTextFailure" value="Интернет ИЗДОХ"/>
-        <property name="notificationTextSuccess" value="Интернет ОЖИЛ"/>
+        <property name="notificationTextFailure" value="Power failure"/>
+        <property name="notificationTextSuccess" value="Power restored"/>
         <property name="period" value="10"/>
     </bean>
     <!--Simple Watchers end-->
@@ -96,14 +45,10 @@
     <util:properties id="hswProperties">
         <prop key="mail.smtp.host">smtp.gmail.com</prop>
         <prop key="mail.smtp.port">587</prop>
-        <prop key="mail.username">jack.secure.system@gmail.com</prop>
-        <prop key="mail.password">Security83</prop>
-        <prop key="mail.recipients">rudoyeugene@gmail.com,kseniya.pitel@gmail.com</prop>
-        <prop key="mail.admin">rudoyeugene@gmail.com</prop>
-
-        <prop key="dropbox.token">ryLN-azp32IAAAAAAACFcPbgKBwolrDvevP_2I0OmuE6Tgn7dTDLxgyjYTaURoNe</prop>
-
-        <prop key="video.archive.location">C:\PROJECTS\HomeSystemServer\data</prop>
+        <prop key="mail.username">user@gmail.com</prop>
+        <prop key="mail.password">password</prop>
+        <prop key="mail.recipients">admin@gmail.com,user@gmail.com</prop>
+        <prop key="mail.admin">admin@gmail.com</prop>
         <prop key="server.alias">Apartment223-TEST</prop>
         <prop key="server.port">8081</prop>
         <prop key="pool.size">100</prop>
@@ -140,34 +85,16 @@
 
     <!--IP List of master devices-->
     <util:list id="masterIpList" value-type="java.lang.String">
-        <value>192.168.1.22</value>
-        <value>192.168.1.32</value>
-        <value>192.168.1.51</value>
-        <value>192.168.1.52</value>
+        <value>192.168.1.3</value>
+        <value>192.168.1.4</value>
+        <value>192.168.1.5</value>
     </util:list>
 
     <!--IP resolver-->
     <util:map id="ipResolver" key-type="java.lang.String" value-type="java.lang.String">
-        <entry key="192.168.1.1" value="Apartment's 223 ASUS RT-AX86u"/>
-        <entry key="192.168.1.2" value="Apartment's 223 Server"/>
-        <entry key="192.168.1.3" value="Apartment's 223 HP LaserJet"/>
-        <entry key="192.168.1.4" value="Kitchen's 32M5500"/>
-        <entry key="192.168.1.5" value="Living Room's 65OLED803"/>
-        <entry key="192.168.1.6" value="Living Room's C38"/>
-        <entry key="192.168.1.7" value="Entrance's C7838WIP"/>
-        <entry key="192.168.1.8" value="Bed Room's C7838WIP"/>
-        <entry key="192.168.1.9" value="Apartment's 223 Lenovo Tab m10 Plus"/>
-        <entry key="192.168.1.10" value="Apartment's 223 RoborocS5"/>
-
-        <entry key="192.168.1.21" value="Jack's Legion"/>
-        <entry key="192.168.1.22" value="Jack's One Plus 8 Pro"/>
-        <entry key="192.168.1.23" value="Jack's Work Laptop"/>
-
-        <entry key="192.168.1.31" value="Kseniya's Legion"/>
-        <entry key="192.168.1.32" value="Kseniya's One Plus 8"/>
-
-        <entry key="192.168.1.51" value="Kum's Huawei Mate 10 Pro"/>
-        <entry key="192.168.1.52" value="Kuma's Redmin Note 5"/>
+        <entry key="192.168.1.1" value="Router"/>
+        <entry key="192.168.1.2" value="Server"/>
+        <entry key="192.168.1.3" value="HP LaserJet"/>
     </util:map>
 
 </beans>
