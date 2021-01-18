@@ -28,11 +28,11 @@ public class DataSourceProvider {
         Connection connection = dataSource.getConnection();
 
         //create tables
-        connection.createStatement().execute("CREATE TABLE IF NOT EXISTS RECORD_FILES (FILE_ID STRING UNIQUE, CREATED INTEGER)");
         connection.createStatement().execute("CREATE TABLE IF NOT EXISTS SETTINGS (KEY STRING NOT NULL UNIQUE, VALUE)");
 
         //cleanup deprecated tables
         connection.createStatement().execute("DROP TABLE IF EXISTS DROPBOX_FILES");
+        connection.createStatement().execute("DROP TABLE IF EXISTS RECORD_FILES");
 
         return connection;
     }

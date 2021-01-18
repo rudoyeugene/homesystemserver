@@ -56,6 +56,7 @@ public class UploadAction extends InternetBasedAction implements Runnable {
                     .videoUrl(storageProvider.putData(uploadCandidate.getName(), MediaType.MP4_VIDEO, in))
                     .image(image)
                     .build());
+            uploadCandidate.delete();
         } catch (Exception e) {
             log.error("Upload to FAILED!", e);
         }
