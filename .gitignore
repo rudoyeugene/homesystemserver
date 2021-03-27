@@ -1,9 +1,9 @@
-conf
-database
+./conf
+./database
 .idea
-logs
-target
-data
+./logs
+./target
+./data
 src/main/resources/server-global.json
 src/main/resources/application.properties
 *.pid
