@@ -16,7 +16,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
+import static com.rudyii.hsw.configuration.OptionsService.CURRENT_SESSION_LENGTH;
 import static com.rudyii.hsw.configuration.OptionsService.KEEP_DAYS;
 import static com.rudyii.hsw.providers.StatsProvider.Action.CLEANUP;
 import static com.rudyii.hsw.providers.StatsProvider.Action.INCREASE;
@@ -27,6 +29,7 @@ import static java.math.BigInteger.ZERO;
 public class StatsProvider {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
     private final OptionsService optionsService;
+    private final AtomicLong currentSessionLength = new AtomicLong();
 
     @Autowired
     public StatsProvider(FirebaseDatabaseProvider firebaseDatabaseProvider, OptionsService optionsService) {
@@ -67,7 +70,7 @@ public class StatsProvider {
                         Long historicalToday = calculateHistoricalToday();
                         log.info("Cleaning obsolete usage stats");
                         usageStats.forEach((k, v) -> {
-                            if (Long.parseLong(k) < historicalToday) {
+                            if (!CURRENT_SESSION_LENGTH.equals(k) && Long.parseLong(k) < historicalToday) {
                                 usageStats.remove(k);
                             }
                         });
@@ -75,6 +78,7 @@ public class StatsProvider {
                     case INCREASE:
                         Long armedTodayCount = usageStats.get(today);
                         usageStats.put(today, armedTodayCount + 1);
+                        usageStats.put(CURRENT_SESSION_LENGTH, currentSessionLength.incrementAndGet());
                         break;
                 }
 
@@ -100,6 +104,10 @@ public class StatsProvider {
                 log.error("Failed to fetch Weekly stats Firebase data!");
             }
         };
+    }
+
+    public void resetCurrentSessionLength() {
+        currentSessionLength.set(0L);
     }
 
     enum Action {INCREASE, CLEANUP}

@@ -38,7 +38,6 @@ public class HouseKeepingService {
     public void houseKeep() {
         if (ispService.internetIsAvailable()) {
             AtomicInteger eventsDeleted = new AtomicInteger();
-            AtomicInteger localFilesDeleted = new AtomicInteger();
             AtomicInteger remoteFilesDeleted = new AtomicInteger();
             long timeAgo = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(((Long) optionsService.getOption(KEEP_DAYS)));
 
@@ -71,7 +70,7 @@ public class HouseKeepingService {
 
                 }
             });
-            log.info("Totally deleted: local files: {}, remote files: {}, events: {}", localFilesDeleted.get(), remoteFilesDeleted.get(), eventsDeleted.get());
+            log.info("Totally deleted: remote files: {}, events: {}", remoteFilesDeleted.get(), eventsDeleted.get());
         }
     }
 }

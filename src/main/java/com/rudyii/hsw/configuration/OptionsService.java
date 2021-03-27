@@ -42,6 +42,7 @@ public class OptionsService {
     public static final String INTERVAL = "interval";
     public static final String CAMERAS = "cameras";
     public static final String USE_MOTION_OBJECT = "useMotionObject";
+    public static final String CURRENT_SESSION_LENGTH = "currentSessionLength";
 
     private final ConcurrentHashMap<String, Object> localOptions = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Object> localCamerasOptions = new ConcurrentHashMap<>();

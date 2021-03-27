@@ -4,8 +4,7 @@ database
 logs
 target
 data
-**/server-global.json
-**/application.properties
-**/system-settings.xml
-**/*.pid
+src/main/resources/server-global.json
+src/main/resources/application.properties
+*.pid
 **/*.iml
