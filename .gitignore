@@ -1,9 +1,8 @@
 .idea
-conf
-data
 database
 logs
 target
+conf/system-settings.xml
 src/main/resources/server-global.json
 src/main/resources/application.properties
 *.pid

@@ -17,7 +17,7 @@ Preferable environment: Linux, Windows is also supported but network features ar
 * Copy the tar archive to the Server machine you like
 * Extract contents into a separate folder
 * _(OS dependent) Make scripts under bin dir executable if you are on the Linux_
-* Modify the conf/system-settings.xml as you wish
+* Modify the **conf/system-settings_sample.xml** as you wish and place it as **conf/system-settings.xml**
 * Run bin/start.* _(OS dependent)_
 * Pair Client(s)
 

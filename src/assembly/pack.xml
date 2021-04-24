@@ -9,9 +9,30 @@
 
     <fileSets>
         <fileSet>
-            <directory>..</directory>
+            <directory>src/main/resources</directory>
+            <outputDirectory></outputDirectory>
             <includes>
                 <include>contributors.txt</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>target</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>*.war</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>conf</directory>
+            <outputDirectory>conf</outputDirectory>
+            <includes>
+                <include>system-settings_sample.xml</include>
             </includes>
         </fileSet>
 
@@ -20,21 +41,6 @@
             <outputDirectory>bin</outputDirectory>
             <lineEnding>unix</lineEnding>
             <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>data</directory>
-            <outputDirectory>data</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>conf</directory>
-            <outputDirectory>conf</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>target</directory>
-            <outputDirectory></outputDirectory>
-            <includes>
-                <include>*.war</include>
-            </includes>
         </fileSet>
     </fileSets>
 </assembly>
