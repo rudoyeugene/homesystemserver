@@ -67,10 +67,9 @@ public class StatsProvider {
 
                 switch (action) {
                     case CLEANUP:
-                        Long historicalToday = calculateHistoricalToday();
                         log.info("Cleaning obsolete usage stats");
                         usageStats.forEach((k, v) -> {
-                            if (!CURRENT_SESSION_LENGTH.equals(k) && Long.parseLong(k) < historicalToday) {
+                            if (isLong(k) && beforeHistoricalToday(k)) {
                                 usageStats.remove(k);
                             }
                         });
@@ -90,6 +89,16 @@ public class StatsProvider {
                 return new SimpleDateFormat("yyyyMMdd").format(new Date());
             }
 
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                log.error("Failed to fetch Weekly stats Firebase data!");
+            }
+
+            private boolean beforeHistoricalToday(String k) {
+                return Long.parseLong(k) < calculateHistoricalToday();
+            }
+
             private Long calculateHistoricalToday() {
                 Calendar calendar = Calendar.getInstance();
                 calendar.setTime(new Date());
@@ -99,9 +108,13 @@ public class StatsProvider {
                 return Long.valueOf(new SimpleDateFormat("yyyyMMdd").format(calendar.getTime()));
             }
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-                log.error("Failed to fetch Weekly stats Firebase data!");
+            private boolean isLong(String k) {
+                try {
+                    Long.parseLong(k);
+                    return true;
+                } catch (Exception e) {
+                    return false;
+                }
             }
         };
     }
