@@ -2,6 +2,7 @@ package com.rudyii.hsw.services;
 
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.IPEvent;
+import com.rudyii.hsw.providers.IPStateProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,13 +23,21 @@ public class PingService {
     private final EventService eventService;
     private final Map<String, String> ipResolver;
     private final ThreadPoolTaskExecutor hswExecutor;
+    private final IPStateProvider ipStateProvider;
 
     @Autowired
     public PingService(EventService eventService, Map ipResolver,
-                       ThreadPoolTaskExecutor hswExecutor) {
+                       ThreadPoolTaskExecutor hswExecutor, IPStateProvider ipStateProvider) {
         this.eventService = eventService;
         this.ipResolver = ipResolver;
         this.hswExecutor = hswExecutor;
+        this.ipStateProvider = ipStateProvider;
+
+        if (IS_OS_LINUX) {
+            log.info("Linux OS detected");
+        } else {
+            log.info("NON Linux OS detected! Reachability will be used!");
+        }
     }
 
     @Scheduled(initialDelay = 5000L, fixedRate = 60000L)
@@ -40,7 +49,6 @@ public class PingService {
         log.info("Trying to ping " + ip);
 
         if (IS_OS_LINUX) {
-            log.info("Linux OS detected");
             try {
                 Process pingProcess = getPingProcessBuilderFor(ip).start();
                 pingProcess.waitFor();
@@ -58,7 +66,6 @@ public class PingService {
             }
 
         } else {
-            log.info("NON Linux OS detected! Reachability will be used!");
             InetAddress host;
             try {
                 host = InetAddress.getByName(ip);
@@ -86,8 +93,6 @@ public class PingService {
     private void fireEventWithState(String ip, IPStateEnum state) {
         IPEvent ipEvent = new IPEvent(ip, state);
         eventService.publish(ipEvent);
-        System.out.println(ipResolver.get(ip) == null ? ip : ipResolver.get(ip) + " is " + state);
-        log.info(ip + " is " + state);
     }
 
 
@@ -101,7 +106,6 @@ public class PingService {
         @Override
         public void run() {
             if (IS_OS_LINUX) {
-                log.info("Linux OS detected");
                 try {
                     Process pingProcess = getPingProcessBuilderFor(ip).start();
                     pingProcess.waitFor();
@@ -116,7 +120,6 @@ public class PingService {
                 }
 
             } else {
-                log.info("NON Linux OS detected! Reachability will be used!");
                 try {
                     if (InetAddress.getByName(ip).isReachable(5000)) {
                         fireEventWithState(ip, ONLINE);

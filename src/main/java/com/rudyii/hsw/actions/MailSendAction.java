@@ -7,9 +7,12 @@ import com.rudyii.hsw.providers.EmailDetailsProvider;
 import com.rudyii.hsw.services.ClientsService;
 import com.rudyii.hsw.services.IspService;
 import lombok.extern.slf4j.Slf4j;
-import org.simplejavamail.email.Email;
-import org.simplejavamail.mailer.Mailer;
-import org.simplejavamail.mailer.config.TransportStrategy;
+import org.simplejavamail.api.email.Email;
+import org.simplejavamail.api.email.EmailPopulatingBuilder;
+import org.simplejavamail.api.mailer.Mailer;
+import org.simplejavamail.api.mailer.config.TransportStrategy;
+import org.simplejavamail.email.EmailBuilder;
+import org.simplejavamail.mailer.MailerBuilder;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -53,35 +56,41 @@ public class MailSendAction extends InternetBasedAction implements Runnable {
     }
 
     private Mailer buildMailer() {
-        return new Mailer(emailDetailsProvider.getSmptServer(), emailDetailsProvider.getSmtpPort(), emailDetailsProvider.getUsername(), emailDetailsProvider.getPassword(), TransportStrategy.SMTP_TLS);
+        return MailerBuilder
+                .withSMTPServer(emailDetailsProvider.getSmptServer(), emailDetailsProvider.getSmtpPort())
+                .withSMTPServerUsername(emailDetailsProvider.getUsername())
+                .withSMTPServerPassword(emailDetailsProvider.getPassword())
+                .withTransportStrategy(TransportStrategy.SMTP_TLS)
+                .buildMailer();
     }
 
     public Email buildEmail() {
-        Email email = new Email();
-        email.setFromAddress("Home System", emailDetailsProvider.getUsername());
+        EmailPopulatingBuilder emailPopulatingBuilder = EmailBuilder
+                .startingBlank()
+                .from("Home System", emailDetailsProvider.getUsername());
 
         for (Client client : clientsService.getClients()) {
             if (!client.getHourlyReportMuted() && stringIsNotEmptyOrNull(client.getEmail())) {
-                email.addRecipient(null, client.getEmail(), RecipientType.TO);
+                emailPopulatingBuilder.withRecipient(null, client.getEmail(), RecipientType.TO);
             }
         }
 
-        if (email.getRecipients().isEmpty()) {
+        if (emailPopulatingBuilder.getRecipients().isEmpty()) {
             return null;
         } else {
-            email.setSubject(subject);
+            emailPopulatingBuilder.withSubject(subject);
 
             if (body != null) {
-                email.setTextHTML(String.join("<br>", body));
+                emailPopulatingBuilder.withHTMLText(String.join("<br>", body));
             } else {
-                email.setText("Empty body");
+                emailPopulatingBuilder.withPlainText("Empty body");
             }
 
             if (attachments != null) {
-                attachments.forEach(attachment -> email.addAttachment(attachment.getName(), attachment.getData(), attachment.getMimeType()));
+                attachments.forEach(attachment -> emailPopulatingBuilder.withAttachment(attachment.getName(), attachment.getData(), attachment.getMimeType()));
             }
         }
 
-        return email;
+        return emailPopulatingBuilder.buildEmail();
     }
 }
