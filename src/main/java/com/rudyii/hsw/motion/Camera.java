@@ -107,6 +107,10 @@ public class Camera {
     public void init() throws Exception {
         this.lock = new File(getCameraName() + ".lock");
 
+        if (lock.delete()) {
+            log.warn("Deleted lock from previous run of {} Camera", cameraName);
+        }
+
         buildUrls();
 
         if (isAutostartMonitoring() || isContinuousMonitoring()) {
