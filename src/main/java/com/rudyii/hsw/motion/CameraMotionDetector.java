@@ -95,22 +95,29 @@ public class CameraMotionDetector {
         }
 
         int diff = 0;
-        boolean prevPixelIsDifferent = false;
+        boolean prevPixel = false;
         for (int y = 0; y < previousImageHeight; y++) {
             for (int x = 0; x < previousImageWidth; x++) {
                 int rgbCurr = currentImage.getRGB(x, y);
-                int lightPrev = previousImage.getRGB(x, y) & 0xFF;
-                int lightCurr = currentImage.getRGB(x, y) & 0xFF;
+                int redCurr = (rgbCurr >> 16) & 0xFF;
+                int greenCurr = (rgbCurr >> 8) & 0xFF;
+                int blueCurr = rgbCurr & 0xFF;
 
+                int rgbPrev = previousImage.getRGB(x, y);
+                int redPrev = (rgbPrev >> 16) & 0xFF;
+                int greenPrev = (rgbPrev >> 8) & 0xFF;
+                int bluePrev = rgbPrev & 0xFF;
 
-                boolean diffExists = Math.abs(lightPrev - lightCurr) > noiseLevel();
+                boolean currPixel = ((Math.abs(redCurr - redPrev)) > noiseLevel())
+                        && ((Math.abs(greenCurr - greenPrev)) > noiseLevel())
+                        && ((Math.abs(blueCurr - bluePrev)) > noiseLevel());
 
-                if (diffExists && prevPixelIsDifferent) {
+                if (prevPixel && currPixel) {
                     motionObject.setRGB(x, y, rgbCurr);
                     diff++;
                 }
 
-                prevPixelIsDifferent = diffExists;
+                prevPixel = currPixel;
             }
         }
 
