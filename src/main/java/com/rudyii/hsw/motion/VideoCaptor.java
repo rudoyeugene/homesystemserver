@@ -48,7 +48,7 @@ public class VideoCaptor {
 
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
-        this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + ".mp4");
+        this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis);
 
         System.out.println("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 
