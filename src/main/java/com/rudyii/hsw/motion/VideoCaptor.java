@@ -6,6 +6,7 @@ import com.rudyii.hsw.services.EventService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,8 @@ public class VideoCaptor {
     private final EventService eventService;
     private final OptionsService optionsService;
 
+    @Value("#{hswProperties['video.container.type']}")
+    private String videoContainerType;
     private String cameraName;
     private String rtspUrl;
     private File result;
@@ -48,7 +51,7 @@ public class VideoCaptor {
 
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
-        this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis);
+        this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + "." + videoContainerType);
 
         System.out.println("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 

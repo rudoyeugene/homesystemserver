@@ -54,6 +54,7 @@
         <prop key="pool.size">100</prop>
         <prop key="queue.capacity">50</prop>
         <prop key="client.apk.path">/storage/apps/homesystem/apk/app-release.apk</prop>
+        <prop key="video.container.type">mkv</prop>
     </util:properties>
 
     <!--Commands that will be executed and sent every hourly report-->
