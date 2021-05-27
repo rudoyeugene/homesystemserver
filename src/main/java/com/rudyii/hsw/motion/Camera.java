@@ -91,6 +91,9 @@ public class Camera {
     @Getter
     @Setter
     private String rebootUrlTemplate;
+    @Getter
+    @Setter
+    private String rtspTransport;
 
     @Autowired
     public Camera(ApplicationContext context, PingService pingService,

@@ -40,7 +40,7 @@ public class CameraHealthService {
                     hswExecutor.submit(() -> {
                         try {
                             imageProbe(camera.getJpegUrl(), camera.getCameraName());
-                            ffprobe(camera.getRtspUrl(), camera.getCameraName());
+                            ffprobe(camera.getRtspUrl(), camera.getCameraName(), camera.getRtspTransport());
                         } catch (Exception e) {
                             log.error("Camera {} probe failed, rebooting...", camera.getCameraName());
                             rebootCamera(camera);
@@ -57,16 +57,17 @@ public class CameraHealthService {
         });
     }
 
-    private void ffprobe(String rtspUrl, String cameraName) throws Exception {
+    private void ffprobe(String rtspUrl, String cameraName, String rtspTransport) throws Exception {
         List<String> probeCommand = new ArrayList<>();
 
         if (SystemUtils.IS_OS_LINUX) {
             if (new File("/usr/bin/ffprobe").exists()) {
                 probeCommand.add("/usr/bin/ffprobe");
-                probeCommand.add("-i");
+                setRtspTransportType(rtspTransport, probeCommand);
 
             } else if (new File("/usr/bin/avprobe").exists()) {
                 probeCommand.add("/usr/bin/avprobe");
+                setRtspTransportType(rtspTransport, probeCommand);
 
             } else {
                 log.error("/usr/bin/ffprobe or /usr/bin/avprobe not found, please install, ignoring health checking");
@@ -75,7 +76,7 @@ public class CameraHealthService {
         } else if (SystemUtils.IS_OS_WINDOWS) {
             if (new File("C:/Windows/System32/ffprobe.exe").exists()) {
                 probeCommand.add("ffprobe");
-                probeCommand.add("-i");
+                setRtspTransportType(rtspTransport, probeCommand);
 
             } else {
                 log.error("C:/Windows/System32/ffprobe.exe not found, please install, ignoring health checking");
@@ -86,6 +87,7 @@ public class CameraHealthService {
             return;
         }
 
+        probeCommand.add("-i");
         probeCommand.add(rtspUrl);
 
         ProcessBuilder probeBuilder = new ProcessBuilder(probeCommand);
@@ -98,6 +100,13 @@ public class CameraHealthService {
             throw new Exception("Video probe failed!");
         }
 
+    }
+
+    private void setRtspTransportType(String rtspTransport, List<String> probeCommand) {
+        if ("tcp".equalsIgnoreCase(rtspTransport)) {
+            probeCommand.add("-rtsp_transport");
+            probeCommand.add("tcp");
+        }
     }
 
     private void imageProbe(String jpegUrl, String cameraName) throws Exception {

@@ -17,7 +17,7 @@
                   value="http://${ip}:${httpPort}/videostream.cgi?user=${login}&amp;pwd=${password}"/>
         <property name="jpegUrlTemplate"
                   value="http://${ip}:${httpPort}/snapshot.cgi?res=0&amp;user=${login}&amp;pwd=${password}"/>
-        <property name="rtspUrlTemplate" value="rtsp://${login}:${password}@${ip}:${rtspPort}/udp/av0_0"/>
+        <property name="rtspUrlTemplate" value="rtsp://${login}:${password}@${ip}:${rtspPort}/tcp/av0_0"/>
         <property name="rebootUrlTemplate"
                   value="http://${ip}:${httpPort}/reboot.cgi?user=${login}&amp;pwd=${password}"/>
         <property name="rebootTimeout" value="90000"/>
@@ -28,6 +28,7 @@
         <property name="healthCheckEnabled" value="true"/>
         <property name="autostartMonitoring" value="false"/>
         <property name="continuousMonitoring" value="false"/>
+        <property name="rtspTransport" value="tcp"/>
     </bean>
 
     <!--Simple Watchers, each objects below will be used as a standalone watchers for particular environment state-->
