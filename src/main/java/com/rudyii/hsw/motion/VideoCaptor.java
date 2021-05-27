@@ -35,6 +35,7 @@ public class VideoCaptor {
     private String videoContainerType;
     private String cameraName;
     private String rtspUrl;
+    private String rtspTransport;
     private File result;
     private BufferedImage image;
     private long eventTimeMillis;
@@ -51,6 +52,7 @@ public class VideoCaptor {
 
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
+        this.rtspTransport = camera.getRtspTransport();
         this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + "." + videoContainerType);
 
         System.out.println("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
@@ -105,6 +107,7 @@ public class VideoCaptor {
         captureCommand.add(String.valueOf(optionsService.getOption(RECORD_INTERVAL)));
         captureCommand.add(result.getCanonicalPath());
         captureCommand.add(cameraName);
+        captureCommand.add(rtspTransport);
 
         ProcessBuilder captureProcess = new ProcessBuilder(captureCommand);
         runProcess(captureProcess);

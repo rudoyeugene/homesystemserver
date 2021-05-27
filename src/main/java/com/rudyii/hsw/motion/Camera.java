@@ -110,8 +110,12 @@ public class Camera {
     public void init() throws Exception {
         this.lock = new File(getCameraName() + ".lock");
 
-        if (lock.delete()) {
-            log.warn("Deleted lock from previous run of {} Camera", cameraName);
+        try {
+            if (lock.delete()) {
+                log.warn("Deleted lock from previous run of {} Camera", cameraName);
+            }
+        } catch (Exception e) {
+            log.info("Camera {} lock not found", cameraName);
         }
 
         buildUrls();
