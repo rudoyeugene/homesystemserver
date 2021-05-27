@@ -52,7 +52,13 @@ public class VideoCaptor {
 
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
-        this.rtspTransport = camera.getRtspTransport();
+
+        if ("tcp".equalsIgnoreCase(camera.getRtspTransport())) {
+            this.rtspTransport = "tcp";
+        } else {
+            this.rtspTransport = "udp";
+        }
+
         this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + "." + videoContainerType);
 
         System.out.println("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
@@ -118,6 +124,7 @@ public class VideoCaptor {
         log.info("#2 as record interval in seconds: {}", optionsService.getOption(RECORD_INTERVAL));
         log.info("#3 as a capture result: {}", result.getCanonicalPath());
         log.info("#4 as a camera name: {}", cameraName);
+        log.info("#5 as an rtsp transport: {}", rtspTransport);
     }
 
     private void runProcess(ProcessBuilder process) {
