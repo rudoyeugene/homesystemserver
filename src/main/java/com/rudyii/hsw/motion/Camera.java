@@ -21,7 +21,6 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.Files;
 import java.util.Date;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -161,7 +160,11 @@ public class Camera {
             this.currentCameraMotionDetector = null;
         }
 
-        Files.delete(lock.toPath());
+        try {
+            lock.delete();
+        } catch (Exception e) {
+            log.info("No lock to delete for {}", cameraName);
+        }
 
         log.info("Motion detector disabled for camera: {}", getCameraName());
     }
