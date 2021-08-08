@@ -39,7 +39,10 @@ public class DelayedArmingHelper {
                 seconds--;
             }
 
-            eventService.publish(new ArmedEvent(MANUAL, ARMED));
+            eventService.publish(ArmedEvent.builder()
+                    .armedMode(MANUAL)
+                    .armedState(ARMED)
+                    .build());
 
             this.idle = true;
         } else {

@@ -1,13 +1,14 @@
 package com.rudyii.hsw.web;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
 import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.Camera;
+import com.rudyii.hsw.providers.PairingDataProvider;
 import com.rudyii.hsw.services.ActionsService;
 import com.rudyii.hsw.services.ArmedStateService;
-import com.rudyii.hsw.services.UuidService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -38,7 +39,7 @@ public class AdminPortal {
     private final Uptime uptime;
     private final ArmedStateService armedStateService;
     private final BoardMonitor boardMonitor;
-    private final UuidService uuidService;
+    private final PairingDataProvider pairingDataProvider;
     private final OptionsService optionsService;
     private final List<Camera> cameras;
     private final IpMonitor ipMonitor;
@@ -52,14 +53,14 @@ public class AdminPortal {
 
     @Autowired
     public AdminPortal(Uptime uptime, ArmedStateService armedStateService,
-                       BoardMonitor boardMonitor, UuidService uuidService,
+                       BoardMonitor boardMonitor, PairingDataProvider pairingDataProvider,
                        IpMonitor ipMonitor, ActionsService actionsService,
                        OptionsService optionsService,
                        List<Camera> cameras) {
         this.uptime = uptime;
         this.armedStateService = armedStateService;
         this.boardMonitor = boardMonitor;
-        this.uuidService = uuidService;
+        this.pairingDataProvider = pairingDataProvider;
         this.ipMonitor = ipMonitor;
         this.actionsService = actionsService;
         this.optionsService = optionsService;
@@ -79,9 +80,9 @@ public class AdminPortal {
     }
 
     @RequestMapping(value = "/pair", method = RequestMethod.GET)
-    public ModelAndView pair() {
+    public ModelAndView pair() throws JsonProcessingException {
         ModelAndView modelAndView = new ModelAndView("pair");
-        modelAndView.addObject("pair", uuidService.getQRCodeImageUrl());
+        modelAndView.addObject("pair", pairingDataProvider.getQRCodeImageUrl());
         return modelAndView;
     }
 

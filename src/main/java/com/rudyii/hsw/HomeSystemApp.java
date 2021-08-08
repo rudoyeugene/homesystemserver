@@ -1,12 +1,12 @@
-package com.rudyii.hsw.springcore;
+package com.rudyii.hsw;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class HomeSystem {
+public class HomeSystemApp {
 
     public static void main(String[] args) {
-        SpringApplication.run(HomeSystem.class, args);
+        SpringApplication.run(HomeSystemApp.class, args);
     }
 }

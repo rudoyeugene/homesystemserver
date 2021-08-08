@@ -61,9 +61,12 @@ public class ArmingController {
 
     private void setSystemModeTo(ArmedModeEnum armedMode, ArmedStateEnum armedState) {
         if (armedStateService.getArmedMode().equals(armedMode) && getCurrentArmedState().equals(armedState)) {
-            log.info("System already is " + armedMode.toString() + " and " + armedState.toString());
+            log.info("System already is {}:{}", armedMode, armedState);
         } else {
-            eventService.publish(new ArmedEvent(armedMode, armedState));
+            eventService.publish(ArmedEvent.builder()
+                    .armedMode(armedMode)
+                    .armedState(armedState)
+                    .build());
         }
     }
 

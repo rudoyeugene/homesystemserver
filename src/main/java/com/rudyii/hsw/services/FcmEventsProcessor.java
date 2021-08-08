@@ -67,6 +67,7 @@ public class FcmEventsProcessor {
     public static final String SIMPLE_WATCHER_NOTIFICATION_TEXT_ORIGINAL = "simpleWatcherNotificationTextOriginal";
     public static final String SIMPLE_WATCHER_NOTIFICATION_TEXT_ENCODED = "simpleWatcherNotificationTextEncoded";
     public static final String SIMPLE_NOTIFICATION = "simpleNotification";
+    public static final String BY = "by";
     private final String serverAlias;
     private final Random random = new Random();
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
@@ -168,6 +169,7 @@ public class FcmEventsProcessor {
             jsonObject.addProperty(REASON, SYSTEM_STATE_CHANGED);
             jsonObject.addProperty(ARMED_MODE, armedEvent.getArmedMode().toString());
             jsonObject.addProperty(ARMED_STATE, armedEvent.getArmedState().toString());
+            jsonObject.addProperty(BY, armedEvent.getBy());
 
             sendFcmMessage(jsonObject, ALL);
 
@@ -272,7 +274,10 @@ public class FcmEventsProcessor {
                 if (isHomeSystemInitComplete()) {
                     HashMap<String, Object> state = (HashMap<String, Object>) dataSnapshot.getValue();
 
-                    ArmedEvent armedEvent = new ArmedEvent(ArmedModeEnum.valueOf(state.get(ARMED_MODE).toString()), ArmedStateEnum.valueOf(state.get(ARMED_STATE).toString()));
+                    ArmedEvent armedEvent = ArmedEvent.builder()
+                            .armedState(ArmedStateEnum.valueOf(state.get(ARMED_STATE).toString()))
+                            .armedMode(ArmedModeEnum.valueOf(state.get(ARMED_MODE).toString()))
+                            .build();
 
                     eventService.publish(armedEvent);
                 }

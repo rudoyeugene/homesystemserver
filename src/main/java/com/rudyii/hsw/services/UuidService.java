@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,23 +29,20 @@ public class UuidService {
         readServerKey();
     }
 
+    @PostConstruct
+    public void resolveSecret() {
+        readServerKey();
+        if (serverKey == null) {
+            generateAndInsertNewServerKey();
+        }
+    }
+
     public void resetServerKey() {
         try {
             connection.createStatement().execute("DELETE FROM SETTINGS WHERE KEY = 'SERVER_KEY'");
             this.serverKey = null;
         } catch (SQLException e) {
             log.error("Failed to delete Server Key:", e);
-        }
-    }
-
-    public String getQRCodeImageUrl() {
-        resolveSecret();
-        return "https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=" + serverAlias + ":" + serverKey;
-    }
-
-    private void resolveSecret() {
-        if (serverKey == null) {
-            generateAndInsertNewServerKey();
         }
     }
 

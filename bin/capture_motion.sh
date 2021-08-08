@@ -1,11 +1,23 @@
 #!/bin/sh
-# HELP:
-# $1 - source, $2 - duration in seconds, $3 - location, $4 - lock name $5 - rtsp transport type
 
-if [ -f /usr/bin/ffmpeg ]; then
-  ffmpeg -rtsp_transport "$5" -i "$1" -vcodec libx264 -acodec aac -t $2 "$3"
-elif [ -f /usr/bin/avconv ]; then
-  avconv -rtsp_transport "$5" -i "$1" -vcodec libx264 -acodec aac -t $2 "$3"
+# exact URL of camera
+SOURCE=$1
+# record duration in seconds
+DURATION=$2
+# output file incl extension to define container type
+OUTPUT_FILE=$3
+# lock file name to resume motion detection in the App
+LOCK_FILE_NAME=$4
+# rtsp transport type (udp|tcp), default - udp
+RTSP_TRANSPORT=$5
+
+BINARY=ffmpeg
+
+if [ -f /usr/bin/avconv ]; then
+  BINARY=avconv
 fi
 
-rm $4.lock
+#$BINARY -err_detect aggressive -fflags discardcorrupt -t $DURATION -rtsp_transport $RTSP_TRANSPORT -i "$SOURCE" -vcodec libx264 -acodec aac "$OUTPUT_FILE"
+$BINARY -err_detect aggressive -fflags discardcorrupt -t $DURATION -rtsp_transport $RTSP_TRANSPORT -i "$SOURCE" -vcodec copy -acodec aac "$OUTPUT_FILE"
+
+rm $LOCK_FILE_NAME.lock

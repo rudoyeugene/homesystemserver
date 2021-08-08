@@ -13,7 +13,8 @@ import org.springframework.stereotype.Service;
 
 import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
 import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
-import static com.rudyii.hsw.enums.ArmedStateEnum.*;
+import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
+import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
 
 @Slf4j
 @Service
@@ -40,7 +41,7 @@ public class ArmedStateService {
                 arm(true);
             } else if (systemArmed && ipStateProvider.mastersOnline()) {
                 System.out.println(getMessage());
-                disarm(true);
+                disarm(true, "system");
             }
             System.out.println(getMessage());
         }
@@ -52,22 +53,37 @@ public class ArmedStateService {
         return "System is " + (systemArmed ? ARMED : DISARMED) + "; " + (ipStateProvider.mastersOnline() ? "Any master is present." : "Any master is absent.");
     }
 
-    private void disarm(boolean publishEvent) {
-        this.systemArmed = false;
-        if (publishEvent) {
-            eventService.publish(new ArmedEvent(AUTOMATIC, DISARMED));
-        }
+    private void disarm(boolean publishEvent, String email) {
+        if (systemArmed) {
+            this.systemArmed = false;
+            if (publishEvent) {
+                eventService.publish(ArmedEvent.builder()
+                        .armedMode(AUTOMATIC)
+                        .armedState(DISARMED)
+                        .by(email)
+                        .build());
+            }
 
-        log.info("System " + DISARMED);
+            log.info("System DISARMED");
+        } else {
+            log.info("System already DISARMED");
+        }
     }
 
     private void arm(boolean publishEvent) {
-        this.systemArmed = true;
-        if (publishEvent) {
-            eventService.publish(new ArmedEvent(AUTOMATIC, ARMED));
-        }
+        if (!systemArmed) {
+            this.systemArmed = true;
+            if (publishEvent) {
+                eventService.publish(ArmedEvent.builder()
+                        .armedMode(AUTOMATIC)
+                        .armedState(ARMED)
+                        .build());
+            }
 
-        log.info("System " + ARMED);
+            log.info("System ARMED");
+        } else {
+            log.info("System already ARMED");
+        }
     }
 
     @Async
@@ -78,12 +94,16 @@ public class ArmedStateService {
             arm(false);
         } else if (event.getArmedMode().equals(MANUAL) && event.getArmedState().equals(DISARMED)) {
             this.armedMode = MANUAL;
-            disarm(false);
-        } else if (event.getArmedMode().equals(AUTOMATIC) && event.getArmedState().equals(AUTO)) {
+            disarm(false, "system");
+        } else if (event.getArmedMode().equals(AUTOMATIC)) {
             this.armedMode = AUTOMATIC;
         } else {
             log.info("Unsupported case: mode " + event.getArmedMode() + " with state: " + event.getArmedState());
         }
+    }
+
+    public void disarmBy(String email) {
+        disarm(true, email);
     }
 
     public boolean isSystemInAutoMode() {

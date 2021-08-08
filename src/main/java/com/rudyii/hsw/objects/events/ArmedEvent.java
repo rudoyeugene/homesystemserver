@@ -14,4 +14,5 @@ import lombok.EqualsAndHashCode;
 public class ArmedEvent extends EventBase {
     private ArmedModeEnum armedMode;
     private ArmedStateEnum armedState;
+    private String by;
 }
