@@ -41,6 +41,7 @@ public class FcmEventsProcessor {
     public static final String IMAGE_URL = "imageUrl";
     public static final String VIDEO_URL = "videoUrl";
     public static final String SERVER_NAME = "serverName";
+    public static final String SERVER_KEY = "serverKey";
     public static final String SERVER_STATE_CHANGED = "serverStateChanged";
     public static final String ACTION = "action";
     public static final String STOPPED = "stopped";
@@ -69,6 +70,7 @@ public class FcmEventsProcessor {
     public static final String SIMPLE_NOTIFICATION = "simpleNotification";
     public static final String BY = "by";
     private final String serverAlias;
+    private final String serverKey;
     private final Random random = new Random();
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
     private final ArmedStateService armedStateService;
@@ -106,6 +108,7 @@ public class FcmEventsProcessor {
         this.valueEventListeners = new ArrayList();
 
         this.serverAlias = uuidService.getServerAlias();
+        this.serverKey = uuidService.getServerKey();
     }
 
     @EventListener(ServerKeyUpdatedEvent.class)
@@ -159,6 +162,7 @@ public class FcmEventsProcessor {
     public void onEvent(EventBase event) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(SERVER_NAME, serverAlias);
+        jsonObject.addProperty(SERVER_KEY, serverKey);
         jsonObject.addProperty(EVENT_ID, event.getEventId());
 
         if (event instanceof ArmedEvent) {
@@ -277,6 +281,7 @@ public class FcmEventsProcessor {
                     ArmedEvent armedEvent = ArmedEvent.builder()
                             .armedState(ArmedStateEnum.valueOf(state.get(ARMED_STATE).toString()))
                             .armedMode(ArmedModeEnum.valueOf(state.get(ARMED_MODE).toString()))
+                            .by(state.get(BY).toString())
                             .build();
 
                     eventService.publish(armedEvent);
@@ -324,7 +329,7 @@ public class FcmEventsProcessor {
     @NotNull
     private JsonObject getStartStopJsonObject(String starting) {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty(SERVER_NAME, serverAlias);
+        jsonObject.addProperty(SERVER_KEY, serverKey);
         jsonObject.addProperty(REASON, SERVER_STATE_CHANGED);
         jsonObject.addProperty(EVENT_ID, System.currentTimeMillis());
         jsonObject.addProperty(ACTION, starting);

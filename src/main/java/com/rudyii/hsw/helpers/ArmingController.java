@@ -66,6 +66,7 @@ public class ArmingController {
             eventService.publish(ArmedEvent.builder()
                     .armedMode(armedMode)
                     .armedState(armedState)
+                    .by("web")
                     .build());
         }
     }

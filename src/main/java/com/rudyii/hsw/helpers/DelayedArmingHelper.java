@@ -42,6 +42,7 @@ public class DelayedArmingHelper {
             eventService.publish(ArmedEvent.builder()
                     .armedMode(MANUAL)
                     .armedState(ARMED)
+                    .by("delay")
                     .build());
 
             this.idle = true;

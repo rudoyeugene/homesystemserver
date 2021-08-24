@@ -77,6 +77,7 @@ public class ArmedStateService {
                 eventService.publish(ArmedEvent.builder()
                         .armedMode(AUTOMATIC)
                         .armedState(ARMED)
+                        .by("system")
                         .build());
             }
 
