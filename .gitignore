@@ -3,6 +3,7 @@ database
 logs
 target
 conf/system-settings.xml
+conf/server.key
 src/main/resources/server-global.json
 src/main/resources/application.properties
 *.pid

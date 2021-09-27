@@ -1,31 +1,26 @@
 package com.rudyii.hsw.helpers;
 
-import com.rudyii.hsw.enums.ArmedModeEnum;
-import com.rudyii.hsw.enums.ArmedStateEnum;
+import com.rudyii.hs.common.type.SystemModeType;
+import com.rudyii.hs.common.type.SystemStateType;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.services.ArmedStateService;
-import com.rudyii.hsw.services.EventService;
+import com.rudyii.hsw.services.system.EventService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
-import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
-import static com.rudyii.hsw.enums.ArmedStateEnum.*;
+import static com.rudyii.hs.common.names.StaticData.BY_WEB;
+import static com.rudyii.hs.common.type.SystemModeType.AUTOMATIC;
+import static com.rudyii.hs.common.type.SystemModeType.MANUAL;
+import static com.rudyii.hs.common.type.SystemStateType.*;
 
 @Slf4j
 @Component
+@AllArgsConstructor
 public class ArmingController {
     private final EventService eventService;
     private final DelayedArmingHelper armingHelper;
     private final ArmedStateService armedStateService;
-
-    @Autowired
-    public ArmingController(EventService eventService, DelayedArmingHelper armingHelper, ArmedStateService armedStateService) {
-        this.eventService = eventService;
-        this.armingHelper = armingHelper;
-        this.armedStateService = armedStateService;
-    }
 
     public void forceArm() {
         try {
@@ -53,27 +48,27 @@ public class ArmingController {
 
     public void automatic() {
         try {
-            setSystemModeTo(AUTOMATIC, AUTO);
+            setSystemModeTo(AUTOMATIC, RESOLVING);
         } catch (Exception e) {
             log.error("Error fire action!", e);
         }
     }
 
-    private void setSystemModeTo(ArmedModeEnum armedMode, ArmedStateEnum armedState) {
-        if (armedStateService.getArmedMode().equals(armedMode) && getCurrentArmedState().equals(armedState)) {
+    private void setSystemModeTo(SystemModeType armedMode, SystemStateType armedState) {
+        if (armedStateService.getSystemMode().equals(armedMode) && getCurrentArmedState().equals(armedState)) {
             log.info("System already is {}:{}", armedMode, armedState);
         } else {
             eventService.publish(ArmedEvent.builder()
-                    .armedMode(armedMode)
-                    .armedState(armedState)
-                    .by("web")
+                    .systemMode(armedMode)
+                    .systemState(armedState)
+                    .by(BY_WEB)
                     .build());
         }
     }
 
-    private ArmedStateEnum getCurrentArmedState() {
+    private SystemStateType getCurrentArmedState() {
         if (armedStateService.isSystemInAutoMode()) {
-            return AUTO;
+            return RESOLVING;
         } else {
             return armedStateService.isArmed() ? ARMED : DISARMED;
         }

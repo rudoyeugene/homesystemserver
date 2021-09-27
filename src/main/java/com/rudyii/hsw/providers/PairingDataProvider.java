@@ -2,33 +2,28 @@ package com.rudyii.hsw.providers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rudyii.hsw.objects.PairingData;
-import com.rudyii.hsw.services.IspService;
-import com.rudyii.hsw.services.UuidService;
+import com.rudyii.hs.common.objects.PairingData;
+import com.rudyii.hsw.services.internet.IspService;
+import com.rudyii.hsw.services.system.ServerKeyService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class PairingDataProvider {
-
+    private final ServerKeyService serverKeyService;
+    private final IspService ispService;
+    @Value("#{hswProperties['server.port']}")
     private String serverPort;
-    private UuidService uuidService;
-    private IspService ispService;
-
-    public PairingDataProvider(@Value("#{hswProperties['server.port']}") String serverPort,
-                               UuidService uuidService, IspService ispService) {
-        this.serverPort = serverPort;
-        this.uuidService = uuidService;
-        this.ispService = ispService;
-    }
 
     public PairingData getPairingData() {
         return PairingData.builder()
                 .serverIp(ispService.getLocalIpAddress())
-                .serverKey(uuidService.getServerKey())
-                .serverAlias(uuidService.getServerAlias())
+                .serverKey(serverKeyService.getServerKey().toString())
+                .serverAlias(serverKeyService.getServerAlias())
                 .serverPort(Integer.parseInt(serverPort))
                 .build();
     }

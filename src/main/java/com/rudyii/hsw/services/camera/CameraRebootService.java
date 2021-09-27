@@ -1,7 +1,8 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.camera;
 
 import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
+import com.rudyii.hsw.services.ArmedStateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;

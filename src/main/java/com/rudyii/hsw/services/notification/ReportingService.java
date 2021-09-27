@@ -1,13 +1,17 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.notification;
 
-import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
-import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.providers.NotificationsService;
+import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
+import com.rudyii.hsw.services.internet.IspService;
+import com.rudyii.hsw.services.system.EventService;
+import com.rudyii.hsw.services.system.ServerKeyService;
+import com.rudyii.hsw.services.system.UptimeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -21,43 +25,41 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.rudyii.hsw.configuration.OptionsService.*;
-
 @Slf4j
 @Service
 public class ReportingService {
-    private final Uptime uptime;
+    private final UptimeService uptimeService;
     private final ArmedStateService armedStateService;
     private final IpMonitor ipMonitor;
     private final IspService ispService;
     private final NotificationsService notificationsService;
     private final BoardMonitor boardMonitor;
-    private final OptionsService optionsService;
-    private final UuidService uuidService;
+    private final ServerKeyService serverKeyService;
+    private final FirebaseGlobalSettingsService globalSettingsService;
     private final List<Camera> cameras;
     private final EventService eventService;
 
     @Autowired
     public ReportingService(ArmedStateService armedStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
-                            Uptime uptime, BoardMonitor boardMonitor, EventService eventService,
-                            OptionsService optionsService, UuidService uuidService,
-                            List<Camera> cameras) {
+                            UptimeService uptimeService, BoardMonitor boardMonitor,
+                            ServerKeyService serverKeyService, EventService eventService,
+                            FirebaseGlobalSettingsService globalSettingsService, List<Camera> cameras) {
         this.armedStateService = armedStateService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
         this.ipMonitor = ipMonitor;
-        this.uptime = uptime;
+        this.uptimeService = uptimeService;
         this.boardMonitor = boardMonitor;
         this.eventService = eventService;
-        this.optionsService = optionsService;
-        this.uuidService = uuidService;
+        this.serverKeyService = serverKeyService;
+        this.globalSettingsService = globalSettingsService;
         this.cameras = cameras;
     }
 
     @Scheduled(cron = "0 0 * * * *")
     public void sendHourlyReportScheduled() {
-        if (armedStateService.isArmed() && (boolean) optionsService.getOption(HOURLY_REPORT_ENABLED) || (boolean) optionsService.getOption(HOURLY_REPORT_FORCED))
+        if (armedStateService.isArmed() && (globalSettingsService.getGlobalSettings().isHourlyReportEnabled() || globalSettingsService.getGlobalSettings().isHourlyReportForced()))
             sendHourlyReport();
     }
 
@@ -86,12 +88,12 @@ public class ReportingService {
 
         ArrayList<String> body = new ArrayList<>();
 
-        body.add("Home system uptime: <b>" + uptime.getUptime() + "</b>");
+        body.add("Home system uptime: <b>" + uptimeService.getUptime() + "</b>");
         body.add("Current external IP: <b>" + ispService.getCurrentOrLastWanIpAddress() + "</b>");
         body.add("Current internal IP: <b>" + ispService.getLocalIpAddress() + "</b>");
         body.add("Total monitored cameras: <b>" + cameras.size() + "</b>");
 
-        if ((boolean) optionsService.getOption(MONITORING_ENABLED)) {
+        if (globalSettingsService.getGlobalSettings().isMonitoringEnabled()) {
             body.add("Monitored targets states:");
             body.add("<ul>");
             ipMonitor.getStates().forEach(line -> body.add("<li>" + line));
@@ -100,6 +102,6 @@ public class ReportingService {
             body.addAll(boardMonitor.getMonitoringResults());
         }
 
-        notificationsService.sendEmail(uuidService.getServerAlias() + " hourly report", body, attachments);
+        notificationsService.sendEmail(serverKeyService.getServerAlias() + " hourly report", body, attachments);
     }
 }

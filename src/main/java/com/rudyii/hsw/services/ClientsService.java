@@ -4,37 +4,30 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
+import com.rudyii.hs.common.objects.ConnectedClient;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
-import com.rudyii.hsw.objects.Client;
-import com.rudyii.hsw.objects.events.ServerKeyUpdatedEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+
+import static com.rudyii.hs.common.names.FirebaseNameSpaces.CLIENTS_ROOT;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ClientsService {
-    private final List<Client> clients;
-    private final DatabaseReference connectedClientsRef;
-    private final ValueEventListener connectedClientsValueEventListener;
+    private final FirebaseDatabaseProvider firebaseDatabaseProvider;
+    private List<ConnectedClient> clients;
 
-    @Autowired
-    public ClientsService(FirebaseDatabaseProvider firebaseDatabaseProvider) {
-        this.clients = Collections.synchronizedList(new ArrayList());
-        connectedClientsRef = firebaseDatabaseProvider.getReference("/connectedClients");
-        connectedClientsValueEventListener = getConnectedClientsValueEventListener();
-    }
-
-    @EventListener(ServerKeyUpdatedEvent.class)
     @PostConstruct
     public void initService() {
+        clients = new ArrayList<>();
+        DatabaseReference connectedClientsRef = firebaseDatabaseProvider.getRootReference().child(CLIENTS_ROOT);
+        ValueEventListener connectedClientsValueEventListener = getConnectedClientsValueEventListener();
         connectedClientsRef.removeEventListener(connectedClientsValueEventListener);
         connectedClientsRef.addValueEventListener(connectedClientsValueEventListener);
     }
@@ -43,27 +36,11 @@ public class ClientsService {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                HashMap<String, Object> connectedClients = (HashMap<String, Object>) dataSnapshot.getValue();
-
-                if (connectedClients == null) {
-                    log.warn("No connected clients found!");
-                } else {
+                if (dataSnapshot.exists()) {
                     clients.clear();
-
-                    connectedClients.forEach((userId, value) -> {
-                        HashMap<String, Object> userProperties = (HashMap<String, Object>) value;
-                        clients.add(Client.builder()
-                                .hourlyReportMuted(Boolean.TRUE.equals(userProperties.get("hourlyReportMuted")))
-                                .notificationsMuted(Boolean.TRUE.equals(userProperties.get("notificationsMuted")))
-                                .email(String.valueOf(userProperties.get("email")))
-                                .device(String.valueOf(userProperties.get("device")))
-                                .appVersion(String.valueOf(userProperties.get("appVersion")))
-                                .token(String.valueOf(userProperties.get("token")))
-                                .notificationType(String.valueOf(userProperties.get("notificationType")))
-                                .build()
-                        );
+                    dataSnapshot.getChildren().forEach(dataSnapshotConnectedClient -> {
+                        clients.add(dataSnapshotConnectedClient.getValue(ConnectedClient.class));
                     });
-
                 }
             }
 
@@ -74,7 +51,7 @@ public class ClientsService {
         };
     }
 
-    public List<Client> getClients() {
+    public List<ConnectedClient> getClients() {
         return clients;
     }
 }

@@ -1,8 +1,7 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.system;
 
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.IPEvent;
-import com.rudyii.hsw.providers.IPStateProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,15 +22,13 @@ public class PingService {
     private final EventService eventService;
     private final Map<String, String> ipResolver;
     private final ThreadPoolTaskExecutor hswExecutor;
-    private final IPStateProvider ipStateProvider;
 
     @Autowired
     public PingService(EventService eventService, Map ipResolver,
-                       ThreadPoolTaskExecutor hswExecutor, IPStateProvider ipStateProvider) {
+                       ThreadPoolTaskExecutor hswExecutor) {
         this.eventService = eventService;
         this.ipResolver = ipResolver;
         this.hswExecutor = hswExecutor;
-        this.ipStateProvider = ipStateProvider;
 
         if (IS_OS_LINUX) {
             log.info("Linux OS detected");

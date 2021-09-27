@@ -1,26 +1,24 @@
 package com.rudyii.hsw.database;
 
-import com.google.api.core.ApiFuture;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.rudyii.hsw.services.UuidService;
+import com.rudyii.hsw.services.system.ServerKeyService;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Map;
 
 @Component
 public class FirebaseDatabaseProvider {
-    private final UuidService uuidService;
+    private final ServerKeyService serverKeyService;
     private final FirebaseDatabase firebaseDatabase;
 
-    public FirebaseDatabaseProvider(UuidService uuidService) throws IOException {
-        this.uuidService = uuidService;
+    public FirebaseDatabaseProvider(ServerKeyService serverKeyService) throws IOException {
+        this.serverKeyService = serverKeyService;
 
-        FirebaseOptions options = new FirebaseOptions.Builder()
+        FirebaseOptions options = FirebaseOptions.builder()
                 .setCredentials(GoogleCredentials.fromStream(this.getClass().getResourceAsStream("/server-global.json")))
                 .setDatabaseUrl("https://complete-home-system.firebaseio.com/")
                 .setDatabaseAuthVariableOverride(null)
@@ -31,12 +29,7 @@ public class FirebaseDatabaseProvider {
         this.firebaseDatabase = FirebaseDatabase.getInstance();
     }
 
-    public ApiFuture pushData(String path, Map<String, ?> value) {
-        DatabaseReference reference = firebaseDatabase.getReference(uuidService.getServerKey() + path);
-        return reference.setValueAsync(value);
-    }
-
-    public DatabaseReference getReference(String path) {
-        return firebaseDatabase.getReference(uuidService.getServerKey() + path);
+    public DatabaseReference getRootReference() {
+        return firebaseDatabase.getReference(serverKeyService.getServerKey().toString());
     }
 }

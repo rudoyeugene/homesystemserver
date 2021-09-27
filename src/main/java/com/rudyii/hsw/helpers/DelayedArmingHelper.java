@@ -1,37 +1,30 @@
 package com.rudyii.hsw.helpers;
 
-import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.objects.events.ArmedEvent;
-import com.rudyii.hsw.services.EventService;
+import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
+import com.rudyii.hsw.services.system.EventService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import static com.rudyii.hsw.configuration.OptionsService.DELAYED_ARM_INTERVAL;
-import static com.rudyii.hsw.enums.ArmedModeEnum.MANUAL;
-import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
+import static com.rudyii.hs.common.type.SystemModeType.MANUAL;
+import static com.rudyii.hs.common.type.SystemStateType.ARMED;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class DelayedArmingHelper {
     private final EventService eventService;
-    private final OptionsService optionsService;
+    private final FirebaseGlobalSettingsService globalSettingsService;
 
-    private boolean idle;
-
-    @Autowired
-    public DelayedArmingHelper(EventService eventService, OptionsService optionsService) {
-        this.eventService = eventService;
-        this.optionsService = optionsService;
-        this.idle = true;
-    }
+    private boolean idle = true;
 
     @Async
     void armWithDelayInSeconds() throws InterruptedException {
         if (idle) {
             this.idle = false;
-            Long seconds = (Long) optionsService.getOption(DELAYED_ARM_INTERVAL);
+            int seconds = globalSettingsService.getGlobalSettings().getDelayedArmTimeout();
 
             while (seconds != 0) {
                 System.out.println("System will be ARMED in " + seconds + " seconds...");
@@ -40,8 +33,8 @@ public class DelayedArmingHelper {
             }
 
             eventService.publish(ArmedEvent.builder()
-                    .armedMode(MANUAL)
-                    .armedState(ARMED)
+                    .systemMode(MANUAL)
+                    .systemState(ARMED)
                     .by("delay")
                     .build());
 

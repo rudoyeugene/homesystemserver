@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
-public class IamBack {
-    private String serverKey;
-    private String email;
+@NoArgsConstructor
+public class FcmResponse {
+    private int success;
+    private int failure;
 }

@@ -1,20 +1,17 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.actions;
 
 import com.rudyii.hsw.helpers.ArmingController;
+import com.rudyii.hsw.services.notification.ReportingService;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
+@AllArgsConstructor
 public class ActionsService {
-
     private final ArmingController armingController;
     private final ReportingService reportingService;
-
-    public ActionsService(ArmingController armingController, ReportingService reportingService) {
-        this.armingController = armingController;
-        this.reportingService = reportingService;
-    }
 
     public void performAction(String action) {
         switch (action) {
@@ -36,5 +33,8 @@ public class ActionsService {
             default:
                 log.error("Unsupported action: " + action);
         }
+    }
+
+    public void resetCamera(String cameraName) {
     }
 }

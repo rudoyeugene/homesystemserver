@@ -5,7 +5,7 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.net.MediaType;
-import com.rudyii.hsw.services.UuidService;
+import com.rudyii.hsw.services.system.ServerKeyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,14 +23,14 @@ public class StorageProvider {
     private final Bucket bucket;
 
     @Autowired
-    public StorageProvider(UuidService uuidService) throws IOException {
+    public StorageProvider(ServerKeyService serverKeyService) throws IOException {
         Storage defaultStorage = StorageOptions.newBuilder()
                 .setCredentials(GoogleCredentials.fromStream(this.getClass().getResourceAsStream("/server-global.json")))
                 .setProjectId("complete-home-system")
                 .build().getService();
-        if (defaultStorage.get(uuidService.getServerKey(), Storage.BucketGetOption.fields()) == null) {
+        if (defaultStorage.get(serverKeyService.getServerKey().toString(), Storage.BucketGetOption.fields()) == null) {
             this.bucket = defaultStorage.create(
-                    BucketInfo.newBuilder(uuidService.getServerKey())
+                    BucketInfo.newBuilder(serverKeyService.getServerKey().toString())
                             .setStorageClass(StorageClass.STANDARD)
                             .setLocation("EUROPE-WEST3")
                             .setLifecycleRules(ImmutableList.of(
@@ -40,7 +40,7 @@ public class StorageProvider {
                             .build());
 
         } else {
-            this.bucket = defaultStorage.get(uuidService.getServerKey());
+            this.bucket = defaultStorage.get(serverKeyService.getServerKey().toString());
         }
     }
 

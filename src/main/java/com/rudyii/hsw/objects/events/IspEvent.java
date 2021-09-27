@@ -10,4 +10,6 @@ import lombok.EqualsAndHashCode;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class IspEvent extends EventBase {
+    private String externalIp;
+    private String ispName;
 }

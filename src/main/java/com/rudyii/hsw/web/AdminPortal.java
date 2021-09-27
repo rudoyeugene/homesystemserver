@@ -1,14 +1,14 @@
 package com.rudyii.hsw.web;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.rudyii.hsw.configuration.OptionsService;
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
-import com.rudyii.hsw.helpers.Uptime;
 import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.providers.PairingDataProvider;
-import com.rudyii.hsw.services.ActionsService;
 import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.actions.ActionsService;
+import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
+import com.rudyii.hsw.services.system.UptimeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
@@ -29,18 +29,17 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.rudyii.hsw.configuration.OptionsService.DELAYED_ARM_INTERVAL;
-import static com.rudyii.hsw.enums.ArmedModeEnum.AUTOMATIC;
-import static com.rudyii.hsw.enums.ArmedStateEnum.ARMED;
-import static com.rudyii.hsw.enums.ArmedStateEnum.DISARMED;
+import static com.rudyii.hs.common.type.SystemModeType.AUTOMATIC;
+import static com.rudyii.hs.common.type.SystemStateType.ARMED;
+import static com.rudyii.hs.common.type.SystemStateType.DISARMED;
 
 @RestController
 public class AdminPortal {
-    private final Uptime uptime;
+    private final UptimeService uptimeService;
     private final ArmedStateService armedStateService;
     private final BoardMonitor boardMonitor;
     private final PairingDataProvider pairingDataProvider;
-    private final OptionsService optionsService;
+    private final FirebaseGlobalSettingsService globalSettingsService;
     private final List<Camera> cameras;
     private final IpMonitor ipMonitor;
     private final ActionsService actionsService;
@@ -52,18 +51,18 @@ public class AdminPortal {
     private String apkFileLocation;
 
     @Autowired
-    public AdminPortal(Uptime uptime, ArmedStateService armedStateService,
+    public AdminPortal(UptimeService uptimeService, ArmedStateService armedStateService,
                        BoardMonitor boardMonitor, PairingDataProvider pairingDataProvider,
                        IpMonitor ipMonitor, ActionsService actionsService,
-                       OptionsService optionsService,
+                       FirebaseGlobalSettingsService globalSettingsService,
                        List<Camera> cameras) {
-        this.uptime = uptime;
+        this.uptimeService = uptimeService;
         this.armedStateService = armedStateService;
         this.boardMonitor = boardMonitor;
         this.pairingDataProvider = pairingDataProvider;
         this.ipMonitor = ipMonitor;
         this.actionsService = actionsService;
-        this.optionsService = optionsService;
+        this.globalSettingsService = globalSettingsService;
         this.cameras = cameras;
     }
 
@@ -71,10 +70,10 @@ public class AdminPortal {
     public ModelAndView buildIndexPage() {
         ModelAndView modelAndView = new ModelAndView("index");
         modelAndView.addObject("title", "Home System " + appVersion);
-        modelAndView.addObject("armDelaySeconds", optionsService.getOption(DELAYED_ARM_INTERVAL));
+        modelAndView.addObject("armDelaySeconds", globalSettingsService.getGlobalSettings().getDelayedArmTimeout());
         modelAndView.addObject("currentState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
-        modelAndView.addObject("currentMode", armedStateService.getArmedMode() == AUTOMATIC ? AUTOMATIC.toString() : "MANUAL");
-        modelAndView.addObject("uptime", uptime.getUptime());
+        modelAndView.addObject("currentMode", armedStateService.getSystemMode() == AUTOMATIC ? AUTOMATIC.toString() : "MANUAL");
+        modelAndView.addObject("uptime", uptimeService.getUptime());
 
         return modelAndView;
     }
@@ -135,14 +134,19 @@ public class AdminPortal {
         actionsService.performAction(action);
     }
 
+    @RequestMapping(value = "/resetCamera", method = RequestMethod.POST)
+    public void resetCamera(@RequestParam(value = "cameraName") String cameraName) {
+        actionsService.resetCamera(cameraName);
+    }
+
     @RequestMapping(value = "/currentState", method = RequestMethod.GET)
     public String currentState() {
-        return "System is " + armedStateService.getArmedMode().toString() + " and " + (armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
+        return "System is " + armedStateService.getSystemMode().toString() + " and " + (armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
     }
 
     @RequestMapping(value = "/uptime", method = RequestMethod.GET)
     public String uptime() {
-        return "System uptime: " + uptime.getUptime();
+        return "System uptime: " + uptimeService.getUptime();
     }
 
     @RequestMapping(path = "/downloadClient", method = RequestMethod.GET)

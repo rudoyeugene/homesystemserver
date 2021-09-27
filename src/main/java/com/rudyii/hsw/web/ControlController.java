@@ -1,6 +1,6 @@
 package com.rudyii.hsw.web;
 
-import com.rudyii.hsw.objects.IamBack;
+import com.rudyii.hs.common.objects.IamBack;
 import com.rudyii.hsw.services.IamBackService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

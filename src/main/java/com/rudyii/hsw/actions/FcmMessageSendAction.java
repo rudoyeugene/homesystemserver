@@ -1,10 +1,10 @@
 package com.rudyii.hsw.actions;
 
-import com.google.gson.JsonObject;
+import com.rudyii.hs.common.objects.message.MessageBase;
 import com.rudyii.hsw.actions.base.InternetBasedAction;
 import com.rudyii.hsw.enums.FcmMessageEnum;
 import com.rudyii.hsw.helpers.FCMSender;
-import com.rudyii.hsw.services.IspService;
+import com.rudyii.hsw.services.internet.IspService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
@@ -20,7 +20,7 @@ import static com.rudyii.hsw.helpers.FCMSender.TYPE_TO;
 public class FcmMessageSendAction extends InternetBasedAction implements Runnable {
     private final FCMSender fcmSender;
     private String recipientToken, name;
-    private JsonObject messageData;
+    private MessageBase messageBase;
 
     @Autowired
     public FcmMessageSendAction(FCMSender fcmSender, IspService ispService) {
@@ -28,9 +28,9 @@ public class FcmMessageSendAction extends InternetBasedAction implements Runnabl
         this.fcmSender = fcmSender;
     }
 
-    public FcmMessageSendAction withData(String name, String recipientToken, JsonObject messageData) {
+    public FcmMessageSendAction withData(String name, String recipientToken, MessageBase messageBase) {
         this.recipientToken = recipientToken;
-        this.messageData = messageData;
+        this.messageBase = messageBase;
         this.name = name;
         return this;
     }
@@ -41,7 +41,7 @@ public class FcmMessageSendAction extends InternetBasedAction implements Runnabl
         ensureInternetIsAvailable();
 
         try {
-            FcmMessageEnum result = fcmSender.sendData(TYPE_TO, recipientToken, messageData);
+            FcmMessageEnum result = fcmSender.sendData(TYPE_TO, recipientToken, messageBase);
             switch (result) {
                 case SUCCESS:
                     log.info("FCMessage successfully sent to: {}", name);

@@ -1,12 +1,13 @@
 package com.rudyii.hsw.motion;
 
-import com.rudyii.hsw.configuration.OptionsService;
+import com.rudyii.hs.common.objects.settings.CameraSettings;
 import com.rudyii.hsw.objects.events.CaptureEvent;
-import com.rudyii.hsw.services.EventService;
+import com.rudyii.hsw.services.system.EventService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -22,14 +23,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.rudyii.hsw.configuration.OptionsService.RECORD_INTERVAL;
-
+@Lazy
 @Slf4j
 @Component
 @Scope(value = "prototype")
+@RequiredArgsConstructor
 public class VideoCaptor {
     private final EventService eventService;
-    private final OptionsService optionsService;
+    private CameraSettings cameraSettings;
 
     @Value("#{hswProperties['video.container.type']}")
     private String videoContainerType;
@@ -40,16 +41,10 @@ public class VideoCaptor {
     private BufferedImage image;
     private long eventTimeMillis;
 
-    @Autowired
-    public VideoCaptor(EventService eventService, OptionsService optionsService) {
-        this.eventService = eventService;
-        this.optionsService = optionsService;
-    }
-
     @Async
     void startCaptureFrom(Camera camera) {
         this.eventTimeMillis = System.currentTimeMillis();
-
+        this.cameraSettings = camera.getCameraSettings();
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
 
@@ -110,7 +105,7 @@ public class VideoCaptor {
         }
 
         captureCommand.add(rtspUrl);
-        captureCommand.add(String.valueOf(optionsService.getOption(RECORD_INTERVAL)));
+        captureCommand.add(String.valueOf(cameraSettings.getRecordLength()));
         captureCommand.add(result.getCanonicalPath());
         captureCommand.add(cameraName);
         captureCommand.add(rtspTransport);
@@ -121,7 +116,7 @@ public class VideoCaptor {
 
     private void printParametersIntoLog() throws IOException {
         log.info("#1 as source: {}", rtspUrl);
-        log.info("#2 as record interval in seconds: {}", optionsService.getOption(RECORD_INTERVAL));
+        log.info("#2 as record interval in seconds: {}", cameraSettings.getRecordLength());
         log.info("#3 as a capture result: {}", result.getCanonicalPath());
         log.info("#4 as a camera name: {}", cameraName);
         log.info("#5 as an rtsp transport: {}", rtspTransport);
@@ -130,9 +125,9 @@ public class VideoCaptor {
     private void runProcess(ProcessBuilder process) {
         try {
             Process runningProcess = process.inheritIO().start();
-            runningProcess.waitFor((Long) optionsService.getOption(RECORD_INTERVAL) + 1, TimeUnit.SECONDS);
+            runningProcess.waitFor(cameraSettings.getRecordLength() + 1, TimeUnit.SECONDS);
             if (runningProcess.isAlive()) {
-                runningProcess.waitFor((Long) optionsService.getOption(RECORD_INTERVAL) / 2, TimeUnit.SECONDS);
+                runningProcess.waitFor(cameraSettings.getRecordLength() / 2, TimeUnit.SECONDS);
                 runningProcess.destroy();
 
                 if (runningProcess.isAlive()) {

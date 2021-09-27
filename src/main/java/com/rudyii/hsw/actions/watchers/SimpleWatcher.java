@@ -1,9 +1,7 @@
 package com.rudyii.hsw.actions.watchers;
 
 import com.rudyii.hsw.objects.events.SimpleWatcherEvent;
-import com.rudyii.hsw.services.EventService;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import com.rudyii.hsw.services.system.EventService;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
@@ -17,14 +15,12 @@ import java.io.IOException;
 
 @Slf4j
 @Data
-@Builder
-@AllArgsConstructor
 public class SimpleWatcher {
+    private final EventService eventService;
+    private final ThreadPoolTaskScheduler hswScheduler;
     private String checkingCommand, notificationTextFailure, notificationTextSuccess;
     private long period;
     private boolean lastRun = true;
-    private EventService eventService;
-    private ThreadPoolTaskScheduler hswScheduler;
 
     @Autowired
     public SimpleWatcher(EventService eventService, ThreadPoolTaskScheduler hswScheduler) {

@@ -1,4 +1,4 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.actions;
 
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -49,15 +49,15 @@ public class OnEventCommandRunService {
 
     @EventListener(ArmedEvent.class)
     public void executeOnArmDisarm(ArmedEvent event) {
-        switch (event.getArmedState()) {
+        switch (event.getSystemState()) {
             case ARMED:
                 executeCommandList(onArmCommands);
                 break;
             case DISARMED:
                 executeCommandList(onDisarmCommands);
                 break;
-            case AUTO:
-                log.info("Ignoring ArmedEvent: " + event.getArmedState());
+            case RESOLVING:
+                log.info("Ignoring ArmedEvent: " + event.getSystemState());
                 break;
         }
     }

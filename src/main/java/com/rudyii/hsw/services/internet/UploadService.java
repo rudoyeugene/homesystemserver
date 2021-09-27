@@ -1,4 +1,4 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.internet;
 
 import com.rudyii.hsw.actions.base.ActionsFactory;
 import com.rudyii.hsw.objects.events.CaptureEvent;

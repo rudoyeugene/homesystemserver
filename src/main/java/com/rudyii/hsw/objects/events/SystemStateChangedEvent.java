@@ -11,9 +11,8 @@ import lombok.EqualsAndHashCode;
 @Builder
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class ArmedEvent extends EventBase {
+public class SystemStateChangedEvent extends EventBase {
     private SystemModeType systemMode;
     private SystemStateType systemState;
     private String by;
-    private boolean skipMe;
 }

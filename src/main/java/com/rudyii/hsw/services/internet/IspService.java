@@ -1,8 +1,10 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.internet;
 
 import com.google.gson.Gson;
 import com.rudyii.hsw.objects.WanIp;
 import com.rudyii.hsw.objects.events.IspEvent;
+import com.rudyii.hsw.services.system.EventService;
+import com.rudyii.hsw.services.system.PingService;
 import lombok.extern.slf4j.Slf4j;
 import org.codehaus.plexus.util.IOUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,14 +67,14 @@ public class IspService {
             }
         }
 
-        if (previousWanIp.getQuery().equals(currentWanIp.getQuery())) {
-            previousWanIp = currentWanIp;
-        } else {
-
-            eventService.publish(new IspEvent());
-
-            previousWanIp = currentWanIp;
+        if (!previousWanIp.getQuery().equals(currentWanIp.getQuery())) {
+            eventService.publish(IspEvent.builder()
+                    .externalIp(currentWanIp.getQuery())
+                    .ispName(currentWanIp.getIsp())
+                    .build());
         }
+
+        previousWanIp = currentWanIp;
     }
 
     private WanIp getWanIp() {
@@ -106,5 +108,9 @@ public class IspService {
 
     public WanIp getCurrentWanIp() {
         return currentWanIp;
+    }
+
+    public boolean isWanUpdated() {
+        return currentWanIp != null;
     }
 }

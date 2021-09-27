@@ -1,4 +1,4 @@
-package com.rudyii.hsw.services;
+package com.rudyii.hsw.services.system;
 
 import com.rudyii.hsw.objects.events.EventBase;
 import org.jetbrains.annotations.NotNull;

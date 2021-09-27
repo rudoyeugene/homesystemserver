@@ -1,11 +1,11 @@
 package com.rudyii.hsw.actions;
 
+import com.rudyii.hs.common.objects.ConnectedClient;
 import com.rudyii.hsw.actions.base.InternetBasedAction;
 import com.rudyii.hsw.objects.Attachment;
-import com.rudyii.hsw.objects.Client;
 import com.rudyii.hsw.providers.EmailDetailsProvider;
 import com.rudyii.hsw.services.ClientsService;
-import com.rudyii.hsw.services.IspService;
+import com.rudyii.hsw.services.internet.IspService;
 import lombok.extern.slf4j.Slf4j;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.EmailPopulatingBuilder;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 import javax.mail.Message.RecipientType;
 import java.util.ArrayList;
 
-import static com.rudyii.hsw.helpers.StringUtils.stringIsNotEmptyOrNull;
+import static org.apache.commons.lang3.StringUtils.isNoneBlank;
 
 @Slf4j
 @Component
@@ -69,8 +69,8 @@ public class MailSendAction extends InternetBasedAction implements Runnable {
                 .startingBlank()
                 .from("Home System", emailDetailsProvider.getUsername());
 
-        for (Client client : clientsService.getClients()) {
-            if (!client.getHourlyReportMuted() && stringIsNotEmptyOrNull(client.getEmail())) {
+        for (ConnectedClient client : clientsService.getClients()) {
+            if (client.isHourlyReportEnabled() && isNoneBlank(client.getEmail())) {
                 emailPopulatingBuilder.withRecipient(null, client.getEmail(), RecipientType.TO);
             }
         }

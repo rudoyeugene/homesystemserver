@@ -86,21 +86,26 @@
                 <button type="submit" onclick="return arm('ARM system immediately?')" class="button btnArm">ARM</button>
             </td>
             <td style="text-align: right">
-                <button type="submit" onclick="return delayedArm(delayedArmMessage)" class="button btnArm">DELAYED ARM</button>
+                <button class="button btnArm" onclick="return delayedArm(delayedArmMessage)" type="submit">DELAYED ARM
+                </button>
             </td>
         </tr>
         <tr>
             <td style="text-align: left">
-                <button type="submit" onclick="return disarm('DISARM system immediately?')" class="button btnDisarm">DISARM</button>
+                <button class="button btnDisarm" onclick="return disarm('DISARM system immediately?')" type="submit">
+                    DISARM
+                </button>
             </td>
             <td style="text-align: right">
-                <button type="submit" onclick="return automatic('Turn system in AUTO mode immediately?')" class="button btnInfo">AUTOMATIC</button>
+                <button class="button btnInfo" onclick="return automatic('Turn system in AUTO mode immediately?')"
+                        type="submit">AUTOMATIC
+                </button>
             </td>
         </tr>
         </tbody>
     </table>
 </div>
-<br></br>
+<br>
 <div class="blackShadowedText">SYSTEM STATUS:</div>
 <div>
     <table cellspacing="5" cellpadding="10">
@@ -113,14 +118,16 @@
         </tbody>
     </table>
 </div>
-<br></br>
+<br>
 <div class="blackShadowedText">REPORTING CONTROLS:</div>
 <div>
     <table cellspacing="5" cellpadding="10">
         <tbody>
         <tr>
             <td style="text-align: center">
-                <button type="submit" onclick="return resendHourly('Are you sure?')" class="button btnInfo">RESEND HOURLY REPORT</button>
+                <button class="button btnInfo" onclick="return resendHourly('Are you sure?')" type="submit">RESEND
+                    HOURLY REPORT
+                </button>
             </td>
         </tr>
         <tr>
@@ -129,7 +136,7 @@
         </tbody>
     </table>
 </div>
-<br></br>
+<br>
 <div class="blackShadowedText">SYSTEM CONTROLS:</div>
 <div>
     <table cellspacing="5" cellpadding="10">

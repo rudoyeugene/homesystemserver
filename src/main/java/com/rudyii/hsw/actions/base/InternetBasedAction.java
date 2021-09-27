@@ -1,6 +1,6 @@
 package com.rudyii.hsw.actions.base;
 
-import com.rudyii.hsw.services.IspService;
+import com.rudyii.hsw.services.internet.IspService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 

@@ -18,9 +18,9 @@ import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 @Slf4j
 @Component
 public class IPStateProvider {
-    private final HashMap<String, IPStateEnum> ipStates = new HashMap<>();
     private final List<String> masterIpList;
     private final Map<String, String> ipResolver;
+    private final HashMap<String, IPStateEnum> ipStates = new HashMap<>();
 
     @Autowired
     public IPStateProvider(List masterIpList, Map ipResolver) {

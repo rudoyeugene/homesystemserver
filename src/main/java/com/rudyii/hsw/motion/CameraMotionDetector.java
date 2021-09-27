@@ -1,12 +1,13 @@
 package com.rudyii.hsw.motion;
 
-import com.rudyii.hsw.configuration.OptionsService;
+import com.rudyii.hs.common.objects.settings.CameraSettings;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.objects.events.MotionDetectedEvent;
 import com.rudyii.hsw.services.ArmedStateService;
-import com.rudyii.hsw.services.EventService;
+import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
+import com.rudyii.hsw.services.system.EventService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
@@ -17,30 +18,22 @@ import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static com.rudyii.hsw.configuration.OptionsService.SHOW_MOTION_AREA;
-
+@Lazy
 @Slf4j
 @Component
 @Scope(value = "prototype")
+@RequiredArgsConstructor
 public class CameraMotionDetector {
-    private final OptionsService optionsService;
     private final ArmedStateService armedStateService;
-
+    private final FirebaseGlobalSettingsService globalSettingsService;
     private final EventService eventService;
+
     private BufferedImage previousImage, currentImage, motionObject;
     private URL sourceUrl;
     private String cameraName;
     private boolean enabled = false;
     private boolean eventFired = false;
-
-    @Lazy
-    @Autowired
-    public CameraMotionDetector(EventService eventService, OptionsService optionsService,
-                                ArmedStateService armedStateService) {
-        this.eventService = eventService;
-        this.optionsService = optionsService;
-        this.armedStateService = armedStateService;
-    }
+    private CameraSettings cameraSettings;
 
     @Async
     public void start() throws Exception {
@@ -78,7 +71,7 @@ public class CameraMotionDetector {
                 log.error("Failed to get current image from camera: {}", cameraName);
                 fireRebootEvent();
             }
-            Thread.sleep(interval());
+            Thread.sleep(cameraSettings.getInterval());
         }
     }
 
@@ -108,9 +101,9 @@ public class CameraMotionDetector {
                 int greenPrev = (rgbPrev >> 8) & 0xFF;
                 int bluePrev = rgbPrev & 0xFF;
 
-                boolean currPixel = ((Math.abs(redCurr - redPrev)) > noiseLevel())
-                        && ((Math.abs(greenCurr - greenPrev)) > noiseLevel())
-                        && ((Math.abs(blueCurr - bluePrev)) > noiseLevel());
+                boolean currPixel = ((Math.abs(redCurr - redPrev)) > cameraSettings.getNoiseLevel())
+                        && ((Math.abs(greenCurr - greenPrev)) > cameraSettings.getNoiseLevel())
+                        && ((Math.abs(blueCurr - bluePrev)) > cameraSettings.getNoiseLevel());
 
                 if (prevPixel && currPixel) {
                     motionObject.setRGB(x, y, rgbCurr);
@@ -124,11 +117,11 @@ public class CameraMotionDetector {
         int imageSize = previousImageWidth * previousImageHeight;
         int differenceInPercentage = (100 * diff) / imageSize;
 
-        if (showMotionArea()) {
-            System.out.println(cameraName + " noise level: " + noiseLevel() + " and motion area size: " + differenceInPercentage + "%");
+        if (globalSettingsService.getGlobalSettings().isShowMotionArea()) {
+            System.out.println(cameraName + " noise level: " + cameraSettings.getNoiseLevel() + " and motion area size: " + differenceInPercentage + "%");
         }
 
-        if (differenceInPercentage > motionAreaSize()) {
+        if (differenceInPercentage > cameraSettings.getMotionArea()) {
             log.info("Motion detected on Camera {} with motion area size : {}%", cameraName, differenceInPercentage);
             eventService.publish(new MotionDetectedEvent(cameraName, differenceInPercentage, currentImage, motionObject));
         }
@@ -142,27 +135,10 @@ public class CameraMotionDetector {
         }
     }
 
-    private boolean showMotionArea() {
-        return (boolean) optionsService.getOption(SHOW_MOTION_AREA);
-    }
-
-    private long motionAreaSize() {
-        return ((long) optionsService.getCameraOptions(cameraName).get("motionArea"));
-    }
-
-    private long interval() {
-        return (long) optionsService.getCameraOptions(cameraName).get("interval");
-    }
-
-    private long noiseLevel() {
-        return (long) optionsService.getCameraOptions(cameraName).get("noiseLevel");
-    }
-
-
     public CameraMotionDetector on(Camera camera) throws MalformedURLException {
         this.cameraName = camera.getCameraName();
         this.sourceUrl = new URL(camera.getJpegUrl());
-
+        this.cameraSettings = camera.getCameraSettings();
         return this;
     }
 }
