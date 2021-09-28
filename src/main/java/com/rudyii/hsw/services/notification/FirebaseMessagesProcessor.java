@@ -16,7 +16,6 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import static com.rudyii.hs.common.type.NotificationType.*;
-import static org.apache.commons.lang3.StringUtils.isNoneBlank;
 
 @Slf4j
 @Service
@@ -76,27 +75,18 @@ public class FirebaseMessagesProcessor {
         sendFcmMessage(fillWithBasicData(System.currentTimeMillis()).messageType(MessageType.SERVER_START_STOP).build(), ALL);
     }
 
-    private void sendFcmMessage(FcmMessage message, NotificationType notificationType) {
+    private void sendFcmMessage(FcmMessage message, NotificationType serverNotificationType) {
         clientsService.getClients().forEach(client -> {
             NotificationType clientNotificationType = client.getNotificationType();
             String email = client.getEmail();
-            String device = client.getDevice();
-            String appVersion = client.getAppVersion();
             String token = client.getToken();
 
-            boolean shouldSendFcm = notificationType.equals(clientNotificationType) || ALL.equals(clientNotificationType);
-
-            if (shouldSendFcm && tokenLooksGood(token)) {
-                log.info("Ready to send message to the Client:" + email + " on device " + device + " with client version " + appVersion);
-
+            if (clientNotificationType.equals(serverNotificationType) || serverNotificationType.equals(ALL)) {
                 notificationsService.sendFcmMessage(token, message);
             } else {
-                log.warn("Client:" + email + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
+                log.warn("{} won't be notified, client notification type: {} != server notification type: {} and server is not ALL",
+                        email, serverNotificationType, clientNotificationType);
             }
         });
-    }
-
-    private boolean tokenLooksGood(String token) {
-        return isNoneBlank(token);
     }
 }
