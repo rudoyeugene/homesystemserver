@@ -27,8 +27,8 @@ public class ActionsFactory {
     }
 
     @Async
-    public void orderMessageSendAction(String name, String recipientToken, FcmMessage message) {
-        hswExecutor.submit(context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, message));
+    public void orderMessageSendAction(String recipientToken, FcmMessage message) {
+        hswExecutor.submit(context.getBean(FcmMessageSendAction.class).withData(recipientToken, message));
     }
 
     @Async

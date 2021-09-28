@@ -19,7 +19,7 @@ public class NotificationsService {
         actionsFactory.orderMailSenderAction(subject, body, attachments);
     }
 
-    public void sendFcmMessage(String name, String recipientToken, FcmMessage message) {
-        actionsFactory.orderMessageSendAction(name, recipientToken, message);
+    public void sendFcmMessage(String recipientToken, FcmMessage message) {
+        actionsFactory.orderMessageSendAction(recipientToken, message);
     }
 }

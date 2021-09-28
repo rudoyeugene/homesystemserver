@@ -89,7 +89,7 @@ public class FirebaseMessagesProcessor {
             if (shouldSendFcm && tokenLooksGood(token)) {
                 log.info("Ready to send message to the Client:" + email + " on device " + device + " with client version " + appVersion);
 
-                notificationsService.sendFcmMessage(email, token, message);
+                notificationsService.sendFcmMessage(token, message);
             } else {
                 log.warn("Client:" + email + " on device " + device + " with client version " + appVersion + " is not interested in such type of notification: server - " + notificationType + ", client - " + clientNotificationType);
             }
