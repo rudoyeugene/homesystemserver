@@ -1,23 +1,16 @@
 package com.rudyii.hsw.helpers;
 
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.Message;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.rudyii.hs.common.objects.message.MessageBase;
+import com.rudyii.hs.common.objects.message.FcmMessage;
 import com.rudyii.hsw.enums.FcmMessageEnum;
-import com.rudyii.hsw.objects.FcmResponse;
-import lombok.Builder;
-import lombok.Data;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.net.URI;
 
 import static com.rudyii.hsw.enums.FcmMessageEnum.FAIL;
 import static com.rudyii.hsw.enums.FcmMessageEnum.SUCCESS;
@@ -32,44 +25,34 @@ public class FCMSender {
     @Value("${fcm.server.key}")
     private String fcmServerKey;
 
-    public FcmMessageEnum sendData(String recipientType, String recipientToken, MessageBase messageBase) throws IOException {
-        return sendNotificationAndData(recipientType, recipientToken, null, messageBase);
+    public FcmMessageEnum sendData(String recipientType, String recipientToken, FcmMessage message) throws IOException {
+        return sendNotificationAndData(recipientType, recipientToken, null, message);
     }
 
-    public FcmMessageEnum sendData(String recipientType, String recipientToken, MessageBase messageBase, Object notificationObject) throws IOException {
-        return sendNotificationAndData(recipientType, recipientToken, notificationObject, messageBase);
+    public FcmMessageEnum sendData(String recipientType, String recipientToken, FcmMessage message, Object notificationObject) throws IOException {
+        return sendNotificationAndData(recipientType, recipientToken, notificationObject, message);
     }
 
-    private FcmMessageEnum sendNotificationAndData(String recipientType, String recipientToken, Object notificationObject, MessageBase messageBase) throws IOException {
+    private FcmMessageEnum sendNotificationAndData(String recipientType, String recipientToken, Object notificationObject, FcmMessage message) throws IOException {
         FcmMessageEnum result = null;
         if (recipientType.equals(TYPE_TO) || recipientType.equals(TYPE_CONDITION)) {
             JsonObject recipientDetails = new JsonObject();
             recipientDetails.addProperty(recipientType, recipientToken);
-            result = sendFcmMessage(recipientToken, messageBase);
+            result = sendFcmMessage(recipientToken, message);
         }
         return result;
     }
 
     @SneakyThrows
-    private FcmMessageEnum sendFcmMessage(String recipientToken, MessageBase messageBase) {
-        RestTemplate restTemplate = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("Authorization", "key=" + fcmServerKey);
-        HttpEntity<FcmMessage> entity = new HttpEntity<>(FcmMessage.builder()
-                .to(recipientToken)
-                .data(messageBase)
-                .build(), headers);
-
-        URI uri = new URI(URL_SEND);
-        ResponseEntity<FcmResponse> result = restTemplate.postForEntity(uri, entity, FcmResponse.class);
-        return result.getBody().getSuccess() == 1 ? SUCCESS : FAIL;
-    }
-
-    @Data
-    @Builder
-    private static class FcmMessage {
-        private String to;
-        private MessageBase data;
+    private FcmMessageEnum sendFcmMessage(String recipientToken, FcmMessage message) {
+        String result = FirebaseMessaging.getInstance().send(Message.builder()
+                .setToken(recipientToken)
+                .putData("messageType", message.getMessageType().name())
+                .putData("publishedAt", message.getPublishedAt() + "")
+                .putData("serverKey", message.getServerKey())
+                .putData("serverAlias", message.getServerAlias())
+                .putData("by", message.getBy())
+                .build());
+        return result != null ? SUCCESS : FAIL;
     }
 }

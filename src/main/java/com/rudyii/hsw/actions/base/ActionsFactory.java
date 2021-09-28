@@ -1,6 +1,6 @@
 package com.rudyii.hsw.actions.base;
 
-import com.rudyii.hs.common.objects.message.MessageBase;
+import com.rudyii.hs.common.objects.message.FcmMessage;
 import com.rudyii.hsw.actions.FcmMessageSendAction;
 import com.rudyii.hsw.actions.MailSendAction;
 import com.rudyii.hsw.actions.UploadAction;
@@ -27,8 +27,8 @@ public class ActionsFactory {
     }
 
     @Async
-    public void orderMessageSendAction(String name, String recipientToken, MessageBase messageBase) {
-        hswExecutor.submit(context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, messageBase));
+    public void orderMessageSendAction(String name, String recipientToken, FcmMessage message) {
+        hswExecutor.submit(context.getBean(FcmMessageSendAction.class).withData(name, recipientToken, message));
     }
 
     @Async

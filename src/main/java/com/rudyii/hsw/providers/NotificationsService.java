@@ -1,6 +1,6 @@
 package com.rudyii.hsw.providers;
 
-import com.rudyii.hs.common.objects.message.MessageBase;
+import com.rudyii.hs.common.objects.message.FcmMessage;
 import com.rudyii.hsw.actions.base.ActionsFactory;
 import com.rudyii.hsw.objects.Attachment;
 import lombok.AllArgsConstructor;
@@ -19,7 +19,7 @@ public class NotificationsService {
         actionsFactory.orderMailSenderAction(subject, body, attachments);
     }
 
-    public void sendFcmMessage(String name, String recipientToken, MessageBase messageBase) {
-        actionsFactory.orderMessageSendAction(name, recipientToken, messageBase);
+    public void sendFcmMessage(String name, String recipientToken, FcmMessage message) {
+        actionsFactory.orderMessageSendAction(name, recipientToken, message);
     }
 }

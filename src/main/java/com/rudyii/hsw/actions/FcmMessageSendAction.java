@@ -1,6 +1,6 @@
 package com.rudyii.hsw.actions;
 
-import com.rudyii.hs.common.objects.message.MessageBase;
+import com.rudyii.hs.common.objects.message.FcmMessage;
 import com.rudyii.hsw.actions.base.InternetBasedAction;
 import com.rudyii.hsw.enums.FcmMessageEnum;
 import com.rudyii.hsw.helpers.FCMSender;
@@ -20,7 +20,7 @@ import static com.rudyii.hsw.helpers.FCMSender.TYPE_TO;
 public class FcmMessageSendAction extends InternetBasedAction implements Runnable {
     private final FCMSender fcmSender;
     private String recipientToken, name;
-    private MessageBase messageBase;
+    private FcmMessage message;
 
     @Autowired
     public FcmMessageSendAction(FCMSender fcmSender, IspService ispService) {
@@ -28,9 +28,9 @@ public class FcmMessageSendAction extends InternetBasedAction implements Runnabl
         this.fcmSender = fcmSender;
     }
 
-    public FcmMessageSendAction withData(String name, String recipientToken, MessageBase messageBase) {
+    public FcmMessageSendAction withData(String name, String recipientToken, FcmMessage message) {
         this.recipientToken = recipientToken;
-        this.messageBase = messageBase;
+        this.message = message;
         this.name = name;
         return this;
     }
@@ -41,7 +41,7 @@ public class FcmMessageSendAction extends InternetBasedAction implements Runnabl
         ensureInternetIsAvailable();
 
         try {
-            FcmMessageEnum result = fcmSender.sendData(TYPE_TO, recipientToken, messageBase);
+            FcmMessageEnum result = fcmSender.sendData(TYPE_TO, recipientToken, message);
             switch (result) {
                 case SUCCESS:
                     log.info("FCMessage successfully sent to: {}", name);
