@@ -1,7 +1,7 @@
 package com.rudyii.hsw.services.actions;
 
 import com.rudyii.hsw.helpers.ArmingController;
-import com.rudyii.hsw.services.notification.ReportingService;
+import com.rudyii.hsw.services.messaging.ReportingService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

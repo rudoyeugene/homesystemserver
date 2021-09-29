@@ -1,5 +1,6 @@
 package com.rudyii.hsw.helpers;
 
+import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
 import com.rudyii.hsw.services.system.EventService;
@@ -17,6 +18,7 @@ import static com.rudyii.hs.common.type.SystemStateType.ARMED;
 public class DelayedArmingHelper {
     private final EventService eventService;
     private final FirebaseGlobalSettingsService globalSettingsService;
+    private final Logger logger;
 
     private boolean idle = true;
 
@@ -27,7 +29,7 @@ public class DelayedArmingHelper {
             int seconds = globalSettingsService.getGlobalSettings().getDelayedArmTimeout();
 
             while (seconds != 0) {
-                System.out.println("System will be ARMED in " + seconds + " seconds...");
+                logger.printAdditionalInfo("System will be ARMED in " + seconds + " seconds...");
                 Thread.sleep(1000);
                 seconds--;
             }

@@ -5,6 +5,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hs.common.objects.settings.CameraSettings;
+import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.*;
@@ -44,6 +45,7 @@ public class Camera {
     private final EventService eventService;
     private final ArmedStateService armedStateService;
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
+    private Logger logger;
     private CameraMotionDetector currentCameraMotionDetector;
     private File lock;
     private boolean rebootInProgress, detectorEnabled;
@@ -71,13 +73,15 @@ public class Camera {
     @Autowired
     public Camera(ApplicationContext context, PingService pingService,
                   StorageProvider storageProvider, EventService eventService,
-                  ArmedStateService armedStateService, FirebaseDatabaseProvider firebaseDatabaseProvider) {
+                  ArmedStateService armedStateService, FirebaseDatabaseProvider firebaseDatabaseProvider,
+                  Logger logger) {
         this.context = context;
         this.pingService = pingService;
         this.storageProvider = storageProvider;
         this.eventService = eventService;
         this.armedStateService = armedStateService;
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
+        this.logger = logger;
     }
 
     @PostConstruct
@@ -192,8 +196,8 @@ public class Camera {
             urlConnection.setRequestProperty("User-Agent", USER_AGENT);
 
             int responseCode = urlConnection.getResponseCode();
-            System.out.println("\nSending 'GET' request to URL : " + url);
-            System.out.println("Response Code : " + responseCode);
+            logger.printAdditionalInfo("Sending 'GET' request to URL : " + url);
+            logger.printAdditionalInfo("Response Code : " + responseCode);
 
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(urlConnection.getInputStream()));
@@ -203,7 +207,7 @@ public class Camera {
                 response.append(inputLine);
             }
 
-            System.out.println(response);
+            logger.printAdditionalInfo(response.toString());
             in.close();
         } catch (IOException e) {
             log.error("Failed to reboot camera: {}", getCameraName(), e);

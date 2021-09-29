@@ -1,6 +1,7 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hs.common.objects.settings.CameraSettings;
+import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.objects.events.CaptureEvent;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class VideoCaptor {
     private final EventService eventService;
+    private final Logger logger;
     private CameraSettings cameraSettings;
 
     @Value("#{hswProperties['video.container.type']}")
@@ -56,7 +58,7 @@ public class VideoCaptor {
 
         this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + "." + videoContainerType);
 
-        System.out.println("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
+        logger.printAdditionalInfo("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 
         try {
             this.image = ImageIO.read(new URL(camera.getJpegUrl()));

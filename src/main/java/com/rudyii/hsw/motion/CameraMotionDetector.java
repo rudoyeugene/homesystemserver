@@ -1,6 +1,7 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hs.common.objects.settings.CameraSettings;
+import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.objects.events.MotionDetectedEvent;
 import com.rudyii.hsw.services.ArmedStateService;
@@ -27,6 +28,7 @@ public class CameraMotionDetector {
     private final ArmedStateService armedStateService;
     private final FirebaseGlobalSettingsService globalSettingsService;
     private final EventService eventService;
+    private final Logger logger;
 
     private BufferedImage previousImage, currentImage, motionObject;
     private URL sourceUrl;
@@ -118,7 +120,7 @@ public class CameraMotionDetector {
         int differenceInPercentage = (100 * diff) / imageSize;
 
         if (globalSettingsService.getGlobalSettings().isShowMotionArea()) {
-            System.out.println(cameraName + " noise level: " + cameraSettings.getNoiseLevel() + " and motion area size: " + differenceInPercentage + "%");
+            logger.printAdditionalInfo(cameraName + " noise level: " + cameraSettings.getNoiseLevel() + " and motion area size: " + differenceInPercentage + "%");
         }
 
         if (differenceInPercentage > cameraSettings.getMotionArea()) {

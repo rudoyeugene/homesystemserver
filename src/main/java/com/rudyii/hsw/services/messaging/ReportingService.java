@@ -1,4 +1,4 @@
-package com.rudyii.hsw.services.notification;
+package com.rudyii.hsw.services.messaging;
 
 import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;

@@ -2,6 +2,7 @@ package com.rudyii.hsw.services;
 
 import com.rudyii.hs.common.type.SystemModeType;
 import com.rudyii.hs.common.type.SystemStateType;
+import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.objects.events.SystemStateChangedEvent;
 import com.rudyii.hsw.providers.IPStateProvider;
@@ -27,6 +28,7 @@ import static com.rudyii.hs.common.type.SystemStateType.*;
 public class ArmedStateService {
     private final EventService eventService;
     private final IPStateProvider ipStateProvider;
+    private final Logger logger;
     private final AtomicInteger count = new AtomicInteger();
     private SystemModeType systemMode = AUTOMATIC;
     private SystemStateType systemState = RESOLVING;
@@ -58,7 +60,7 @@ public class ArmedStateService {
 
             }
         }
-        System.out.println("System is UP for " + count.incrementAndGet() + " minutes");
+        logger.printAdditionalInfo("System is UP for " + count.incrementAndGet() + " minutes");
     }
 
     private void disarm(String by) {

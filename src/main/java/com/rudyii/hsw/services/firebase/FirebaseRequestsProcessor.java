@@ -8,7 +8,7 @@ import com.rudyii.hs.common.objects.ServerStatusChangeRequest;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.objects.events.ArmedEvent;
 import com.rudyii.hsw.services.ArmedStateService;
-import com.rudyii.hsw.services.notification.ReportingService;
+import com.rudyii.hsw.services.messaging.ReportingService;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

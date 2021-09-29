@@ -4,8 +4,10 @@ import com.rudyii.hs.common.objects.logs.*;
 import com.rudyii.hs.common.type.LogType;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.objects.events.*;
+import com.rudyii.hsw.services.messaging.FirebaseMessageService;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
@@ -17,6 +19,8 @@ import static com.rudyii.hs.common.names.FirebaseNameSpaces.LOG_ROOT;
 @AllArgsConstructor
 public class FirebaseLogsProcessor {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
+    private final ThreadPoolTaskExecutor hswExecutor;
+    private FirebaseMessageService firebaseMessageService;
 
     @EventListener({SystemStateChangedEvent.class, CameraRebootEvent.class, IspEvent.class, MotionToNotifyEvent.class, UploadEvent.class, SimpleWatcherEvent.class})
     public void onEvent(EventBase event) {
@@ -79,7 +83,8 @@ public class FirebaseLogsProcessor {
         }
 
         if (logBase != null) {
-            firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(logBase.getEventId())).setValueAsync(logBase);
+            LogBase finalLogBase = logBase;
+            firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(logBase.getEventId())).setValueAsync(logBase).addListener(() -> firebaseMessageService.sendMessageForLog(finalLogBase), hswExecutor);
         }
     }
 }
