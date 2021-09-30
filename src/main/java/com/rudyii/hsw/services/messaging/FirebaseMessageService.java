@@ -1,5 +1,6 @@
 package com.rudyii.hsw.services.messaging;
 
+import com.google.firebase.messaging.AndroidConfig;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.rudyii.hs.common.objects.logs.LogBase;
@@ -15,6 +16,7 @@ import com.rudyii.hsw.services.ClientsService;
 import com.rudyii.hsw.services.system.ServerKeyService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
@@ -43,6 +45,7 @@ public class FirebaseMessageService {
         notifyServerStopped();
     }
 
+    @Async
     public void sendMessageForLog(LogBase logBase) {
         FcmMessage.FcmMessageBuilder fcmMessageBuilder = fillWithBasicData(logBase.getEventId());
 
@@ -105,13 +108,21 @@ public class FirebaseMessageService {
                     || serverNotificationType.equals(ALL)) {
                 Message firebaseMessage = Message.builder()
                         .setToken(token)
+                        .setAndroidConfig(AndroidConfig.builder()
+                                .setPriority(AndroidConfig.Priority.HIGH)
+                                .build())
                         .putData("messageType", message.getMessageType().name())
                         .putData("publishedAt", message.getPublishedAt() + "")
                         .putData("serverKey", message.getServerKey())
                         .putData("serverAlias", message.getServerAlias())
                         .putData("by", message.getBy() == null ? "system" : message.getBy())
                         .build();
-                FirebaseMessaging.getInstance().sendAsync(firebaseMessage);
+                try {
+                    String result = FirebaseMessaging.getInstance().send(firebaseMessage);
+                    log.info(result);
+                } catch (Exception e) {
+                    log.error("Failed to send FCM message to {}", email, e);
+                }
             } else {
                 log.warn("{} won't be notified, client notification type: {} != server notification type: {} and server is not ALL",
                         email, serverNotificationType, clientNotificationType);

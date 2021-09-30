@@ -21,8 +21,7 @@ public class IamBackService {
             armedStateService.disarmBy(iamBack.getEmail());
             log.info("System disarmed by {}", iamBack.getEmail());
         } else {
-            String target = targetThis ? " this " : iamBack.getServerKey();
-            log.warn("Unknown disarm request by {} for {} server", iamBack.getEmail(), target);
+            log.warn("Skipping disarm request by {} for {} server", iamBack.getEmail(), iamBack.getServerKey());
         }
     }
 }

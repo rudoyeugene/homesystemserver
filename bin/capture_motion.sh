@@ -17,7 +17,7 @@ if [ -f /usr/bin/avconv ]; then
   BINARY=avconv
 fi
 
-#$BINARY -err_detect aggressive -fflags discardcorrupt -t $DURATION -rtsp_transport $RTSP_TRANSPORT -i "$SOURCE" -vcodec libx264 -acodec aac "$OUTPUT_FILE"
-$BINARY -err_detect aggressive -fflags discardcorrupt -t $DURATION -rtsp_transport $RTSP_TRANSPORT -i "$SOURCE" -vcodec copy -acodec aac "$OUTPUT_FILE"
+$BINARY -err_detect aggressive -fflags discardcorrupt -t $DURATION -rtsp_transport $RTSP_TRANSPORT -i "$SOURCE" -vcodec libx264 -acodec aac "$OUTPUT_FILE"
+#$BINARY -err_detect aggressive -fflags discardcorrupt -t $DURATION -rtsp_transport $RTSP_TRANSPORT -i "$SOURCE" -vcodec copy -acodec aac "$OUTPUT_FILE"
 
 rm $LOCK_FILE_NAME.lock

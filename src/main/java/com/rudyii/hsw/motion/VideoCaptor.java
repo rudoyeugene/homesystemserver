@@ -7,7 +7,6 @@ import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.SystemUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
@@ -33,9 +32,6 @@ public class VideoCaptor {
     private final EventService eventService;
     private final Logger logger;
     private CameraSettings cameraSettings;
-
-    @Value("#{hswProperties['video.container.type']}")
-    private String videoContainerType;
     private String cameraName;
     private String rtspUrl;
     private String rtspTransport;
@@ -50,13 +46,15 @@ public class VideoCaptor {
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
 
+        File lock = new File(cameraName + ".lock");
+
         if ("tcp".equalsIgnoreCase(camera.getRtspTransport())) {
             this.rtspTransport = "tcp";
         } else {
             this.rtspTransport = "udp";
         }
 
-        this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + "." + videoContainerType);
+        this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + ".mp4");
 
         logger.printAdditionalInfo("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 
@@ -68,6 +66,7 @@ public class VideoCaptor {
         }
 
         publishCaptureEvent();
+        lock.delete();
     }
 
     private void publishCaptureEvent() {
