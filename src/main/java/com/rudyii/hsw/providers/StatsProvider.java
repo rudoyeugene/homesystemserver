@@ -6,9 +6,10 @@ import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.services.ArmedStateService;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
@@ -18,33 +19,38 @@ import static com.rudyii.hs.common.names.FirebaseNameSpaces.USAGE_STATS_ROOT;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class StatsProvider {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
     private final FirebaseGlobalSettingsService globalSettingsService;
     private final ArmedStateService armedStateService;
+    private final ThreadPoolTaskExecutor hswExecutor;
+    private String today;
 
     @Scheduled(cron = "0 */1 * * * *")
     public void run() {
         if (armedStateService.isArmed() && globalSettingsService.getGlobalSettings().isGatherStats()) {
+            today = getToday();
             increaseArmedStatistic();
         }
     }
 
     public void increaseArmedStatistic() {
-        firebaseDatabaseProvider.getRootReference().child(USAGE_STATS_ROOT).child(getToday()).addListenerForSingleValueEvent(getUsageStatsIncreaseValueEventListener(getToday()));
+        firebaseDatabaseProvider.getRootReference().child(USAGE_STATS_ROOT).child(today).addListenerForSingleValueEvent(getUsageStatsIncreaseValueEventListener());
     }
 
-    private ValueEventListener getUsageStatsIncreaseValueEventListener(String today) {
+    private ValueEventListener getUsageStatsIncreaseValueEventListener() {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                int minutes = 0;
+                long minutes = 0;
                 if (dataSnapshot.exists()) {
-                    minutes = (int) dataSnapshot.getValue();
+                    minutes = (long) dataSnapshot.getValue();
                 }
-                minutes++;
-                firebaseDatabaseProvider.getRootReference().child(USAGE_STATS_ROOT).child(today).setValueAsync(minutes);
+                long finalMinutes = minutes + 1;
+                hswExecutor.submit(() -> {
+                    firebaseDatabaseProvider.getRootReference().child(USAGE_STATS_ROOT).child(today).setValueAsync(finalMinutes);
+                });
             }
 
             @Override
