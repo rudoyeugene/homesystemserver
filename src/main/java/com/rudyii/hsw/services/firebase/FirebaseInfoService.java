@@ -5,7 +5,7 @@ import com.rudyii.hs.common.objects.info.Uptime;
 import com.rudyii.hs.common.objects.info.WanInfo;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.objects.events.IspEvent;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.internet.IspService;
 import com.rudyii.hsw.services.system.ServerKeyService;
 import com.rudyii.hsw.services.system.UptimeService;
@@ -27,7 +27,7 @@ public class FirebaseInfoService {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
     private final ServerKeyService serverKeyService;
     private final UptimeService uptimeService;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final IspService ispService;
     private final AtomicInteger currentSession = new AtomicInteger();
     @Value("${application.version}")
@@ -46,7 +46,7 @@ public class FirebaseInfoService {
 
     @Scheduled(cron = "0 */1 * * * *")
     public void doPing() {
-        if (armedStateService.isArmed()) {
+        if (systemModeAndStateService.isArmed()) {
             currentSession.incrementAndGet();
         } else {
             currentSession.set(0);

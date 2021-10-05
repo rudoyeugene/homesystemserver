@@ -7,7 +7,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hs.common.objects.ServerStatusChangeRequest;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.objects.events.ArmedEvent;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.messaging.ReportingService;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import static com.rudyii.hsw.helpers.SimplePropertiesKeeper.isHomeSystemInitComp
 @RequiredArgsConstructor
 public class FirebaseRequestsProcessor {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final EventService eventService;
     private final ReportingService reportingService;
     private final ArrayList<DatabaseReference> databaseReferences = new ArrayList<>();
@@ -37,8 +37,8 @@ public class FirebaseRequestsProcessor {
     public void init() {
         firebaseDatabaseProvider.getRootReference().child(REQUEST_ROOT).child(REQUEST_HOURLY_REPORT).setValueAsync(0);
         firebaseDatabaseProvider.getRootReference().child(REQUEST_ROOT).child(REQUEST_SYSTEM_MODE_AND_STATE).setValueAsync(ServerStatusChangeRequest.builder()
-                .systemMode(armedStateService.getSystemMode())
-                .systemState(armedStateService.getSystemState())
+                .systemMode(systemModeAndStateService.getSystemMode())
+                .systemState(systemModeAndStateService.getSystemState())
                 .by(BY_SYSTEM)
                 .build());
         registerListeners();

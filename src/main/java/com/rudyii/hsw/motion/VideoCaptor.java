@@ -40,13 +40,18 @@ public class VideoCaptor {
     private long eventTimeMillis;
 
     @Async
-    void startCaptureFrom(Camera camera) {
+    void startCaptureFrom(Camera camera) throws IOException {
         this.eventTimeMillis = System.currentTimeMillis();
         this.cameraSettings = camera.getCameraSettings();
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
 
         File lock = new File(cameraName + ".lock");
+        if (lock.exists()) {
+            log.warn("Previous record still in progress on {}", cameraName);
+        } else {
+            lock.createNewFile();
+        }
 
         if ("tcp".equalsIgnoreCase(camera.getRtspTransport())) {
             this.rtspTransport = "tcp";

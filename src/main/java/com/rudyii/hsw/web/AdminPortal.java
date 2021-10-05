@@ -5,7 +5,7 @@ import com.rudyii.hsw.helpers.BoardMonitor;
 import com.rudyii.hsw.helpers.IpMonitor;
 import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.providers.PairingDataProvider;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.actions.ActionsService;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
 import com.rudyii.hsw.services.system.UptimeService;
@@ -36,7 +36,7 @@ import static com.rudyii.hs.common.type.SystemStateType.DISARMED;
 @RestController
 public class AdminPortal {
     private final UptimeService uptimeService;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final BoardMonitor boardMonitor;
     private final PairingDataProvider pairingDataProvider;
     private final FirebaseGlobalSettingsService globalSettingsService;
@@ -51,13 +51,13 @@ public class AdminPortal {
     private String apkFileLocation;
 
     @Autowired
-    public AdminPortal(UptimeService uptimeService, ArmedStateService armedStateService,
+    public AdminPortal(UptimeService uptimeService, SystemModeAndStateService systemModeAndStateService,
                        BoardMonitor boardMonitor, PairingDataProvider pairingDataProvider,
                        IpMonitor ipMonitor, ActionsService actionsService,
                        FirebaseGlobalSettingsService globalSettingsService,
                        List<Camera> cameras) {
         this.uptimeService = uptimeService;
-        this.armedStateService = armedStateService;
+        this.systemModeAndStateService = systemModeAndStateService;
         this.boardMonitor = boardMonitor;
         this.pairingDataProvider = pairingDataProvider;
         this.ipMonitor = ipMonitor;
@@ -71,8 +71,8 @@ public class AdminPortal {
         ModelAndView modelAndView = new ModelAndView("index");
         modelAndView.addObject("title", "Home System " + appVersion);
         modelAndView.addObject("armDelaySeconds", globalSettingsService.getGlobalSettings().getDelayedArmTimeout());
-        modelAndView.addObject("currentState", armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
-        modelAndView.addObject("currentMode", armedStateService.getSystemMode() == AUTOMATIC ? AUTOMATIC.toString() : "MANUAL");
+        modelAndView.addObject("currentState", systemModeAndStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
+        modelAndView.addObject("currentMode", systemModeAndStateService.getSystemMode() == AUTOMATIC ? AUTOMATIC.toString() : "MANUAL");
         modelAndView.addObject("uptime", uptimeService.getUptime());
 
         return modelAndView;
@@ -141,7 +141,7 @@ public class AdminPortal {
 
     @RequestMapping(value = "/currentState", method = RequestMethod.GET)
     public String currentState() {
-        return "System is " + armedStateService.getSystemMode().toString() + " and " + (armedStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
+        return "System is " + systemModeAndStateService.getSystemMode().toString() + " and " + (systemModeAndStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
     }
 
     @RequestMapping(value = "/uptime", method = RequestMethod.GET)

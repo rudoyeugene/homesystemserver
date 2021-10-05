@@ -3,7 +3,7 @@ package com.rudyii.hsw.helpers;
 import com.rudyii.hs.common.type.SystemModeType;
 import com.rudyii.hs.common.type.SystemStateType;
 import com.rudyii.hsw.objects.events.ArmedEvent;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +20,7 @@ import static com.rudyii.hs.common.type.SystemStateType.*;
 public class ArmingController {
     private final EventService eventService;
     private final DelayedArmingHelper armingHelper;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
 
     public void forceArm() {
         try {
@@ -55,7 +55,7 @@ public class ArmingController {
     }
 
     private void setSystemModeTo(SystemModeType armedMode, SystemStateType armedState) {
-        if (armedStateService.getSystemMode().equals(armedMode) && getCurrentArmedState().equals(armedState)) {
+        if (systemModeAndStateService.getSystemMode().equals(armedMode) && getCurrentArmedState().equals(armedState)) {
             log.info("System already is {}:{}", armedMode, armedState);
         } else {
             eventService.publish(ArmedEvent.builder()
@@ -67,10 +67,10 @@ public class ArmingController {
     }
 
     private SystemStateType getCurrentArmedState() {
-        if (armedStateService.isSystemInAutoMode()) {
+        if (systemModeAndStateService.isSystemInAutoMode()) {
             return RESOLVING;
         } else {
-            return armedStateService.isArmed() ? ARMED : DISARMED;
+            return systemModeAndStateService.isArmed() ? ARMED : DISARMED;
         }
     }
 }

@@ -2,7 +2,7 @@ package com.rudyii.hsw.services.camera;
 
 import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -17,14 +17,14 @@ import java.util.List;
 @Service
 public class CameraRebootService {
     private final List<Camera> cameras;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final ThreadPoolTaskExecutor hswExecutor;
 
     @Autowired
-    public CameraRebootService(List<Camera> cameras, ArmedStateService armedStateService,
+    public CameraRebootService(List<Camera> cameras, SystemModeAndStateService systemModeAndStateService,
                                ThreadPoolTaskExecutor hswExecutor) {
         this.cameras = cameras;
-        this.armedStateService = armedStateService;
+        this.systemModeAndStateService = systemModeAndStateService;
         this.hswExecutor = hswExecutor;
     }
 
@@ -51,7 +51,7 @@ public class CameraRebootService {
                         camera.rebootComplete();
                         log.info("Reboot complete on Camera {}", camera.getCameraName());
 
-                        if (armedStateService.isArmed()) {
+                        if (systemModeAndStateService.isArmed()) {
                             log.info("Enabling motion detection on Camera {}", camera.getCameraName());
                             camera.enableMotionDetection();
                         }

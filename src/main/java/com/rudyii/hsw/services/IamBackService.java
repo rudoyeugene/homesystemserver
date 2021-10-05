@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 @Service
 @AllArgsConstructor
 public class IamBackService {
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final ClientsService clientsService;
     private final ServerKeyService serverKeyService;
 
@@ -18,7 +18,7 @@ public class IamBackService {
         boolean targetThis = serverKeyService.getServerKey().equals(iamBack.getServerKey());
         if (clientsService.getClients().stream().anyMatch(client -> client.getEmail().equals(iamBack.getEmail()))
                 && targetThis) {
-            armedStateService.disarmBy(iamBack.getEmail());
+            systemModeAndStateService.disarmBy(iamBack.getEmail());
             log.info("System disarmed by {}", iamBack.getEmail());
         } else {
             log.warn("Skipping disarm request by {} for {} server", iamBack.getEmail(), iamBack.getServerKey());

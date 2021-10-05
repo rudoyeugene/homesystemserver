@@ -6,7 +6,7 @@ import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.providers.NotificationsService;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
 import com.rudyii.hsw.services.internet.IspService;
 import com.rudyii.hsw.services.system.EventService;
@@ -29,7 +29,7 @@ import java.util.List;
 @Service
 public class ReportingService {
     private final UptimeService uptimeService;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final IpMonitor ipMonitor;
     private final IspService ispService;
     private final NotificationsService notificationsService;
@@ -40,12 +40,12 @@ public class ReportingService {
     private final EventService eventService;
 
     @Autowired
-    public ReportingService(ArmedStateService armedStateService, IspService ispService,
+    public ReportingService(SystemModeAndStateService systemModeAndStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
                             UptimeService uptimeService, BoardMonitor boardMonitor,
                             ServerKeyService serverKeyService, EventService eventService,
                             FirebaseGlobalSettingsService globalSettingsService, List<Camera> cameras) {
-        this.armedStateService = armedStateService;
+        this.systemModeAndStateService = systemModeAndStateService;
         this.ispService = ispService;
         this.notificationsService = notificationsService;
         this.ipMonitor = ipMonitor;
@@ -59,7 +59,7 @@ public class ReportingService {
 
     @Scheduled(cron = "0 0 * * * *")
     public void sendHourlyReportScheduled() {
-        if (armedStateService.isArmed() && (globalSettingsService.getGlobalSettings().isHourlyReportEnabled() || globalSettingsService.getGlobalSettings().isHourlyReportForced()))
+        if (systemModeAndStateService.isArmed() && (globalSettingsService.getGlobalSettings().isHourlyReportEnabled() || globalSettingsService.getGlobalSettings().isHourlyReportForced()))
             sendHourlyReport();
     }
 

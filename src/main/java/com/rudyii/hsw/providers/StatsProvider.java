@@ -4,7 +4,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,13 +23,13 @@ import static com.rudyii.hs.common.names.FirebaseNameSpaces.USAGE_STATS_ROOT;
 public class StatsProvider {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
     private final FirebaseGlobalSettingsService globalSettingsService;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final ThreadPoolTaskExecutor hswExecutor;
     private String today;
 
     @Scheduled(cron = "0 */1 * * * *")
     public void run() {
-        if (armedStateService.isArmed() && globalSettingsService.getGlobalSettings().isGatherStats()) {
+        if (systemModeAndStateService.isArmed() && globalSettingsService.getGlobalSettings().isGatherStats()) {
             today = getToday();
             increaseArmedStatistic();
         }

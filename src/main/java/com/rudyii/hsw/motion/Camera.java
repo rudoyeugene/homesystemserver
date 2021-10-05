@@ -5,12 +5,13 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hs.common.objects.settings.CameraSettings;
+import com.rudyii.hs.common.type.SystemStateType;
 import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.*;
 import com.rudyii.hsw.providers.StorageProvider;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.system.EventService;
 import com.rudyii.hsw.services.system.PingService;
 import lombok.AccessLevel;
@@ -33,8 +34,6 @@ import java.util.Date;
 
 import static com.rudyii.hs.common.names.FirebaseNameSpaces.SETTINGS_CAMERA;
 import static com.rudyii.hs.common.names.FirebaseNameSpaces.SETTINGS_ROOT;
-import static com.rudyii.hs.common.type.SystemStateType.ARMED;
-import static com.rudyii.hs.common.type.SystemStateType.DISARMED;
 
 @Slf4j
 @Data
@@ -43,7 +42,7 @@ public class Camera {
     private final PingService pingService;
     private final StorageProvider storageProvider;
     private final EventService eventService;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
     private Logger logger;
     private CameraMotionDetector currentCameraMotionDetector;
@@ -73,13 +72,13 @@ public class Camera {
     @Autowired
     public Camera(ApplicationContext context, PingService pingService,
                   StorageProvider storageProvider, EventService eventService,
-                  ArmedStateService armedStateService, FirebaseDatabaseProvider firebaseDatabaseProvider,
+                  SystemModeAndStateService systemModeAndStateService, FirebaseDatabaseProvider firebaseDatabaseProvider,
                   Logger logger) {
         this.context = context;
         this.pingService = pingService;
         this.storageProvider = storageProvider;
         this.eventService = eventService;
-        this.armedStateService = armedStateService;
+        this.systemModeAndStateService = systemModeAndStateService;
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
         this.logger = logger;
     }
@@ -124,7 +123,7 @@ public class Camera {
                 }
                 if (!detectorEnabled && cameraSettings.isContinuousMonitoring()) {
                     enableMotionDetection();
-                } else if (detectorEnabled && !cameraSettings.isContinuousMonitoring() && !armedStateService.isArmed()) {
+                } else if (detectorEnabled && !cameraSettings.isContinuousMonitoring() && !systemModeAndStateService.isArmed()) {
                     disableMotionDetection();
                 }
 
@@ -224,19 +223,14 @@ public class Camera {
     }
 
     @Async
-    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, SettingsUpdatedEvent.class})
+    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, SettingsUpdatedEvent.class, SystemStateChangedEvent.class})
     public void onEvent(EventBase event) throws Exception {
         if (event instanceof ArmedEvent) {
             ArmedEvent armedEvent = (ArmedEvent) event;
-            if (ARMED.equals(armedEvent.getSystemState()) && !isDetectorEnabled()) {
-                enableMotionDetection();
-            } else if (DISARMED.equals(armedEvent.getSystemState())
-                    && isDetectorEnabled()
-                    && !cameraSettings.isContinuousMonitoring()) {
-                disableMotionDetection();
-            } else {
-                log.warn("New ArmedEvent received but system state unchanged.");
-            }
+            enableDisableDetector(armedEvent.getSystemState());
+        } else if (event instanceof SystemStateChangedEvent) {
+            SystemStateChangedEvent systemStateChangedEvent = (SystemStateChangedEvent) event;
+            enableDisableDetector(systemStateChangedEvent.getSystemState());
         } else if (event instanceof MotionDetectedEvent) {
             MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
             if (!motionDetectedEvent.getCameraName().equals(getCameraName())) {
@@ -264,12 +258,25 @@ public class Camera {
                             .snapshotUrl(uploadMotionImageFrom(motionDetectedEvent.getEventId(), bufferedImage))
                             .build());
 
-                    lock.createNewFile();
                     context.getBean(VideoCaptor.class).startCaptureFrom(this);
                 } catch (Exception e) {
                     log.error("Failed to lock {}", lock.getAbsolutePath(), e);
                 }
             }
+        }
+    }
+
+    private void enableDisableDetector(SystemStateType systemState) throws Exception {
+        switch (systemState) {
+            case ARMED:
+                if (!isDetectorEnabled()) enableMotionDetection();
+                break;
+            case DISARMED:
+                if (isDetectorEnabled() && !cameraSettings.isContinuousMonitoring()) disableMotionDetection();
+                break;
+            case RESOLVING:
+                if (cameraSettings.isContinuousMonitoring()) enableMotionDetection();
+                break;
         }
     }
 

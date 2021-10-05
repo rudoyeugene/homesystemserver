@@ -3,7 +3,7 @@ package com.rudyii.hsw.services.firebase;
 import com.rudyii.hs.common.objects.info.ServerStatus;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.objects.events.SystemStateChangedEvent;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import lombok.AllArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -17,13 +17,13 @@ import static com.rudyii.hs.common.names.FirebaseNameSpaces.STATUS_SERVER;
 @AllArgsConstructor
 public class FirebaseStatusProcessor {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
 
     @PostConstruct
     public void init() {
         firebaseDatabaseProvider.getRootReference().child(STATUS_ROOT).child(STATUS_SERVER).setValueAsync(ServerStatus.builder()
-                .systemMode(armedStateService.getSystemMode())
-                .systemState(armedStateService.getSystemState())
+                .systemMode(systemModeAndStateService.getSystemMode())
+                .systemState(systemModeAndStateService.getSystemState())
                 .timestamp(System.currentTimeMillis())
                 .build());
     }

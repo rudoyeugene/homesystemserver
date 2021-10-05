@@ -4,7 +4,7 @@ import com.rudyii.hs.common.objects.settings.CameraSettings;
 import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.objects.events.MotionDetectedEvent;
-import com.rudyii.hsw.services.ArmedStateService;
+import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.net.URL;
 @Scope(value = "prototype")
 @RequiredArgsConstructor
 public class CameraMotionDetector {
-    private final ArmedStateService armedStateService;
+    private final SystemModeAndStateService systemModeAndStateService;
     private final FirebaseGlobalSettingsService globalSettingsService;
     private final EventService eventService;
     private final Logger logger;
@@ -63,7 +63,7 @@ public class CameraMotionDetector {
     }
 
     private void startDetection() throws InterruptedException {
-        while (this.enabled && armedStateService.isArmed()) {
+        while (this.enabled && systemModeAndStateService.isArmed()) {
             this.previousImage = currentImage;
             try {
                 this.motionObject = new BufferedImage(previousImage.getWidth(), previousImage.getHeight(), previousImage.getType());

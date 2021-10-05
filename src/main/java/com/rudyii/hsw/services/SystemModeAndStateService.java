@@ -25,7 +25,7 @@ import static com.rudyii.hs.common.type.SystemStateType.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ArmedStateService {
+public class SystemModeAndStateService {
     private final EventService eventService;
     private final IPStateProvider ipStateProvider;
     private final Logger logger;
