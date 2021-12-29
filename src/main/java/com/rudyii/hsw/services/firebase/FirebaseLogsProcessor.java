@@ -26,8 +26,7 @@ public class FirebaseLogsProcessor {
     public void onEvent(EventBase event) {
         LogBase logBase = null;
 
-        if (event instanceof SystemStateChangedEvent) {
-            SystemStateChangedEvent armedEvent = (SystemStateChangedEvent) event;
+        if (event instanceof SystemStateChangedEvent armedEvent) {
             StateChangedLog stateChangedLog = StateChangedLog.builder()
                     .eventId(armedEvent.getEventId())
                     .logType(LogType.STATE_CHANGED)
@@ -37,8 +36,7 @@ public class FirebaseLogsProcessor {
                     .build();
             firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(event.getEventId())).setValueAsync(stateChangedLog).addListener(() -> firebaseMessageService.sendMessageForLog(stateChangedLog), hswExecutor);
 
-        } else if (event instanceof MotionToNotifyEvent) {
-            MotionToNotifyEvent motionToNotifyEvent = (MotionToNotifyEvent) event;
+        } else if (event instanceof MotionToNotifyEvent motionToNotifyEvent) {
             MotionLog motionLog = MotionLog.builder()
                     .eventId(motionToNotifyEvent.getEventId())
                     .logType(LogType.MOTION_DETECTED)
@@ -48,8 +46,7 @@ public class FirebaseLogsProcessor {
                     .build();
             firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(event.getEventId())).setValueAsync(motionLog).addListener(() -> firebaseMessageService.sendMessageForLog(motionLog), hswExecutor);
 
-        } else if (event instanceof UploadEvent) {
-            UploadEvent uploadEvent = (UploadEvent) event;
+        } else if (event instanceof UploadEvent uploadEvent) {
             UploadLog uploadLog = UploadLog.builder()
                     .eventId(uploadEvent.getEventId())
                     .logType(LogType.RECORD_UPLOADED)
@@ -58,8 +55,7 @@ public class FirebaseLogsProcessor {
                     .build();
             firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(event.getEventId())).setValueAsync(uploadLog).addListener(() -> firebaseMessageService.sendMessageForLog(uploadLog), hswExecutor);
 
-        } else if (event instanceof IspEvent) {
-            IspEvent ispEvent = (IspEvent) event;
+        } else if (event instanceof IspEvent ispEvent) {
             IspLog ispLog = IspLog.builder()
                     .eventId(ispEvent.getEventId())
                     .logType(LogType.ISP_CHANGED)
@@ -68,8 +64,7 @@ public class FirebaseLogsProcessor {
                     .build();
             firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(event.getEventId())).setValueAsync(ispLog).addListener(() -> firebaseMessageService.sendMessageForLog(ispLog), hswExecutor);
 
-        } else if (event instanceof CameraRebootEvent) {
-            CameraRebootEvent cameraRebootEvent = (CameraRebootEvent) event;
+        } else if (event instanceof CameraRebootEvent cameraRebootEvent) {
             CameraRebootLog cameraRebootLog = CameraRebootLog.builder()
                     .eventId(cameraRebootEvent.getEventId())
                     .logType(LogType.CAMERA_REBOOTED)
@@ -77,8 +72,7 @@ public class FirebaseLogsProcessor {
                     .build();
             firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(event.getEventId())).setValueAsync(cameraRebootLog).addListener(() -> firebaseMessageService.sendMessageForLog(cameraRebootLog), hswExecutor);
 
-        } else if (event instanceof SimpleWatcherEvent) {
-            SimpleWatcherEvent simpleWatcherEvent = (SimpleWatcherEvent) event;
+        } else if (event instanceof SimpleWatcherEvent simpleWatcherEvent) {
             SimpleWatcherLog simpleWatcherLog = SimpleWatcherLog.builder()
                     .eventId(simpleWatcherEvent.getEventId())
                     .logType(LogType.SIMPLE_WATCHER_FIRED)

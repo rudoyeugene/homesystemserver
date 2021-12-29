@@ -26,7 +26,7 @@ public class DelayedArmingHelper {
     void armWithDelayInSeconds() throws InterruptedException {
         if (idle) {
             this.idle = false;
-            int seconds = globalSettingsService.getGlobalSettings().getDelayedArmTimeout();
+            int seconds = globalSettingsService.getGlobalSettings().getDelayedArmTimeoutSec();
 
             while (seconds != 0) {
                 logger.printAdditionalInfo("System will be ARMED in " + seconds + " seconds...");

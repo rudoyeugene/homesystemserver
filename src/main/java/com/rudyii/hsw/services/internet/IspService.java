@@ -25,8 +25,9 @@ import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
 public class IspService {
     private final PingService pingService;
     private final EventService eventService;
-    private WanIp previousWanIp;
-    private WanIp currentWanIp;
+    private WanIp previousWanIp = WanIp.builder().build();
+    private WanIp currentWanIp = WanIp.builder().build();
+    ;
 
     @Autowired
     public IspService(PingService pingService, EventService eventService) {

@@ -2,6 +2,8 @@ package com.rudyii.hsw.services.system;
 
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.IPEvent;
+import com.rudyii.hsw.services.SystemModeAndStateService;
+import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.util.Map;
 
@@ -22,19 +25,46 @@ public class PingService {
     private final EventService eventService;
     private final Map<String, String> ipResolver;
     private final ThreadPoolTaskExecutor hswExecutor;
+    private final FirebaseGlobalSettingsService globalSettingsService;
+    private final SystemModeAndStateService systemModeAndStateService;
 
     @Autowired
     public PingService(EventService eventService, Map ipResolver,
-                       ThreadPoolTaskExecutor hswExecutor) {
+                       ThreadPoolTaskExecutor hswExecutor, FirebaseGlobalSettingsService globalSettingsService,
+                       SystemModeAndStateService systemModeAndStateService) {
         this.eventService = eventService;
         this.ipResolver = ipResolver;
         this.hswExecutor = hswExecutor;
+        this.globalSettingsService = globalSettingsService;
+        this.systemModeAndStateService = systemModeAndStateService;
 
         if (IS_OS_LINUX) {
             log.info("Linux OS detected");
         } else {
             log.info("NON Linux OS detected! Reachability will be used!");
         }
+    }
+
+    @PostConstruct
+    public void scheduleNextPing() {
+        hswExecutor.submit(() -> {
+            while (true) {
+                ipResolver.forEach((ip, name) -> hswExecutor.submit(new PingRunnable(ip)));
+                long sleepFor;
+                if (systemModeAndStateService.isArmed()) {
+                    sleepFor = globalSettingsService.getGlobalSettings().getMasterCheckPeriodIfArmedSec();
+                } else {
+                    sleepFor = globalSettingsService.getGlobalSettings().getMasterCheckPeriodIfDisarmedSec();
+                }
+
+                try {
+                    log.info("Next ping action will run in {} seconds", sleepFor);
+                    Thread.sleep(sleepFor * 1000L);
+                } catch (Exception e) {
+                    log.info("PingService failed:", e);
+                }
+            }
+        });
     }
 
     @Scheduled(initialDelay = 5000L, fixedRate = 60000L)

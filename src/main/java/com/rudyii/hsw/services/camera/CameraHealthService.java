@@ -4,6 +4,8 @@ import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.extern.slf4j.Slf4j;
+import net.bramp.ffmpeg.FFprobe;
+import net.bramp.ffmpeg.probe.FFmpegProbeResult;
 import org.apache.commons.lang.SystemUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,8 +14,8 @@ import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -34,79 +36,54 @@ public class CameraHealthService {
     @Scheduled(initialDelayString = "10000", fixedDelayString = "600000")
     public void run() {
         cameras.forEach(camera -> {
-            if (camera.isHealthCheckEnabled() && camera.isOnline()) {
+            boolean isOnline = camera.isOnline();
+            boolean isHealthCheckEnabled = camera.getCameraSettings().isHealthCheckEnabled();
+            if (isHealthCheckEnabled && isOnline) {
                 if (camera.isRecordingInProgress() || camera.isDetectorEnabled()) {
                     log.warn("Camera {} is busy, skipping Health Check", camera.getCameraName());
                 } else {
                     hswExecutor.submit(() -> {
                         try {
                             imageProbe(camera.getJpegUrl(), camera.getCameraName());
-                            ffprobe(camera.getRtspUrl(), camera.getCameraName(), camera.getRtspTransport());
+                            ffprobe(camera.getRtspUrl(), camera.getCameraName());
                         } catch (Exception e) {
                             log.error("Camera {} probe failed, rebooting...", camera.getCameraName());
                             rebootCamera(camera);
                         }
                     });
                 }
-            }
-
-            if (!camera.isHealthCheckEnabled()) {
+            } else if (!isHealthCheckEnabled) {
                 log.info("Health Check is disabled for camera {}", camera.getCameraName());
-            } else if (!camera.isOnline()) {
+            } else {
                 log.info("Camera {} is OFFLINE, skipping Health Check", camera.getCameraName());
             }
         });
     }
 
-    private void ffprobe(String rtspUrl, String cameraName, String rtspTransport) throws Exception {
-        List<String> probeCommand = new ArrayList<>();
-
+    private void ffprobe(String rtspUrl, String cameraName) throws Exception {
+        FFprobe ffprobe;
         if (SystemUtils.IS_OS_LINUX) {
-            if (new File("/usr/bin/ffprobe").exists()) {
-                probeCommand.add("/usr/bin/ffprobe");
-                setRtspTransportType(rtspTransport, probeCommand);
-
-            } else if (new File("/usr/bin/avprobe").exists()) {
-                probeCommand.add("/usr/bin/avprobe");
-                setRtspTransportType(rtspTransport, probeCommand);
-
+            if (new File("/usr/bin/ffmpeg").exists() && new File("/usr/bin/ffprobe").exists()) {
+                ffprobe = new FFprobe("/usr/bin/ffprobe");
             } else {
-                log.error("/usr/bin/ffprobe or /usr/bin/avprobe not found, please install, ignoring health checking");
-                return;
+                throw new IOException("/usr/bin/ffmpeg & /usr/bin/ffprobe are not found, can't capture");
             }
         } else if (SystemUtils.IS_OS_WINDOWS) {
-            if (new File("C:/Windows/System32/ffprobe.exe").exists()) {
-                probeCommand.add("ffprobe");
-                setRtspTransportType(rtspTransport, probeCommand);
-
+            if (new File("C:/Windows/System32/ffmpeg.exe").exists() && new File("C:/Windows/System32/ffprobe.exe").exists()) {
+                ffprobe = new FFprobe("C:/Windows/System32/ffprobe.exe");
             } else {
-                log.error("C:/Windows/System32/ffprobe.exe not found, please install, ignoring health checking");
-                return;
+                throw new IOException("C:/Windows/System32/ffmpeg.exe & C:/Windows/System32/ffprobe.exe are not found, can't capture");
             }
         } else {
-            log.error("Unsupported OS detected, ignoring health checking");
+            log.error("Unsupported OS detected, ignoring video capture");
             return;
         }
 
-        probeCommand.add("-i");
-        probeCommand.add(rtspUrl);
-
-        ProcessBuilder probeBuilder = new ProcessBuilder(probeCommand);
-        Process ffprobeProcess = probeBuilder.start();
-        ffprobeProcess.waitFor();
-
-        if (ffprobeProcess.exitValue() == 0) {
-            log.info("Video stream probe success on camera {}", cameraName);
+        FFmpegProbeResult fFmpegProbeResult = ffprobe.probe(rtspUrl);
+        if (fFmpegProbeResult.hasError()) {
+            throw new Exception("Video probe failed on " + cameraName);
         } else {
-            throw new Exception("Video probe failed!");
-        }
-
-    }
-
-    private void setRtspTransportType(String rtspTransport, List<String> probeCommand) {
-        if ("tcp".equalsIgnoreCase(rtspTransport)) {
-            probeCommand.add("-rtsp_transport");
-            probeCommand.add("tcp");
+            log.info("Video stream probe success on camera {}", cameraName);
         }
     }
 

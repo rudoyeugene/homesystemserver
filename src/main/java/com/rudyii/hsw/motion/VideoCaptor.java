@@ -1,11 +1,16 @@
 package com.rudyii.hsw.motion;
 
 import com.rudyii.hs.common.objects.settings.CameraSettings;
-import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.objects.events.CaptureEvent;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.bramp.ffmpeg.FFmpeg;
+import net.bramp.ffmpeg.FFmpegExecutor;
+import net.bramp.ffmpeg.FFprobe;
+import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import net.bramp.ffmpeg.probe.FFmpegProbeResult;
 import org.apache.commons.lang.SystemUtils;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Scope;
@@ -18,9 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Lazy
@@ -30,48 +33,83 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class VideoCaptor {
     private final EventService eventService;
-    private final Logger logger;
     private CameraSettings cameraSettings;
     private String cameraName;
     private String rtspUrl;
-    private String rtspTransport;
     private File result;
     private BufferedImage image;
     private long eventTimeMillis;
 
     @Async
-    void startCaptureFrom(Camera camera) throws IOException {
+    public void startCaptureFrom(Camera camera) {
         this.eventTimeMillis = System.currentTimeMillis();
         this.cameraSettings = camera.getCameraSettings();
         this.cameraName = camera.getCameraName();
         this.rtspUrl = camera.getRtspUrl();
 
-        File lock = new File(cameraName + ".lock");
-        if (lock.exists()) {
-            log.warn("Previous record still in progress on {}", cameraName);
-        } else {
-            lock.createNewFile();
-        }
-
-        if ("tcp".equalsIgnoreCase(camera.getRtspTransport())) {
-            this.rtspTransport = "tcp";
-        } else {
-            this.rtspTransport = "udp";
-        }
-
         this.result = new File(System.getProperty("java.io.tmpdir") + "/" + eventTimeMillis + ".mp4");
 
-        logger.printAdditionalInfo("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
+        log.info("A new motion detected: {}" + new SimpleDateFormat("yyyy.MM.dd-HH.mm.ss.SSS").format(new Date()));
 
         try {
             this.image = ImageIO.read(new URL(camera.getJpegUrl()));
-            getFfmpegStream();
+            startRecording();
         } catch (IOException e) {
             log.error("Failed to process output file", e);
         }
 
         publishCaptureEvent();
-        lock.delete();
+        camera.resetVideoCaptor();
+    }
+
+    @SneakyThrows
+    private void startRecording() {
+        FFmpeg ffmpeg;
+        FFprobe ffprobe;
+        if (SystemUtils.IS_OS_LINUX) {
+            if (new File("/usr/bin/ffmpeg").exists() && new File("/usr/bin/ffprobe").exists()) {
+                ffmpeg = new FFmpeg("/usr/bin/ffmpeg");
+                ffprobe = new FFprobe("/usr/bin/ffprobe");
+            } else {
+                throw new IOException("/usr/bin/ffmpeg & /usr/bin/ffprobe are not found, can't capture");
+            }
+        } else if (SystemUtils.IS_OS_WINDOWS) {
+            if (new File("C:/Windows/System32/ffmpeg.exe").exists() && new File("C:/Windows/System32/ffprobe.exe").exists()) {
+                ffmpeg = new FFmpeg("C:/Windows/System32/ffmpeg.exe");
+                ffprobe = new FFprobe("C:/Windows/System32/ffprobe.exe");
+            } else {
+                throw new IOException("C:/Windows/System32/ffmpeg.exe & C:/Windows/System32/ffprobe.exe are not found, can't capture");
+            }
+        } else {
+            log.error("Unsupported OS detected, ignoring video capture");
+            return;
+        }
+
+        FFmpegProbeResult probeResult = ffprobe.probe(rtspUrl);
+
+        FFmpegBuilder builder = new FFmpegBuilder()
+                .setInput(probeResult)     // Filename, or a FFmpegProbeResult
+                .overrideOutputFiles(true) // Override the output if it exists
+
+                .addOutput(result.getCanonicalPath())   // Filename for the destination
+                .setFormat("mp4")        // Format is inferred from filename, or can be set
+
+                .setAudioCodec("aac")        // using the aac codec
+                .setVideoCodec("libx264")     // Video using x264
+
+                .setDuration(cameraSettings.getRecordLengthSec(), TimeUnit.SECONDS)
+
+                .setStrict(FFmpegBuilder.Strict.EXPERIMENTAL) // Allow FFmpeg to use experimental specs
+                .done();
+
+        FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
+
+        // Run a one-pass encode
+        long recordStarted = System.currentTimeMillis();
+        executor.createJob(builder).run();
+        log.info("Recording completed in {} ms", System.currentTimeMillis() - recordStarted);
+        // Or run a two-pass encode (which is better quality at the cost of being slower)
+        // executor.createTwoPassJob(builder).run();
     }
 
     private void publishCaptureEvent() {
@@ -80,68 +118,5 @@ public class VideoCaptor {
                 .uploadCandidate(result)
                 .image(image)
                 .eventId(eventTimeMillis).build());
-    }
-
-    private void getFfmpegStream() throws IOException {
-        log.info("Starting capture on camera {}...", cameraName);
-        List<String> captureCommand = new ArrayList<>();
-
-        if (SystemUtils.IS_OS_LINUX) {
-            if (new File("/usr/bin/ffmpeg").exists() || new File("/usr/bin/avconv").exists()) {
-                log.info("Linux OS detected, using script bin/capture_motion.sh with params:");
-                printParametersIntoLog();
-                captureCommand.add("bin/capture_motion.sh");
-
-            } else {
-                log.error("/usr/bin/ffmpeg or /usr/bin/avconv not found, please install, ignoring video capture");
-                return;
-            }
-        } else if (SystemUtils.IS_OS_WINDOWS) {
-            if (new File("C:/Windows/System32/ffmpeg.exe").exists()) {
-                printParametersIntoLog();
-                captureCommand.add("bin/capture_motion.bat");
-
-            } else {
-                log.error("C:/Windows/System32/ffmpeg.exe not found, please install, ignoring video capture");
-                return;
-            }
-        } else {
-            log.error("Unsupported OS detected, ignoring video capture");
-            return;
-        }
-
-        captureCommand.add(rtspUrl);
-        captureCommand.add(String.valueOf(cameraSettings.getRecordLength()));
-        captureCommand.add(result.getCanonicalPath());
-        captureCommand.add(cameraName);
-        captureCommand.add(rtspTransport);
-
-        ProcessBuilder captureProcess = new ProcessBuilder(captureCommand);
-        runProcess(captureProcess);
-    }
-
-    private void printParametersIntoLog() throws IOException {
-        log.info("#1 as source: {}", rtspUrl);
-        log.info("#2 as record interval in seconds: {}", cameraSettings.getRecordLength());
-        log.info("#3 as a capture result: {}", result.getCanonicalPath());
-        log.info("#4 as a camera name: {}", cameraName);
-        log.info("#5 as an rtsp transport: {}", rtspTransport);
-    }
-
-    private void runProcess(ProcessBuilder process) {
-        try {
-            Process runningProcess = process.inheritIO().start();
-            runningProcess.waitFor(cameraSettings.getRecordLength() + 1, TimeUnit.SECONDS);
-            if (runningProcess.isAlive()) {
-                runningProcess.waitFor(cameraSettings.getRecordLength() / 2, TimeUnit.SECONDS);
-                runningProcess.destroy();
-
-                if (runningProcess.isAlive()) {
-                    runningProcess.destroyForcibly();
-                }
-            }
-        } catch (Exception e) {
-            log.error("Video capture failed!", e);
-        }
     }
 }

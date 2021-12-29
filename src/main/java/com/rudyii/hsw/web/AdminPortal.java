@@ -70,7 +70,7 @@ public class AdminPortal {
     public ModelAndView buildIndexPage() {
         ModelAndView modelAndView = new ModelAndView("index");
         modelAndView.addObject("title", "Home System " + appVersion);
-        modelAndView.addObject("armDelaySeconds", globalSettingsService.getGlobalSettings().getDelayedArmTimeout());
+        modelAndView.addObject("armDelaySeconds", globalSettingsService.getGlobalSettings().getDelayedArmTimeoutSec());
         modelAndView.addObject("currentState", systemModeAndStateService.isArmed() ? ARMED.toString() : DISARMED.toString());
         modelAndView.addObject("currentMode", systemModeAndStateService.getSystemMode() == AUTOMATIC ? AUTOMATIC.toString() : "MANUAL");
         modelAndView.addObject("uptime", uptimeService.getUptime());

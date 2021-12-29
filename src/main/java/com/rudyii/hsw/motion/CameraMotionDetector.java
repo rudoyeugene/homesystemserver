@@ -4,7 +4,6 @@ import com.rudyii.hs.common.objects.settings.CameraSettings;
 import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
 import com.rudyii.hsw.objects.events.MotionDetectedEvent;
-import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
 import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import java.net.URL;
 @Scope(value = "prototype")
 @RequiredArgsConstructor
 public class CameraMotionDetector {
-    private final SystemModeAndStateService systemModeAndStateService;
     private final FirebaseGlobalSettingsService globalSettingsService;
     private final EventService eventService;
     private final Logger logger;
@@ -63,7 +61,7 @@ public class CameraMotionDetector {
     }
 
     private void startDetection() throws InterruptedException {
-        while (this.enabled && systemModeAndStateService.isArmed()) {
+        while (this.enabled) {
             this.previousImage = currentImage;
             try {
                 this.motionObject = new BufferedImage(previousImage.getWidth(), previousImage.getHeight(), previousImage.getType());
@@ -73,7 +71,7 @@ public class CameraMotionDetector {
                 log.error("Failed to get current image from camera: {}", cameraName);
                 fireRebootEvent();
             }
-            Thread.sleep(cameraSettings.getInterval());
+            Thread.sleep(cameraSettings.getIntervalMs());
         }
     }
 
@@ -123,7 +121,7 @@ public class CameraMotionDetector {
             logger.printAdditionalInfo(cameraName + " noise level: " + cameraSettings.getNoiseLevel() + " and motion area size: " + differenceInPercentage + "%");
         }
 
-        if (differenceInPercentage > cameraSettings.getMotionArea()) {
+        if (differenceInPercentage > cameraSettings.getMotionAreaPercent()) {
             log.info("Motion detected on Camera {} with motion area size : {}%", cameraName, differenceInPercentage);
             eventService.publish(new MotionDetectedEvent(cameraName, differenceInPercentage, currentImage, motionObject));
         }

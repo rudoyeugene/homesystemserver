@@ -5,8 +5,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hs.common.objects.settings.GlobalSettings;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
-import com.rudyii.hsw.objects.events.SettingsUpdatedEvent;
-import com.rudyii.hsw.services.system.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,17 +19,7 @@ import static com.rudyii.hs.common.names.FirebaseNameSpaces.SETTINGS_ROOT;
 @RequiredArgsConstructor
 public class FirebaseGlobalSettingsService {
     private final FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private final EventService eventService;
-    private GlobalSettings globalSettings = GlobalSettings.builder()
-            .showMotionArea(false)
-            .hourlyReportEnabled(true)
-            .hourlyReportForced(false)
-            .monitoringEnabled(true)
-            .verboseOutput(false)
-            .gatherStats(true)
-            .historyDays(7)
-            .delayedArmTimeout(60)
-            .build();
+    private GlobalSettings globalSettings = GlobalSettings.builder().build();
 
     @PostConstruct
     public void buildRefreshSettings() {
@@ -48,7 +36,7 @@ public class FirebaseGlobalSettingsService {
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                log.error("Failed to update GlobalSettings ", databaseError);
+                log.error("Failed to update GlobalSettings ", databaseError.toException());
             }
         });
     }
@@ -58,11 +46,6 @@ public class FirebaseGlobalSettingsService {
     }
 
     private void setGlobalSettings(GlobalSettings globalSettings) {
-        if (!this.globalSettings.equals(globalSettings)) {
-            eventService.publish(SettingsUpdatedEvent.builder()
-                    .globalSettings(globalSettings)
-                    .build());
-            this.globalSettings = globalSettings;
-        }
+        this.globalSettings = globalSettings;
     }
 }

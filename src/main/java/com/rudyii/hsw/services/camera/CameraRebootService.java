@@ -44,10 +44,10 @@ public class CameraRebootService {
                     log.info("Motion detection disabled on Camera {}", camera.getCameraName());
 
                     camera.performReboot();
-                    log.info("Rebooting Camera {}, will wait for {} milliseconds.", camera.getCameraName(), camera.getRebootTimeout());
+                    log.info("Rebooting Camera {}, will wait for {} milliseconds.", camera.getCameraName(), camera.getRebootTimeoutSec());
 
                     try {
-                        Thread.sleep(camera.getRebootTimeout());
+                        Thread.sleep(camera.getRebootTimeoutSec() * 1000L);
                         camera.rebootComplete();
                         log.info("Reboot complete on Camera {}", camera.getCameraName());
 

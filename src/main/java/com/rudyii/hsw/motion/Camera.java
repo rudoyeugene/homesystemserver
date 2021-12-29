@@ -5,8 +5,8 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hs.common.objects.settings.CameraSettings;
+import com.rudyii.hs.common.type.MonitoringModeType;
 import com.rudyii.hs.common.type.SystemStateType;
-import com.rudyii.hsw.configuration.Logger;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.IPStateEnum;
 import com.rudyii.hsw.objects.events.*;
@@ -27,7 +27,10 @@ import org.springframework.scheduling.annotation.Async;
 import javax.annotation.PostConstruct;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Date;
@@ -44,20 +47,11 @@ public class Camera {
     private final EventService eventService;
     private final SystemModeAndStateService systemModeAndStateService;
     private FirebaseDatabaseProvider firebaseDatabaseProvider;
-    private Logger logger;
     private CameraMotionDetector currentCameraMotionDetector;
-    private File lock;
-    private boolean rebootInProgress, detectorEnabled;
+    private boolean rebootInProgress;
     @Setter(AccessLevel.NONE)
     private CameraSettings cameraSettings;
     private String mjpegUrl, jpegUrl, rtspUrl, rebootUrl, cameraName;
-    private int interval = 500;
-    private int rebootTimeout = 60;
-    private int noiseLevel = 5;
-    private int motionArea = 20;
-    private boolean healthCheckEnabled = true;
-    private boolean autostartMonitoring;
-    private boolean continuousMonitoring;
     private String ip;
     private Integer httpPort;
     private Integer rtspPort;
@@ -68,47 +62,27 @@ public class Camera {
     private String rtspUrlTemplate;
     private String rebootUrlTemplate;
     private String rtspTransport;
+    private VideoCaptor videoCaptor;
 
     @Autowired
     public Camera(ApplicationContext context, PingService pingService,
                   StorageProvider storageProvider, EventService eventService,
-                  SystemModeAndStateService systemModeAndStateService, FirebaseDatabaseProvider firebaseDatabaseProvider,
-                  Logger logger) {
+                  SystemModeAndStateService systemModeAndStateService, FirebaseDatabaseProvider firebaseDatabaseProvider) {
         this.context = context;
         this.pingService = pingService;
         this.storageProvider = storageProvider;
         this.eventService = eventService;
         this.systemModeAndStateService = systemModeAndStateService;
         this.firebaseDatabaseProvider = firebaseDatabaseProvider;
-        this.logger = logger;
     }
 
     @PostConstruct
     public void init() throws Exception {
-        this.lock = new File(getCameraName() + ".lock");
-
-        try {
-            if (lock.delete()) {
-                log.warn("Deleted lock from previous run of {} Camera", cameraName);
-            }
-        } catch (Exception e) {
-            log.info("Camera {} lock not found", cameraName);
-        }
-
         buildUrls();
 
-        this.cameraSettings = CameraSettings.builder()
-                .continuousMonitoring(continuousMonitoring)
-                .healthCheckEnabled(healthCheckEnabled)
-                .showMotionObject(false)
-                .interval(interval)
-                .motionArea(motionArea)
-                .noiseLevel(noiseLevel)
-                .recordLength(5)
-                .rebootTimeoutSec(rebootTimeout)
-                .build();
+        this.cameraSettings = CameraSettings.builder().build();
 
-        if (isAutostartMonitoring() || cameraSettings.isContinuousMonitoring()) {
+        if (isEnabled()) {
             enableMotionDetection();
         }
 
@@ -121,17 +95,22 @@ public class Camera {
                 } else {
                     firebaseDatabaseProvider.getRootReference().child(SETTINGS_ROOT).child(SETTINGS_CAMERA).child(cameraName).setValueAsync(cameraSettings);
                 }
-                if (!detectorEnabled && cameraSettings.isContinuousMonitoring()) {
-                    enableMotionDetection();
-                } else if (detectorEnabled && !cameraSettings.isContinuousMonitoring() && !systemModeAndStateService.isArmed()) {
-                    disableMotionDetection();
+                switch (cameraSettings.getMonitoringMode()) {
+                    case ENABLED -> enableMotionDetection();
+                    case DISABLED -> disableMotionDetection();
+                    case AUTO -> {
+                        if (currentCameraMotionDetector == null && getSystemModeAndStateService().isArmed()) {
+                            enableMotionDetection();
+                        } else if (currentCameraMotionDetector != null && !getSystemModeAndStateService().isArmed()) {
+                            disableMotionDetection();
+                        }
+                    }
                 }
-
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                log.error("Failed to read/update Camera {} settings", cameraName, databaseError);
+                log.error("Failed to read/update Camera {} settings", cameraName, databaseError.toException());
             }
         });
     }
@@ -143,11 +122,16 @@ public class Camera {
         this.rebootUrl = buildUrlFromTemplate(rebootUrlTemplate);
     }
 
-    @Async
     public void enableMotionDetection() throws Exception {
-        if (isOnline()) {
-            this.detectorEnabled = true;
+        if (currentCameraMotionDetector != null) {
+            log.warn("Detector already enabled on {}:\nCamera: {}\nSystem armed: {}", getCameraName(), cameraSettings.getMonitoringMode(), systemModeAndStateService.isArmed());
+            return;
+        } else if (MonitoringModeType.DISABLED.equals(cameraSettings.getMonitoringMode())) {
+            log.warn("Skip detector change on {}:\nCamera: {}\nSystem armed: {}", getCameraName(), cameraSettings.getMonitoringMode(), systemModeAndStateService.isArmed());
+            return;
+        }
 
+        if (isOnline()) {
             this.currentCameraMotionDetector = context.getBean(CameraMotionDetector.class);
 
             currentCameraMotionDetector.on(this).start();
@@ -159,9 +143,13 @@ public class Camera {
     }
 
     public void disableMotionDetection() throws IOException {
-        if (cameraSettings.isContinuousMonitoring()) return;
-
-        this.detectorEnabled = false;
+        if (currentCameraMotionDetector == null) {
+            log.warn("Detector already disabled on {}:\nCamera: {}\nSystem armed: {}", getCameraName(), cameraSettings.getMonitoringMode(), systemModeAndStateService.isArmed());
+            return;
+        } else if (MonitoringModeType.ENABLED.equals(cameraSettings.getMonitoringMode())) {
+            log.warn("Skip detector change on {}:\nCamera: {}\nSystem armed: {}", getCameraName(), cameraSettings.getMonitoringMode(), systemModeAndStateService.isArmed());
+            return;
+        }
 
         if (currentCameraMotionDetector != null) {
             try {
@@ -170,12 +158,6 @@ public class Camera {
                 log.warn("Some error occurred during disabling motion detector on camera {}", getCameraName(), e);
             }
             this.currentCameraMotionDetector = null;
-        }
-
-        try {
-            lock.delete();
-        } catch (Exception e) {
-            log.info("No lock to delete for {}", cameraName);
         }
 
         log.info("Motion detector disabled for camera: {}", getCameraName());
@@ -195,8 +177,8 @@ public class Camera {
             urlConnection.setRequestProperty("User-Agent", USER_AGENT);
 
             int responseCode = urlConnection.getResponseCode();
-            logger.printAdditionalInfo("Sending 'GET' request to URL : " + url);
-            logger.printAdditionalInfo("Response Code : " + responseCode);
+            log.info("Sending 'GET' request to URL : " + url);
+            log.info("Response Code : " + responseCode);
 
             BufferedReader in = new BufferedReader(
                     new InputStreamReader(urlConnection.getInputStream()));
@@ -206,7 +188,7 @@ public class Camera {
                 response.append(inputLine);
             }
 
-            logger.printAdditionalInfo(response.toString());
+            log.info(response.toString());
             in.close();
         } catch (IOException e) {
             log.error("Failed to reboot camera: {}", getCameraName(), e);
@@ -223,21 +205,18 @@ public class Camera {
     }
 
     @Async
-    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, SettingsUpdatedEvent.class, SystemStateChangedEvent.class})
+    @EventListener({ArmedEvent.class, MotionDetectedEvent.class, SystemStateChangedEvent.class})
     public void onEvent(EventBase event) throws Exception {
-        if (event instanceof ArmedEvent) {
-            ArmedEvent armedEvent = (ArmedEvent) event;
+        if (event instanceof ArmedEvent armedEvent) {
             enableDisableDetector(armedEvent.getSystemState());
-        } else if (event instanceof SystemStateChangedEvent) {
-            SystemStateChangedEvent systemStateChangedEvent = (SystemStateChangedEvent) event;
+        } else if (event instanceof SystemStateChangedEvent systemStateChangedEvent) {
             enableDisableDetector(systemStateChangedEvent.getSystemState());
-        } else if (event instanceof MotionDetectedEvent) {
-            MotionDetectedEvent motionDetectedEvent = (MotionDetectedEvent) event;
+        } else if (event instanceof MotionDetectedEvent motionDetectedEvent) {
             if (!motionDetectedEvent.getCameraName().equals(getCameraName())) {
                 return;
             }
 
-            if (lock.exists()) {
+            if (videoCaptor != null) {
                 log.info("New motion detected on camera: {} but previous capture is in progress, ignoring...", getCameraName());
             } else {
                 log.info("New motion detected at: {} on Camera {}", new Date(), getCameraName());
@@ -248,6 +227,7 @@ public class Camera {
                     } else {
                         bufferedImage = motionDetectedEvent.getCurrentImage();
                     }
+                    assignCaptorAndStartCapture(context.getBean(VideoCaptor.class));
 
                     eventService.publish(MotionToNotifyEvent.builder()
                             .cameraName(getCameraName())
@@ -258,26 +238,28 @@ public class Camera {
                             .snapshotUrl(uploadMotionImageFrom(motionDetectedEvent.getEventId(), bufferedImage))
                             .build());
 
-                    context.getBean(VideoCaptor.class).startCaptureFrom(this);
                 } catch (Exception e) {
-                    log.error("Failed to lock {}", lock.getAbsolutePath(), e);
+                    log.error("Failed to capture video", e);
                 }
             }
         }
     }
 
-    private void enableDisableDetector(SystemStateType systemState) throws Exception {
+    @SneakyThrows
+    private void assignCaptorAndStartCapture(VideoCaptor captor) {
+        this.videoCaptor = captor;
+        videoCaptor.startCaptureFrom(this);
+    }
+
+    private synchronized void enableDisableDetector(SystemStateType systemState) throws Exception {
         switch (systemState) {
-            case ARMED:
-                if (!isDetectorEnabled()) enableMotionDetection();
-                break;
-            case DISARMED:
-                if (isDetectorEnabled() && !cameraSettings.isContinuousMonitoring()) disableMotionDetection();
-                break;
-            case RESOLVING:
-                if (cameraSettings.isContinuousMonitoring()) enableMotionDetection();
-                break;
+            case ARMED -> enableMotionDetection();
+            case DISARMED -> disableMotionDetection();
         }
+    }
+
+    private boolean isEnabled() {
+        return MonitoringModeType.ENABLED.equals(cameraSettings.getMonitoringMode());
     }
 
     private URL uploadMotionImageFrom(long eventId, BufferedImage bufferedImage) {
@@ -296,11 +278,11 @@ public class Camera {
     }
 
     public boolean isDetectorEnabled() {
-        return detectorEnabled;
+        return currentCameraMotionDetector != null;
     }
 
     public boolean isRecordingInProgress() {
-        return lock.exists();
+        return videoCaptor != null;
     }
 
     public boolean isRebootInProgress() {
@@ -309,5 +291,13 @@ public class Camera {
 
     public void rebootComplete() {
         this.rebootInProgress = false;
+    }
+
+    public void resetVideoCaptor() {
+        this.videoCaptor = null;
+    }
+
+    public long getRebootTimeoutSec() {
+        return cameraSettings.getRebootTimeoutSec();
     }
 }

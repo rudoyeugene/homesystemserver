@@ -3,7 +3,10 @@ package com.rudyii.hsw.services.firebase;
 import com.rudyii.hs.common.objects.info.ServerInfo;
 import com.rudyii.hs.common.objects.info.Uptime;
 import com.rudyii.hs.common.objects.info.WanInfo;
+import com.rudyii.hs.common.type.SystemStateType;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
+import com.rudyii.hsw.objects.events.ArmedEvent;
+import com.rudyii.hsw.objects.events.EventBase;
 import com.rudyii.hsw.objects.events.IspEvent;
 import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.internet.IspService;
@@ -40,7 +43,7 @@ public class FirebaseInfoService {
                 .serverAlias(serverKeyService.getServerAlias())
                 .serverVersion(appVersion)
                 .build());
-        updateWanInfo();
+        updateWanInfo(IspEvent.builder().build());
         doPing();
     }
 
@@ -48,8 +51,6 @@ public class FirebaseInfoService {
     public void doPing() {
         if (systemModeAndStateService.isArmed()) {
             currentSession.incrementAndGet();
-        } else {
-            currentSession.set(0);
         }
 
         firebaseDatabaseProvider.getRootReference().child(INFO_ROOT).child(INFO_PING).setValueAsync(Uptime.builder()
@@ -60,13 +61,19 @@ public class FirebaseInfoService {
 
     }
 
-    @EventListener(IspEvent.class)
-    public void updateWanInfo() {
-        if (ispService.isWanUpdated()) {
-            firebaseDatabaseProvider.getRootReference().child(INFO_ROOT).child(INFO_WAN).setValueAsync(WanInfo.builder()
-                    .isp(ispService.getCurrentWanIp().getIsp())
-                    .wanIp(ispService.getCurrentWanIp().getQuery())
-                    .build());
+    @EventListener({IspEvent.class, ArmedEvent.class})
+    public void updateWanInfo(EventBase eventBase) {
+        if (eventBase instanceof IspEvent) {
+            if (ispService.isWanUpdated()) {
+                firebaseDatabaseProvider.getRootReference().child(INFO_ROOT).child(INFO_WAN).setValueAsync(WanInfo.builder()
+                        .isp(ispService.getCurrentWanIp().getIsp())
+                        .wanIp(ispService.getCurrentWanIp().getQuery())
+                        .build());
+            }
+        } else if (eventBase instanceof ArmedEvent armedEvent) {
+            if (SystemStateType.ARMED.equals(armedEvent.getSystemState())) {
+                currentSession.set(0);
+            }
         }
     }
 }
