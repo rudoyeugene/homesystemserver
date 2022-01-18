@@ -5,6 +5,7 @@ import com.rudyii.hsw.helpers.IpMonitor;
 import com.rudyii.hsw.motion.Camera;
 import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.objects.events.CameraRebootEvent;
+import com.rudyii.hsw.providers.IPStateProvider;
 import com.rudyii.hsw.providers.NotificationsService;
 import com.rudyii.hsw.services.SystemModeAndStateService;
 import com.rudyii.hsw.services.firebase.FirebaseGlobalSettingsService;
@@ -31,6 +32,7 @@ public class ReportingService {
     private final UptimeService uptimeService;
     private final SystemModeAndStateService systemModeAndStateService;
     private final IpMonitor ipMonitor;
+    private final IPStateProvider ipStateProvider;
     private final IspService ispService;
     private final NotificationsService notificationsService;
     private final BoardMonitor boardMonitor;
@@ -42,6 +44,7 @@ public class ReportingService {
     @Autowired
     public ReportingService(SystemModeAndStateService systemModeAndStateService, IspService ispService,
                             NotificationsService notificationsService, IpMonitor ipMonitor,
+                            IPStateProvider ipStateProvider,
                             UptimeService uptimeService, BoardMonitor boardMonitor,
                             ServerKeyService serverKeyService, EventService eventService,
                             FirebaseGlobalSettingsService globalSettingsService, List<Camera> cameras) {
@@ -49,6 +52,7 @@ public class ReportingService {
         this.ispService = ispService;
         this.notificationsService = notificationsService;
         this.ipMonitor = ipMonitor;
+        this.ipStateProvider = ipStateProvider;
         this.uptimeService = uptimeService;
         this.boardMonitor = boardMonitor;
         this.eventService = eventService;
@@ -91,7 +95,22 @@ public class ReportingService {
         body.add("Home system uptime: <b>" + uptimeService.getUptime() + "</b>");
         body.add("Current external IP: <b>" + ispService.getCurrentOrLastWanIpAddress() + "</b>");
         body.add("Current internal IP: <b>" + ispService.getLocalIpAddress() + "</b>");
-        body.add("Total monitored cameras: <b>" + cameras.size() + "</b>");
+
+        body.add("System owners:");
+        body.add("<ul>");
+        ipStateProvider.getMasterNames().forEach(masterName -> body.add("<li>" + masterName));
+        body.add("</ul>");
+
+        if (!cameras.isEmpty()) {
+            body.add("Total monitored cameras: <b>" + cameras.size() + "</b>");
+            body.add("<ul>");
+            cameras.forEach(camera -> body.add("<li>" + camera.getCameraName() +
+                    ": " + camera.getCameraSettings().getMonitoringMode() +
+                    " & is " +
+                    (camera.isDetectorEnabled() ? "<font color=\"green\">ON</font>" : "<font color=\"red\">OFF</font>")
+            ));
+            body.add("</ul>");
+        }
 
         if (globalSettingsService.getGlobalSettings().isMonitoringEnabled()) {
             body.add("Monitored targets states:");

@@ -14,8 +14,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,13 +83,18 @@ public class HouseKeepingService {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
                     if (dataSnapshot.exists()) {
+                        List<Long> logsToRemove = new ArrayList<>();
                         dataSnapshot.getChildren().forEach(logRecord -> {
                             LogBase logBase = logRecord.getValue(LogBase.class);
                             if (logBase.getEventId() < timeAgo) {
-                                firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(logBase.getEventId())).removeValueAsync();
+                                logsToRemove.add(logBase.getEventId());
                             }
                         });
 
+                        logsToRemove.forEach(timestamp -> {
+                            firebaseDatabaseProvider.getRootReference().child(LOG_ROOT).child(String.valueOf(timestamp)).removeValueAsync();
+                            eventsDeleted.incrementAndGet();
+                        });
                     } else {
                         log.info("Log is empty, nothing to remove");
                     }
@@ -112,13 +118,15 @@ public class HouseKeepingService {
         return new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                List<String> datesToRemove = new ArrayList<>();
                 if (dataSnapshot.exists()) {
                     dataSnapshot.getChildren().forEach(dataSnapshotPerDay -> {
                         if (beforeHistoricalToday(dataSnapshotPerDay.getKey())) {
-                            firebaseDatabaseProvider.getRootReference().child(USAGE_STATS_ROOT).child(dataSnapshotPerDay.getKey()).removeValueAsync();
+                            datesToRemove.add(dataSnapshotPerDay.getKey());
                         }
                     });
                 }
+                datesToRemove.forEach(date -> firebaseDatabaseProvider.getRootReference().child(USAGE_STATS_ROOT).child(date).removeValueAsync());
             }
 
             @Override
@@ -129,10 +137,12 @@ public class HouseKeepingService {
     }
 
     private boolean beforeHistoricalToday(String date) {
-        return date.compareTo(getHistoricalToday()) < 0;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+        LocalDate aDate = LocalDate.parse(date, formatter);
+        return aDate.isBefore(getHistoricalToday());
     }
 
-    private String getHistoricalToday() {
-        return new SimpleDateFormat("yyyyMMdd").format(LocalDate.now().minusDays(globalSettingsService.getGlobalSettings().getHistoryDays()));
+    private LocalDate getHistoricalToday() {
+        return LocalDate.now().minusDays(globalSettingsService.getGlobalSettings().getHistoryDays());
     }
 }

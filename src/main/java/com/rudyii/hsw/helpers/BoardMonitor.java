@@ -2,6 +2,7 @@ package com.rudyii.hsw.helpers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import java.util.List;
 @Component
 public class BoardMonitor {
     private final List<String> monitorCommandsList;
+    private final DefaultExecutor defaultExecutor = new DefaultExecutor();
 
     @Autowired
     public BoardMonitor(List monitorCommandsList) {
@@ -33,10 +35,11 @@ public class BoardMonitor {
 
             try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
                 CommandLine commandline = CommandLine.parse(command);
-                DefaultExecutor exec = new DefaultExecutor();
                 PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-                exec.setStreamHandler(streamHandler);
-                exec.execute(commandline);
+                DefaultExecuteResultHandler resultHandler = new DefaultExecuteResultHandler();
+                defaultExecutor.setStreamHandler(streamHandler);
+                defaultExecutor.execute(commandline, resultHandler);
+                resultHandler.waitFor();
 
                 body.addAll(List.of(outputStream.toString().split(System.getProperty("line.separator"))));
             } catch (Exception e) {

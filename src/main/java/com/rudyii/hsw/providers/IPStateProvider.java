@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.rudyii.hsw.enums.IPStateEnum.ERROR;
 import static com.rudyii.hsw.enums.IPStateEnum.ONLINE;
@@ -38,6 +39,10 @@ public class IPStateProvider {
 
     public Boolean mastersOnline() {
         return masterIpList.stream().anyMatch(ip -> ONLINE.equals(ipStates.get(ip)));
+    }
+
+    public List<String> getMasterNames() {
+        return masterIpList.stream().map(ipResolver::get).collect(Collectors.toList());
     }
 
     @Async
