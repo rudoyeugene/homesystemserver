@@ -50,14 +50,10 @@ public class FirebaseInfoService {
 
     @Scheduled(cron = "0 */1 * * * *")
     public void doPing() {
-        if (systemModeAndStateService.isArmed()) {
-            currentSession.incrementAndGet();
-        }
-
         firebaseDatabaseProvider.getRootReference().child(INFO_ROOT).child(INFO_PING).setValueAsync(Uptime.builder()
                 .ping(System.currentTimeMillis())
                 .uptime(uptimeService.getUptimeMinutes())
-                .currentSession(currentSession.get())
+                .currentSession(systemModeAndStateService.isArmed() ? currentSession.getAndIncrement() : currentSession.get())
                 .build());
 
     }
@@ -75,7 +71,7 @@ public class FirebaseInfoService {
     @EventListener(ArmedEvent.class)
     public void resetCurrentSession(ArmedEvent armedEvent) {
         if (SystemStateType.ARMED.equals(armedEvent.getSystemState())) {
-            currentSession.set(0);
+            currentSession.getAndSet(0);
         }
     }
 }

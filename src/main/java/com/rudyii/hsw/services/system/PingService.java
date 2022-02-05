@@ -15,6 +15,8 @@ import javax.annotation.PostConstruct;
 import java.net.InetAddress;
 import java.util.Map;
 
+import static com.rudyii.hs.common.type.SystemStateType.ARMED;
+import static com.rudyii.hs.common.type.SystemStateType.RESOLVING;
 import static com.rudyii.hsw.enums.IPStateEnum.*;
 import static java.util.Arrays.asList;
 import static org.apache.commons.lang.SystemUtils.IS_OS_LINUX;
@@ -51,7 +53,7 @@ public class PingService {
             while (true) {
                 ipResolver.forEach((ip, name) -> hswExecutor.submit(new PingRunnable(ip)));
                 long sleepFor;
-                if (systemModeAndStateService.isArmed()) {
+                if (ARMED.equals(systemModeAndStateService.getSystemState()) || RESOLVING.equals(systemModeAndStateService.getSystemState())) {
                     sleepFor = globalSettingsService.getGlobalSettings().getMasterCheckPeriodIfArmedSec();
                 } else {
                     sleepFor = globalSettingsService.getGlobalSettings().getMasterCheckPeriodIfDisarmedSec();
