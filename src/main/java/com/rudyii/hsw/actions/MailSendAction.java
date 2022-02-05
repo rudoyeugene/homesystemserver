@@ -6,6 +6,7 @@ import com.rudyii.hsw.objects.Attachment;
 import com.rudyii.hsw.providers.EmailDetailsProvider;
 import com.rudyii.hsw.services.ClientsService;
 import com.rudyii.hsw.services.internet.IspService;
+import jakarta.mail.Message;
 import lombok.extern.slf4j.Slf4j;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.EmailPopulatingBuilder;
@@ -16,7 +17,6 @@ import org.simplejavamail.mailer.MailerBuilder;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.mail.Message.RecipientType;
 import java.util.ArrayList;
 
 import static org.apache.commons.lang3.StringUtils.isNoneBlank;
@@ -71,7 +71,7 @@ public class MailSendAction extends InternetBasedAction implements Runnable {
 
         for (ConnectedClient client : clientsService.getClients()) {
             if (client.isHourlyReportEnabled() && isNoneBlank(client.getEmail())) {
-                emailPopulatingBuilder.withRecipient(null, client.getEmail(), RecipientType.TO);
+                emailPopulatingBuilder.withRecipient(null, client.getEmail(), Message.RecipientType.TO);
             }
         }
 
