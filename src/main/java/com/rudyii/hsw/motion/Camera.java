@@ -6,6 +6,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 import com.rudyii.hs.common.objects.settings.CameraSettings;
 import com.rudyii.hs.common.type.MonitoringModeType;
+import com.rudyii.hs.common.type.NotificationType;
 import com.rudyii.hs.common.type.SystemStateType;
 import com.rudyii.hsw.database.FirebaseDatabaseProvider;
 import com.rudyii.hsw.enums.IPStateEnum;
@@ -61,7 +62,6 @@ public class Camera {
     private String jpegUrlTemplate;
     private String rtspUrlTemplate;
     private String rebootUrlTemplate;
-    private String rtspTransport;
     private VideoCaptor videoCaptor;
 
     @Autowired
@@ -229,14 +229,16 @@ public class Camera {
                     }
                     assignCaptorAndStartCapture(context.getBean(VideoCaptor.class));
 
-                    eventService.publish(MotionToNotifyEvent.builder()
-                            .cameraName(getCameraName())
-                            .currentImage(motionDetectedEvent.getCurrentImage())
-                            .motionObject(motionDetectedEvent.getMotionObject())
-                            .motionArea(motionDetectedEvent.getMotionArea())
-                            .eventId(motionDetectedEvent.getEventId())
-                            .snapshotUrl(uploadMotionImageFrom(motionDetectedEvent.getEventId(), bufferedImage))
-                            .build());
+                    if (NotificationType.ALL.equals(cameraSettings.getNotificationType()) || NotificationType.MOTION_DETECTED.equals(cameraSettings.getNotificationType())) {
+                        eventService.publish(MotionToNotifyEvent.builder()
+                                .cameraName(getCameraName())
+                                .currentImage(motionDetectedEvent.getCurrentImage())
+                                .motionObject(motionDetectedEvent.getMotionObject())
+                                .motionArea(motionDetectedEvent.getMotionArea())
+                                .eventId(motionDetectedEvent.getEventId())
+                                .snapshotUrl(uploadMotionImageFrom(motionDetectedEvent.getEventId(), bufferedImage))
+                                .build());
+                    }
 
                 } catch (Exception e) {
                     log.error("Failed to capture video", e);

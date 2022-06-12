@@ -1,6 +1,7 @@
 package com.rudyii.hsw.actions;
 
 import com.google.common.net.MediaType;
+import com.rudyii.hs.common.type.NotificationType;
 import com.rudyii.hsw.actions.base.InternetBasedAction;
 import com.rudyii.hsw.objects.events.UploadEvent;
 import com.rudyii.hsw.providers.StorageProvider;
@@ -27,6 +28,7 @@ public class UploadAction extends InternetBasedAction implements Runnable {
     private File uploadCandidate;
     private BufferedImage image;
     private String cameraName;
+    private NotificationType notificationType;
 
     @Autowired
     public UploadAction(StorageProvider storageProvider, IspService ispService, EventService eventService) {
@@ -50,12 +52,14 @@ public class UploadAction extends InternetBasedAction implements Runnable {
     void uploadFile() {
         try {
             InputStream in = new BufferedInputStream(new FileInputStream(uploadCandidate));
-            eventService.publish(UploadEvent.builder()
-                    .cameraName(cameraName)
-                    .fileName(uploadCandidate.getName())
-                    .videoUrl(storageProvider.putData(uploadCandidate.getName(), MediaType.MP4_VIDEO, in))
-                    .image(image)
-                    .build());
+            if (NotificationType.ALL.equals(notificationType) || NotificationType.VIDEO_RECORDED.equals(notificationType)) {
+                eventService.publish(UploadEvent.builder()
+                        .cameraName(cameraName)
+                        .fileName(uploadCandidate.getName())
+                        .videoUrl(storageProvider.putData(uploadCandidate.getName(), MediaType.MP4_VIDEO, in))
+                        .image(image)
+                        .build());
+            }
             uploadCandidate.delete();
         } catch (Exception e) {
             log.error("Upload to FAILED!", e);
@@ -70,6 +74,12 @@ public class UploadAction extends InternetBasedAction implements Runnable {
 
     public UploadAction withCameraName(String cameraName) {
         this.cameraName = cameraName;
+
+        return this;
+    }
+
+    public UploadAction withNotificationType(NotificationType notificationType) {
+        this.notificationType = notificationType;
 
         return this;
     }

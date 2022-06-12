@@ -1,5 +1,6 @@
 package com.rudyii.hsw.actions.base;
 
+import com.rudyii.hs.common.type.NotificationType;
 import com.rudyii.hsw.actions.MailSendAction;
 import com.rudyii.hsw.actions.UploadAction;
 import com.rudyii.hsw.objects.Attachment;
@@ -25,10 +26,11 @@ public class ActionsFactory {
     }
 
     @Async
-    public void orderUploadAction(String cameraName, File uploadCandidate, BufferedImage image) {
+    public void orderUploadAction(String cameraName, NotificationType notificationType, File uploadCandidate, BufferedImage image) {
         hswExecutor.submit(context.getBean(UploadAction.class)
                 .withUploadCandidate(uploadCandidate)
                 .withCameraName(cameraName)
+                .withNotificationType(notificationType)
                 .andImage(image));
     }
 }

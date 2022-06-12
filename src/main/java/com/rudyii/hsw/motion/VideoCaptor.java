@@ -115,6 +115,7 @@ public class VideoCaptor {
     private void publishCaptureEvent() {
         eventService.publish(CaptureEvent.builder()
                 .cameraName(cameraName)
+                .notificationType(cameraSettings.getNotificationType())
                 .uploadCandidate(result)
                 .image(image)
                 .eventId(eventTimeMillis).build());
